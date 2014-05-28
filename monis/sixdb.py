@@ -71,7 +71,7 @@ def sixdb_createdb(studyName,studyDir):
 	#creating table
 	sql = "CREATE table if not exists env(env_id int, key string, value string)"
 	cur.execute(sql)
-	sql = """create table if not exists mad6t_run(env_id int, run_id int, 
+	sql = """create table if not exists mad6t_run(env_id int, run_id string, 
 		seed int , mad_in blob, mad_out blob, mad_lsf blob)"""
 	cur.execute(sql)
 	sql = """create table if not exists mad6t_run2(env_id int, 
@@ -95,7 +95,8 @@ def sixdb_createdb(studyName,studyDir):
 	cur.execute(sql)
 	sql = """create table if not exists six_results(
 		six_input_id int ,row_num int,
-		""" + ','.join('o'+str(i)+' double' for i in xrange(1,61)) + ")"
+		""" + ','.join('o'+str(i)+' double' for i in xrange(1,61)) + """, 
+		primary key(six_input_id,row_num))"""
 	cur.execute(sql)
 
 	#sql = """SELECT name FROM sqlite_master WHERE type='table' 
@@ -118,15 +119,50 @@ def sixdb_createdb(studyName,studyDir):
 	for dirName, subdirList, fileList in os.walk(studyDir+'/studies'):
   	    for files in fileList:
 	        if 'sixdeskenv' in files or 'sysenv' in files:
-	        	if not env_var:
-	        	   	env_var = sixdeskdir.parse_env(dirName)
-	        	else:
-	        		env_var.update(sixdeskdir.parse_env(dirName))
-	        		flag = 1
-	        	if flag == 1:
-	        		newid = store_dict(cur,"env_id","env",env_var)
-	        		conn.commit()
+	        	env_var = sixdeskdir.parse_env(dirName)
+	        	newid = store_dict(cur,"env_id","env",env_var)
+	        	conn.commit()
+	        	break
 
+	
+	print 'storing mad6t_run'
+	rows = {}
+	#print newid
+	col = col_count(cur,'mad6t_run2')
+	for dirName, subdirList, fileList in os.walk(studyDir+'/sixtrack_input'):
+		if 'mad.dorun' in dirName:
+			for files in fileList:
+				if not ( files.endswith('.mask') or 'out' in files 
+						or files.endswith('log') or files.endswith('lsf') ):
+					seed = files.split('.')[-1]
+					run_id = dirName.split('/')[-1]
+					mad_in = sqlite3.Binary(open(
+												os.path.join(dirName,files),'r'
+												).read()
+											)
+
+					out_file = files.replace('.','.out.')
+					mad_out = sqlite3.Binary(open(
+												os.path.join(dirName,out_file),'r'
+												).read()
+											)
+					lsf_file = 'mad6t_'+seed+'.lsf'
+					mad_lsf = sqlite3.Binary(open(
+												os.path.join(dirName,lsf_file),'r'
+												).read()
+											)
+					rows[seed] = []
+					rows[seed].append([newid,seed,mad_in,mad_out,mad_lsf])
+					#print files,out_file,lsf_file
+			if rows:
+				lst = dict_to_list(rows)
+				sql = "INSERT into mad6t_results values(" 
+				sql	+= ','.join("?"*col) + ")"
+				cur.executemany(sql,lst)
+				conn.commit()
+				rows = {}
+
+	
 	print 'storing mad6t_run2'
 	fort3 = {}
 	#print newid
@@ -147,11 +183,9 @@ def sixdb_createdb(studyName,studyDir):
 			conn.commit()
 			fort3 = {}
 	
-	#mad6t_run
-
+	
 	print 'storing mad6t_results'
 	rows = {}
-	run_id = 1
 	col = col_count(cur,'mad6t_results')
 	for dirName, subdirList, fileList in os.walk(studyDir+'/sixtrack_input'):
 		for files in fileList:
@@ -180,7 +214,6 @@ def sixdb_createdb(studyName,studyDir):
 			cur.executemany(sql,lst)
 			conn.commit()
 			rows = {}
-			run_id += 1
 
 
 	print 'storing six_beta values'
@@ -263,7 +296,6 @@ def sixdb_createdb(studyName,studyDir):
 
 	#six_results
 	print 'storing six_results values'
-	exit(1)
 	rows = []
 	col = col_count(cur,'six_results')
 	max = 0
@@ -286,6 +318,11 @@ def sixdb_createdb(studyName,studyDir):
 					else:
 						max += 1
 						six_id = max
+					sql = "INSERT into six_input values(" 
+					sql	+= ','.join('?'*col_count(cur,'six_input')) + ")"
+					cur.execute(sql,[max,newid]+dirn+[''])
+					conn.commit()
+					#print 'added',tuple(dirn)
 				else:
 					six_id = six_id[0]
 				#print six_id
@@ -296,15 +333,15 @@ def sixdb_createdb(studyName,studyDir):
 						rows.append([six_id,count]+lines.split())
 						count += 1
 				if len(rows) > 149999:
-					print len(rows)
+					#print len(rows)
 					sql = "INSERT into six_results values (" 
 					sql += ','.join('?'*col) + ")"
 					#print sql
-					start = time.time()
+					#start = time.time()
 					cur.executemany(sql,rows)
 					conn.commit()
-					end = time.time()
-					print end-start
+					#end = time.time()
+					#print end-start
 					rows = []
 	if rows:
 		#print len(rows)
@@ -315,4 +352,9 @@ def sixdb_createdb(studyName,studyDir):
 		
 
 if __name__ == '__main__':
-	sixdb_createdb('monis','./files')
+
+	if len(sys.argv) == 3:
+		sixdb_createdb(sys.argv[1],sys.argv[2])
+	else:
+		print sys.argv
+		sixdb_createdb('monis','./files')
