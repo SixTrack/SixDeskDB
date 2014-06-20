@@ -80,11 +80,11 @@ class SixDeskDir(object):
   ('turnsl','int','turns for long run'),
   ('sixdeskpairs','int','number of pairs per job'),
   ]
-  def __init__(self,studydir=None,**kwargs):
-    if studydir is not None:
-      studydir=studydir.strip().replace('/sixdeskenv','')
-      self.studydir=studydir
-      opts=parse_env(self.studydir)
+  def __init__(self,studyDir=None,**kwargs):
+    if studyDir is not None:
+      studyDir=studyDir.strip().replace('/sixdeskenv','')
+      self.studyDir=studyDir
+      opts=parse_env(self.studyDir)
     else:
       opts={}
     opts.update(kwargs)
