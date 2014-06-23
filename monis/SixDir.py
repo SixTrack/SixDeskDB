@@ -177,7 +177,8 @@ class SixDir(object):
         for row in six:
             path1 = os.path.join(
                 path,str(row[2]),str(row[3]),str(row[4])+'_'+str(row[5]),
-                str(row[6])+'_'+str(row[7]),str(row[8]),str(row[9])
+                str(int(float(row[6])))+'_'+str(int(float(row[7]))),
+                str(row[8]),str(int(float(row[9])))
                 )
             if not os.path.exists(path1):
                 os.makedirs(path1)
@@ -195,6 +196,39 @@ class SixDir(object):
             f = gzip.open(path1+'/fort.10.gz','w')
             f.write(stri)
             f.close()
+
+    def get_missing_fort10(self):
+        conn = self.conn
+        cur = conn.cursor()
+        env_var = self.env_var
+        # newid = self.newid
+        sql = """select seed,tunex,tuney,amp1,amp2,turns,angle from six_input
+        where not exists(select 1 from six_results where id=six_input_id)"""
+        a = self.execute(sql)
+        if a:
+            for rows in a:
+                print 'fort.10 missing at','/'.join([str(i) for i in rows])
+                print 
+            return 1
+        else:
+            return 0
+
+    def get_incomplete_fort10(self):
+        conn = self.conn
+        cur = conn.cursor()
+        env_var = self.env_var
+        # newid = self.newid
+        sql = """select seed,tunex,tuney,amp1,amp2,turns,angle from six_input
+        where not exists(select 1 from six_results where id=six_input_id and 
+        row_num=30)"""
+        a = self.execute(sql)
+        if a:
+            for rows in a:
+                print 'fort.10 incomplete at','/'.join([str(i) for i in rows])
+                print 
+            return 1
+        else:
+            return 0
 
     def join10(self):
         conn = self.conn

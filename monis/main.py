@@ -3,8 +3,10 @@ from SixDir import *
 from DA_FullStat_v2 import *
 from DA_FullStat_public import *
 from mad6t import *
+import os
 
 if __name__ == "__main__":
+	os.system("clear")
 	try:
 		opts, args = getopt.getopt(sys.argv[1:], "h", ["help","loaddir","loaddb","DA","mad","join10"])
 	except getopt.error, msg:
@@ -14,7 +16,7 @@ if __name__ == "__main__":
 	for o, a in opts:
 		if o in ("-h", "--help"):
 			print "use: main <option>" 
-			print "loaddir <optional: studydir> LOAD A COMPLETE STUDY INTO DATABASE"
+			print "loaddir <optional: studydir> LOAD A COMPLETE OR UPDATED STUDY INTO DATABASE"
 			print "loaddb <studyname> CREATE STUDY FROM DATABASE"
 			print "DA <studyname> CREATE DARE FILES FOR STUDIES"
 			print "mad <studyname> MAD RUN ANALYSIS AND CHECK"
@@ -65,8 +67,8 @@ if __name__ == "__main__":
 		if o in ("--join10"):
 			if len(args)==1:
 				a = SixDir(args[0])
-				a.join10
-				m.check_all()
+				if a.get_missing_fort10 == 0 and a.get_incomplete_fort10 == 0:
+					a.join10
 			else:
 				print "invalid see help with -h or --help"
 				sys.exit(0)

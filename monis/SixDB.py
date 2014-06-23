@@ -12,6 +12,8 @@ import lsfqueue
 import numpy as np
 import matplotlib.pyplot as pl
 import scipy.signal
+from tables import *
+from sqltable import *  
 
 
 def col_count(cur, table):
@@ -30,7 +32,6 @@ def dict_to_list(dict):
                 lst.append(dict[i])
                 break
     return lst
-
 
 def store_dict(cur, colName, table, data):
     cur.execute("select max(%s) from %s" % (colName, table))
@@ -76,10 +77,59 @@ class SixDB(object):
             print "sixdeskenv and sysenv should both be present"
             sys.exit(0)
         self.env_var = sixdeskdir.parse_env(studyDir)
+        env_var = self.env_var
         db = self.env_var['LHCDescrip'] + ".db"
         self.conn = sqlite3.connect(db, isolation_level="IMMEDIATE")
+        cur = self.conn.cursor()
+        cur.execute("PRAGMA synchronous = OFF")
+        cur.execute("PRAGMA journal_mode = MEMORY")
+        cur.execute("PRAGMA auto_vacuum = FULL")
+        cur.execute("PRAGMA temp_store = MEMORY")
+        cur.execute("PRAGMA count_changes = OFF")
+        cur.execute("PRAGMA mmap_size=2335345345")
+        os.system("clear")
         print "Opened database successfully"
-        self.create_empty_tables()
+        cols=SQLTable.cols_from_fields(Env.fields)
+        tab = SQLTable(self.conn,'env',cols,Env.key)
+        temp = tab.select('env_id',"""key='LHCDescrip' and value = 
+            \'%s\'"""%(env_var['LHCDescrip']))
+        if temp:
+            print "study found updating..."
+            newid = int(temp[0][0])
+        else:
+            print "study not found inserting..."
+            temp = self.execute("SELECT max(env_id)+1 from env")[0]
+            if temp[0]:
+                newid = int(temp[0])
+            else:
+                newid = 1
+        self.newid = newid
+        # self.create_empty_tables()
+        self.st_env()
+
+    def st_env(self):
+        extra_files = []
+        conn = self.conn
+        newid = self.newid
+        cols=SQLTable.cols_from_fields(Env.fields)
+        tab = SQLTable(conn,'env',cols,Env.key)
+        cols=SQLTable.cols_from_fields(Files.fields)
+        tab1 = SQLTable(conn,'files',cols,Files.key)
+        cur = self.conn.cursor()
+        env_var = self.env_var
+        workdir = env_var['sixdeskhome']
+        flag = 0
+        for dirName, subdirList, fileList in os.walk(workdir + '/studies'):
+            for files in fileList:
+                if ('sixdeskenv' in files or 'sysenv' in files) and flag == 0:
+                    env_var = [[newid,i,env_var[i]] for i in env_var.keys()]
+                    tab.insertl(env_var)
+                    flag = 1
+                path = os.path.join(dirName, files)
+                content = sqlite3.Binary(open(path, 'r').read())
+                extra_files.append([self.newid, path, content])
+                extra_files.append([newid, path, content])
+                tab1.insertl(extra_files)
 
     def execute(self, sql):
         cur = self.conn.cursor()
@@ -87,75 +137,14 @@ class SixDB(object):
         self.conn.commit()
         return list(cur)
 
-    def create_empty_tables(self):
-        env_var = self.env_var
-        conn = self.conn
-        cur = conn.cursor()
-        sql = """CREATE table if not exists env(env_id int, key string,
-            value string)"""
-        cur.execute(sql)
-
-        sql = """create table if not exists mad6t_run(env_id int, run_id string,
-        seed int , mad_in blob, mad_out blob, mad_lsf blob)"""
-        cur.execute(sql)
-
-        sql = """create table if not exists mad6t_run2(env_id int,
-            fort3aux blob, fort3mad blob, fort3mother1 blob,
-            fort3mother2 blob)"""
-        cur.execute(sql)
-
-        sql = """create table if not exists mad6t_results(env_id int, seed int,
-            fort2 blob, fort8 blob, fort16 blob)"""
-        cur.execute(sql)
-
-        sql = """create table if not exists six_beta(env_id int, seed int,
-            tunex double, tuney double, beta11 double, beta12 double,
-            beta22 double, beta21 double, qx double,qy double,dqx double,
-            dqy double, x double, xp double,y double, yp double, sigma double,
-            delta double, emitn double, gamma double, deltap double,qx1 double,
-             qy1 double, qx2 double, qy2 double)"""
-        cur.execute(sql)
-
-        sql = """create table if not exists six_input(id integer primary key,
-            env_id int, seed int, simul string, tunex double, tuney double,
-            amp1 int, amp2 int, turns string, angle int, fort3 blob)"""
-        cur.execute(sql)
-
-        sql = """create table if not exists six_results(six_input_id int,
-            row_num int, """ + \
-            ','.join('%s %s' % (i[0], i[1]) for i in Fort10.fields) + \
-            """, primary key(six_input_id,row_num))"""
-        cur.execute(sql)
-
-        sql = """create table if not exists files(env_id int, path text,
-            content blob)"""
-        cur.execute(sql)
-        cur.execute("PRAGMA synchronous = OFF")
-        cur.execute("PRAGMA journal_mode = MEMORY")
-        cur.execute("PRAGMA auto_vacuum = FULL")
-        cur.execute("PRAGMA temp_store = MEMORY")
-        cur.execute("PRAGMA count_changes = OFF")
-        cur.execute("PRAGMA mmap_size=2335345345")
-
     def st_control(self):
         extra_files = []
-        cur = self.conn.cursor()
+        conn = self.conn
+        newid = self.newid
+        cols = SQLTable.cols_from_fields(Files.fields)
+        tab = SQLTable(conn,'files',cols,Files.key)
         env_var = self.env_var
         workdir = env_var['sixdeskhome']
-        # workdir = os.path.join(
-        #    env_var['scratchdir'],env_var['workspace'],'sixjobs')
-        # print workdir
-        # env_var['sixdesktrack'] += '/'+env_var['LHCDescrip']
-        # print env_var['sixdesktrack']
-        # print env_var['sixtrack_input']
-        temp = self.execute("""SELECT env_id from env where key='LHCDescrip' 
-                            and value = \'%s\'"""%(env_var['LHCDescrip']))
-        if temp:
-            newid = int(temp[0]) + 1
-        else:
-            newid = 1
-        self.newid = newid
-        print self.newid
         beam = env_var['beam']
         if beam == "" or beam == "b1" or beam == "B1":
             appendbeam = ""
@@ -168,59 +157,38 @@ class SixDB(object):
         path = os.path.join(workdir, 'control_files', files)
         content = sqlite3.Binary(open(path, 'r').read())
         extra_files.append([newid, path, content])
-        sql = """INSERT into files values(?,?,?)"""
-        cur.executemany(sql,extra_files)
-        self.conn.commit()
+        tab.insertl(extra_files)
 
     def st_mask(self):
         extra_files = []
-        cur = self.conn.cursor()
         env_var = self.env_var
         newid = self.newid
+        conn = self.conn
+        cols = SQLTable.cols_from_fields(Files.fields)
+        tab = SQLTable(conn,'files',cols,Files.key)
         workdir = env_var['sixdeskhome']
         files = str(env_var['LHCDescrip']) + '.mask'
         path = os.path.join(workdir, 'mask', files)
         content = sqlite3.Binary(open(path, 'r').read())
         extra_files.append([newid, path, content])
-        sql = """INSERT into files values(?,?,?)"""
-        cur.executemany(sql,extra_files)
-        self.conn.commit()
-
-    def st_env(self):
-        extra_files = []
-        cur = self.conn.cursor()
-        env_var = self.env_var
-        newid = self.newid
-        workdir = env_var['sixdeskhome']
-        flag = 0
-        for dirName, subdirList, fileList in os.walk(workdir + '/studies'):
-            for files in fileList:
-                if ('sixdeskenv' in files or 'sysenv' in files) and flag == 0:
-                    # env_var = sixdeskenvdir.parse_env(dirName)
-                    self.newid = store_dict(cur, "env_id", "env", env_var)
-                    self.conn.commit()
-                    flag = 1
-                path = os.path.join(dirName, files)
-                content = sqlite3.Binary(open(path, 'r').read())
-                extra_files.append([self.newid, path, content])
-                extra_files.append([newid, path, content])
-                sql = """INSERT into files values(?,?,?)"""
-                cur.executemany(sql,extra_files)
-                self.conn.commit()
+        tab.insertl(extra_files)
 
     def st_mad6t_run(self):
         conn = self.conn
         cur = conn.cursor()
         env_var = self.env_var
         newid = self.newid
+        cols = SQLTable.cols_from_fields(Mad_Run.fields)
+        tab = SQLTable(conn,'mad6t_run',cols,Mad_Run.key)
+        cols = SQLTable.cols_from_fields(Files.fields)
+        tab1 = SQLTable(conn,'files',cols,Files.key)
         rows = {}
         extra_files = []
         a = []
         workdir = env_var['sixtrack_input']
-        a = self.execute("SELECT distinct run_id from mad6t_run")
+        a = tab.select('distinct run_id')
         if a:
             a = [str(i) for i in a]
-        # print newid
         col = col_count(cur, 'mad6t_run')
         for dirName, subdirList, fileList in os.walk(workdir):
             if 'mad.dorun' in dirName and not ('mad.dorun' in a):
@@ -254,26 +222,23 @@ class SixDB(object):
                         extra_files.append([newid, path, content])
             if rows:
                 lst = dict_to_list(rows)
-                sql = "INSERT into mad6t_run values("
-                sql += ','.join("?" * col) + ")"
-                cur.executemany(sql, lst)
-                conn.commit()
+                tab.insertl(lst)
                 rows = {}
         if extra_files:
-            sql = "INSERT into files values (?,?,?)"
-            cur.execute("begin IMMEDIATE transaction")
-            cur.executemany(sql, extra_files)
-            conn.commit()
+            tab1.insertl(extra_files)
 
     def st_mad6t_run2(self):
         conn = self.conn
         cur = conn.cursor()
         env_var = self.env_var
         newid = self.newid
+        cols = SQLTable.cols_from_fields(Mad_Run2.fields)
+        tab = SQLTable(conn,'mad6t_run2',cols,Mad_Run2.key)
+        cols = SQLTable.cols_from_fields(Files.fields)
+        tab1 = SQLTable(conn,'files',cols,Files.key)
         workdir = env_var['sixtrack_input']
         fort3 = {}
         extra_files = []
-        # print newid
         col = col_count(cur, 'mad6t_run2')
         for dirName, subdirList, fileList in os.walk(workdir):
             for files in fileList:
@@ -287,24 +252,25 @@ class SixDB(object):
                     content = sqlite3.Binary(open(path, 'r').read())
                     extra_files.append([newid, path, content])
             if fort3 and len(fort3.keys()) == 4:
-                sql = "INSERT into mad6t_run2 values(" + \
-                    ','.join("?" * col) + ")"
-                cur.execute(sql, [newid, fort3['aux'], fort3['mad'],
-                                  fort3['mother1'], fort3['mother2']
-                                  ]
-                            )
-                conn.commit()
+                lst = [newid,fort3['aux'],fort3['mad'],fort3['mother1'],
+                        fort3['mother2']]
+                tab.insertl(lst)
                 fort3 = {}
+            if fort3 and len(fort3.key()) < 4:
+                print "files from fort.3.aux ,fort.3.mad ,fort.3.mother1 or",
+                print "fort.3.mother2 missing"
+                print "please check and run again"
+                exit(0)
         if extra_files:
-            sql = "INSERT into files values (?,?,?)"
-            cur.execute("begin IMMEDIATE transaction")
-            cur.executemany(sql, extra_files)
+            tab1.insertl(extra_files)
 
     def st_mad6t_results(self):
         conn = self.conn
         cur = conn.cursor()
         env_var = self.env_var
         newid = self.newid
+        cols = SQLTable.cols_from_fields(Mad_Res.fields)
+        tab = SQLTable(conn,'mad6t_results',cols,Mad_Res.key)
         workdir = env_var['sixtrack_input']
         rows = {}
         col = col_count(cur, 'mad6t_results')
@@ -334,11 +300,7 @@ class SixDB(object):
                         ])
             if rows:
                 lst = dict_to_list(rows)
-                sql = "INSERT into mad6t_results values(" + ','.join("?" * col)
-                sql += ")"
-                cur.execute("begin IMMEDIATE transaction")
-                cur.executemany(sql, lst)
-                conn.commit()
+                tab.insertl(lst)
                 rows = {}
 
     def st_six_beta(self):
@@ -346,6 +308,10 @@ class SixDB(object):
         cur = conn.cursor()
         env_var = self.env_var
         newid = self.newid
+        cols = SQLTable.cols_from_fields(Six_Be.fields)
+        tab = SQLTable(conn,'six_beta',cols,Six_Be.key)
+        cols = SQLTable.cols_from_fields(Files.fields)
+        tab1 = SQLTable(conn,'files',cols,Files.key)
         rows = {}
         extra_files = []
         col = col_count(cur, 'six_beta')
@@ -377,28 +343,23 @@ class SixDB(object):
                 if beta and temp and six:
                     rows[seed].append(temp + beta + gen + six)
                     beta = temp = six = []
-
         if rows:
             lst = dict_to_list(rows)
-            sql = "INSERT into six_beta values(" + \
-                ','.join("?" * col) + ")"
-            cur.executemany(sql, lst)
-            conn.commit()
-            rows = {}
+            tab.insertl(lst)
         if extra_files:
-            sql = "INSERT into files values (?,?,?)"
-            cur.execute("begin IMMEDIATE transaction")
-            cur.executemany(sql, extra_files)
-            conn.commit()
+            tab1.insertl(extra_files)
 
     def st_six_input(self):
         conn = self.conn
         cur = conn.cursor()
         env_var = self.env_var
         newid = self.newid
+        cols = SQLTable.cols_from_fields(Six_In.fields)
+        tab = SQLTable(conn,'six_input',cols,Six_In.key)
+        cols = SQLTable.cols_from_fields(Files.fields)
+        tab1 = SQLTable(conn,'files',cols,Files.key)
         extra_files = []
         rows = []
-        #res = []
         cur.execute('SELECT id from six_input order by id DESC limit 1')
         six_id = cur.fetchone()
         if six_id is not None:
@@ -406,12 +367,10 @@ class SixDB(object):
         else:
             six_id = 1
         col = col_count(cur, 'six_input')
-        col1 = col_count(cur, 'six_results')
         for dirName, subdirList, fileList in os.walk(env_var['sixdesktrack']):
             for files in fileList:
                 if 'fort.3' in files and not ('-' in dirName):
                     dirn = dirName.replace(env_var['sixdesktrack'] + '/', '')
-                    # print dirn
                     dirn = re.split('/|_', dirn)
                     dirn = [six_id, newid] + dirn
                     dirn.extend([sqlite3.Binary(gzip.open(
@@ -420,73 +379,50 @@ class SixDB(object):
                     )])
                     rows.append(dirn)
                     dirn = []
-                    # files = files.replace('3', '10')
-                    # if not os.path.exists(os.path.join(dirName, files)):
-                    #     print "fort 10 not present at", 
-                    #     print dirName.replace(env_var['sixdesktrack'], '')
-                    # else:
-                    #     with gzip.open(os.path.join(dirName, files), "r") \
-                    #     as FileObj:
-                    #         count = 1
-                    #         for lines in FileObj:
-                    #             res.append([six_id, count] + lines.split())
-                    #             count += 1
                     six_id += 1
                 if files.endswith('.log') or files.endswith('.lsf'):
                     path = os.path.join(dirName, files)
                     content = sqlite3.Binary(open(path, 'r').read())
                     extra_files.append([newid, path, content])
             if len(rows) > 3000:
-                sql = "INSERT into six_input values ("
-                sql += ','.join('?' * col) + ")"
-                cur.execute("begin IMMEDIATE transaction")
-                cur.executemany(sql, rows)
-                conn.commit()
+                tab.insertl(rows)
                 rows = []
-            # if len(res) > 90000:
-            #     sql = "INSERT into six_results values ("
-            #     sql += ','.join('?' * col1) + ")"
-            #     cur.execute("begin IMMEDIATE transaction")
-            #     cur.executemany(sql, res)
-            #     conn.commit()
-            #     res = []
         if rows:
-            sql = "INSERT into six_input values (" + ','.join('?' * col) + ")"
-            cur.executemany(sql, rows)
-            conn.commit()
-            rows = []
-        # if res:
-        #     sql = "INSERT into six_results values (" + \
-        #         ','.join('?' * col1) + ")"
-        #     cur.execute("begin IMMEDIATE transaction")
-        #     cur.executemany(sql, res)
-        #     conn.commit()
-        #     res = []
+            tab.insertl(rows)
         if extra_files:
-            sql = "INSERT into files values (?,?,?)"
-            cur.execute("begin IMMEDIATE transaction")
-            cur.executemany(sql, extra_files)
-            conn.commit()
+            tab1.insertl(extra_files)
 
     def st_six_results(self):
         conn = self.conn
         cur = conn.cursor()
         env_var = self.env_var
         newid = self.newid
+        cols = SQLTable.cols_from_fields(Six_In.fields)
+        tab = SQLTable(conn,'six_input',cols,Six_In.key)
         rows = []
         col = col_count(cur,'six_results')
-        sql = """SELECT distinct id,seed,simul,tunex,tuney,amp1,amp2,turns,
-                angle from six_input where env_id=%d"""
-        inp = self.execute(sql%(newid))
+        inp = tab.select("""distinct id,seed,simul,tunex,tuney,amp1,amp2,turns,
+                angle""","env_id=%d"%(newid))
         inp = [[str(i) for i in j] for j in inp]
+        cols = SQLTable.cols_from_fields(Six_Res.fields)
+        tab = SQLTable(conn,'six_results',cols,Six_Res.key)
         for dirName, subdirList, fileList in os.walk(env_var['sixdesktrack']):
             for files in fileList:
                 if 'fort.10' in files and not '-' in dirName:
                     dirn = dirName.replace(env_var['sixdesktrack']+'/','')
                     dirn = re.split('/|_',dirn)
-                    for i in inp:
-                        if dirn == i[1:]:
-                            six_id = i[0]
+                    for i in [2,3,4,5,7]:
+                        if not ('.' in str(dirn[i])): 
+                            dirn[i] += '.0'
+                    for i in xrange(len(inp)+1):
+                        if i == len(inp):
+                          print 'fort.3 file missing for',
+                          print dirName.replace(env_var['sixdesktrack']+'/','')
+                          print 'create file and run again'
+                          print dirn
+                          exit(0)
+                        if dirn == inp[i][1:]:
+                            six_id = inp[i][0]
                             break
                     with gzip.open(os.path.join(dirName,files),"r") as FileObj:
                         count = 1
@@ -494,18 +430,10 @@ class SixDB(object):
                             rows.append([six_id,count]+lines.split())
                             count += 1
                     if len(rows) > 90000:
-                        sql = "INSERT into six_results values (" 
-                        sql += ','.join('?'*col) + ")"
-                        cur.execute("begin IMMEDIATE transaction")
-                        cur.executemany(sql,rows)
-                        conn.commit()
+                        tab.insertl(rows)
                         rows = []
         if rows:
-            sql = "INSERT into six_results values (" + ','.join('?'*col) + ")"
-            cur.execute("begin IMMEDIATE transaction")
-            cur.executemany(sql,rows)
-            conn.commit()
-            rows = []
+            tab.insertl(rows)
 
     def get_missing_fort10(self):
         conn = self.conn
@@ -519,6 +447,26 @@ class SixDB(object):
             for rows in a:
                 print 'fort.10 missing at','/'.join([str(i) for i in rows])
                 print 
+            return 1
+        else:
+            return 0
+
+    def get_incomplete_fort10(self):
+        conn = self.conn
+        cur = conn.cursor()
+        env_var = self.env_var
+        # newid = self.newid
+        sql = """select seed,tunex,tuney,amp1,amp2,turns,angle from six_input
+        where not exists(select 1 from six_results where id=six_input_id and 
+        row_num=30)"""
+        a = self.execute(sql)
+        if a:
+            for rows in a:
+                print 'fort.10 incomplete at','/'.join([str(i) for i in rows])
+                print 
+            return 1
+        else:
+            return 0
 
     def inspect_results(self):
         names='seed,tunex,tuney,amp1,amp2,turns,angle'
@@ -677,7 +625,6 @@ if __name__ == '__main__':
     a = SixDB('./files/w7/sixjobs/')
     a.st_control()
     a.st_mask()
-    a.st_env()
     a.st_mad6t_run()
     a.st_mad6t_run2()
     a.st_mad6t_results()
@@ -685,6 +632,7 @@ if __name__ == '__main__':
     a.st_six_input()
     a.st_six_results()
     a.get_missing_fort10()
+    # exit(0)
     # print a.get_num_results()
     # print a.inspect_jobparams()
     # a.plot_survival_2d(1)
