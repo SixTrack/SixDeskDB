@@ -69,8 +69,12 @@ def guess_range(l):
 
 class SixDB(object):
 
-    def __init__(self, studyDir):
+    def __init__(self, studyDir='.'):
         self.studyDir = studyDir
+        if not (os.path.exists(studyDir+'/sixdeskenv') and \
+            os.path.exists(studyDir+'/sysenv')):
+            print "sixdeskenv and sysenv should both be present"
+            sys.exit(0)
         self.env_var = sixdeskdir.parse_env(studyDir)
         db = self.env_var['LHCDescrip'] + ".db"
         self.conn = sqlite3.connect(db, isolation_level="IMMEDIATE")

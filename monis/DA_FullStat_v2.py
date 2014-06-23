@@ -34,7 +34,7 @@ rectype=[('seed','int'),('betx'    ,'float'),('bety'    ,'float'),('sigx1'   ,'f
 names='seed,betx,bety,sigx1,sigy1,emitx,emity,sigxavgnld,sigyavgnld,betx2,bety2,distp,dist,sturns1,sturns2,turn_max,amp1,amp2,angle'
 outtype=[('study','S100'),('seed','int'),('angle','float'),('achaos','float'),('achaos1','float'),('alost1','float'),('alost2','float'),('Amin','float'),('Amax','float')]
 
-def main1(studyName):
+def main2(studyName):
     database='%s.db'%(studyName)
     if os.path.isfile(database):
         sd=SixDir(studyName)
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     if len(args)>1 :
         print "too many options: please provide only <study_name>"
         sys.exit()
-    main1(sys.argv[1])
+    main2(sys.argv[1])
 
 
 

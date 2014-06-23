@@ -1,11 +1,26 @@
 import os
-from sixdeskdir import extract_kmax 
+import numpy as np
+
+def extract_kmax(l):
+  name,val=l.split('=')
+  name=name.split('/')[0]
+  val=float(val.split(';')[0])
+  return name,val
+
+def minmaxavg(l,fmt="%13e"):
+  l=np.array(l)
+  mi=l.min()
+  ma=l.max()
+  av=l.mean()
+  tmp="min %s avg %s max %s"%(fmt,fmt,fmt)
+  return tmp%(mi,av,ma)
+
 class Mad6tOut(object):
   def __init__(self,**opt):
     self.basedir=opt['sixtrack_input']
     self.LHCDescrip=opt['LHCDescrip']
-    self.ista=opt['ista']
-    self.iend=opt['iend']
+    self.ista=int(opt['ista'])
+    self.iend=int(opt['iend'])
     print "Mad6tOut basedir: %s"%self.basedir
   def get_outdirnames(self):
     out=[]
@@ -24,7 +39,7 @@ class Mad6tOut(object):
     except IndexError:
       raise ValueError, "Mad6tOut no mad_run directory found"
     print "Mad6tOut rundir used: %s" % basedir
-    for i in range(int(self.ista),int(self.iend)+1):
+    for i in range(self.ista,self.iend+1):
       out_fn=os.path.join(basedir,"%s.out.%d"%(self.LHCDescrip,i))
       if os.path.exists(out_fn):
         out.append(out_fn)

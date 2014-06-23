@@ -28,7 +28,7 @@ rectype=[('study','S100'),('betx'    ,'float'),('bety'    ,'float'),('sigx1'   ,
         ('sturns1' ,'int')   ,('sturns2' ,'int')  ,('turn_max','int')  ,('amp1'    ,'float'),('amp2'    ,'float'),('angle'   ,'float')]
 names='study,betx,bety,sigx1,sigy1,emitx,emity,sigxavg,sigyavg,betx2,bety2,distp,dist,sturns1,sturns2,turn_max,amp1,amp2,angle'
 
-def main():
+def main2():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
     except getopt.error, msg:
@@ -148,7 +148,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main2()
 
 
 
