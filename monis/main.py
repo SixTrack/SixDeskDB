@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from SixDB import *
 from SixDir import *
 from DA_FullStat_v2 import *
@@ -6,7 +8,6 @@ from mad6t import *
 import os
 
 if __name__ == "__main__":
-	os.system("clear")
 	try:
 		opts, args = getopt.getopt(sys.argv[1:], "h", ["help","loaddir","loaddb","DA","mad","join10"])
 	except getopt.error, msg:

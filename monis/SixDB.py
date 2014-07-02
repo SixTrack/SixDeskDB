@@ -1,6 +1,5 @@
 import sqlite3
 import time
-import psutil
 import os
 import re
 import gzip

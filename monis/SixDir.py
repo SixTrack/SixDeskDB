@@ -1,5 +1,5 @@
 import sqlite3,time
-import psutil, os, re, gzip
+import os, re, gzip
 from sys import platform as _platform
 import sys
 import sixdeskdir
