@@ -12,7 +12,9 @@ class Mad_Run(object):
   ('seed','int','seed value'),
   ('mad_in','blob','mad_in file'),
   ('mad_out','blob','mad_out file'),
-  ('mad_lsf','blob','mad_lsf file')]
+  ('mad_lsf','blob','mad_lsf file'),
+  ('mad_log','blob','mad_log file'),
+  ('mtime','double','last modification time')]
   key=['env_id','run_id','seed']
 
 class Mad_Run2(object):
@@ -132,15 +134,15 @@ class Six_Res(object):
   ('bety2', 'float', 'Secondary vertical beta-function'),
   ('qpx', 'float', "Q'x"),
   ('qpy', 'float', "Q'y"),
-  ('dum1', 'float', 'Dummy1'),
-  ('dum2', 'float', 'Dummy2'),
-  ('dum3', 'float', 'Dummy3'),
-  ('dum4', 'float', 'Dummy4'),
-  ('dum5', 'float', 'Dummy5'),
-  ('dum6', 'float', 'Dummy6'),
-  ('dum7', 'float', 'Dummy7'),
-  ('int1', 'float', 'Internal1'),
-  ('int2', 'float', 'Internal2')]
+  ('version', 'float', 'Dummy1'),
+  ('cx', 'float', 'Dummy2'),
+  ('cy', 'float', 'Dummy3'),
+  ('csigma', 'float', 'Dummy4'),
+  ('xp', 'float', 'Dummy5'),
+  ('yp', 'float', 'Dummy6'),
+  ('delta', 'float', 'Dummy7'),
+  ('dnms', 'float', 'Internal1'),
+  ('trttime', 'float', 'Internal2')]
   key=['six_input_id','row_num']
 
 class Files(object):

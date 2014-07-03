@@ -22,7 +22,7 @@ if __name__ == "__main__":
 			print "DA <studyname> CREATE DARE FILES FOR STUDIES"
 			print "mad <studyname> MAD RUN ANALYSIS AND CHECK"
 			print "join10 <studyname> PERFORM RUN_JOIN10 FOR STUDY PROVIDED"
-		if o in ("--loaddir"):
+		if o in ("--loaddir","-loaddir"):
 			if len(args)<1:
 				a = SixDB()
 			if len(args)==1:
@@ -34,11 +34,12 @@ if __name__ == "__main__":
 				a.st_mad6t_run2()
 				a.st_mad6t_results()
 				a.st_six_beta()
-				a.st_six_input_results()
+				a.st_six_input()
+				a.st_six_results()
 			else:
 				print "too many arguments see help with -h or --help"
 				sys.exit(0)
-		if o in ("--loaddb"):
+		if o in ("--loaddb","-loaddb"):
 			if len(args)==1:
 				a = SixDir(args[0])
 				a.load_extra()
@@ -50,14 +51,14 @@ if __name__ == "__main__":
 			else:
 				print "invalid see help with -h or --help"
 				sys.exit(0)
-		if o in ("--DA"):
+		if o in ("--DA","-DA"):
 			if len(args)==1:
 				main2(args[0])
 				main1(args[0])
 			else:
 				print "invalid see help with -h or --help"
 				sys.exit(0)
-		if o in ("--mad"):
+		if o in ("--mad","-mad"):
 			if len(args)==1:
 				a = SixDir(args[0])
 				m = Mad6tOut(**a.env_var)
@@ -65,7 +66,7 @@ if __name__ == "__main__":
 			else:
 				print "invalid see help with -h or --help"
 				sys.exit(0)
-		if o in ("--join10"):
+		if o in ("--join10","-join10"):
 			if len(args)==1:
 				a = SixDir(args[0])
 				if a.get_missing_fort10 == 0 and a.get_incomplete_fort10 == 0:
