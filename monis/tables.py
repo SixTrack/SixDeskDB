@@ -32,7 +32,8 @@ class Mad_Res(object):
   ('seed','int','seed value'),
   ('fort2','blob','fort2 file'),
   ('fort8','blob','fort8 file'),
-  ('fort16','blob','fort16 file')]
+  ('fort16','blob','fort16 file'),
+  ('mtime','double','last modification time')]
   key=['env_id','seed']
 
 class Six_Be(object):
@@ -151,3 +152,4 @@ class Files(object):
   ('path','str','file path'),
   ('content','blob','file content')]
   key=['env_id','path']
+ 

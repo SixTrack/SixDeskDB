@@ -82,6 +82,7 @@ def guess_range(l):
 
 class SixDB(object):
   def __init__(self, studyDir='.'):
+    print studyDir
     self.studyDir = studyDir
     if not (os.path.exists(studyDir+'/sixdeskenv') and \
       os.path.exists(studyDir+'/sysenv')):
@@ -98,20 +99,28 @@ class SixDB(object):
     cur.execute("PRAGMA temp_store = MEMORY")
     cur.execute("PRAGMA count_changes = OFF")
     cur.execute("PRAGMA mmap_size=2335345345")
+    self.conn.text_factory=str
     #os.system("clear")
     print "Opened database successfully"
     cols=SQLTable.cols_from_fields(tables.Env.fields)
     tab = SQLTable(self.conn,'env',cols,tables.Env.key)
-    temp = tab.select('env_id',"""key='LHCDescrip' and value = 
+    temp = tab.select('max(env_id)',"""key='LHCDescrip' and value = 
       \'%s\'"""%(env_var['LHCDescrip']))
     if temp:
-      print "study found updating..."
-      newid = int(temp[0][0])
+      if temp[0][0] is not None:
+        print "study found updating..."
+        newid = int(temp[0][0])
+      else:
+        print "study not found inserting..."
+        newid = 1
     else:
       print "study not found inserting..."
       temp = self.execute("SELECT max(env_id)+1 from env")[0]
       if temp[0]:
-        newid = int(temp[0])
+        if temp[0] is None:
+          newid = 1
+        else:
+          newid = int(temp[0])
       else:
         newid = 1
     self.newid = newid
@@ -133,20 +142,46 @@ class SixDB(object):
     for dirName, subdirList, fileList in os.walk(workdir + '/studies'):
       for files in fileList:
         if ('sixdeskenv' in files or 'sysenv' in files) and flag == 0:
+          env_var['env_timestamp']=str(time.time())
           env_var = [[newid,i,env_var[i]] for i in env_var.keys()]
           tab.insertl(env_var)
           flag = 1
-        # path = os.path.join(dirName, files)
-        # content = sqlite3.Binary(open(path, 'r').read())
+        path = os.path.join(dirName, files)
+        content = sqlite3.Binary(compressBuf(path))
         # extra_files.append([self.newid, path, content])
-        # extra_files.append([newid, path, content])
-        # tab1.insertl(extra_files)
+        extra_files.append([newid, path, content])
+        tab1.insertl(extra_files)
 
   def execute(self, sql):
     cur = self.conn.cursor()
     cur.execute(sql)
     self.conn.commit()
     return list(cur)
+
+  def set_variable(self, lst):
+    conn = self.conn
+    env_var = self.env_var
+    newid = self.newid
+    cols=SQLTable.cols_from_fields(tables.Env.fields)
+    tab = SQLTable(conn,'env',cols,tables.Env.key)
+    for i in lst:
+      if str(i[0]) in env_var.keys():
+        print 'variable already present updating value'
+      env_var[str(i[0])] = str(i[1])
+    newid += 1
+    env_var['env_timestamp']=str(time.time())
+    env_var = [[newid,i,env_var[i]] for i in env_var.keys()]
+    tab.insertl(env_var) 
+    self.newid = newid
+
+  def info(self):     
+    var = ['LHCDescrip', 'platform', 'madlsfq', 'lsfq', 'runtype', 'e0',
+    'gamma', 'beam', 'dpini', 'istamad', 'iendmad', 'ns1l', 'ns2l', 'nsincl', 
+    'sixdeskpairs', 'turnsl', 'turnsle', 'writebinl', 'kstep', 'kendl', 'kmaxl',
+    'trackdir', 'sixtrack_input']
+    env_var = self.env_var
+    for keys in var:
+      print '%s=%s'%(keys,env_var[keys])
 
   def st_control(self):
     extra_files = []
@@ -203,10 +238,10 @@ class SixDB(object):
     workdir = env_var['sixtrack_input']
     a = tab.select('distinct run_id')
     if a:
-      a = [str(i) for i in a]
+      a = [str(i[0]) for i in a]
     col = col_count(cur, 'mad6t_run')
     for dirName, subdirList, fileList in os.walk(workdir):
-      if 'mad.dorun' in dirName and not ('mad.dorun' in a):
+      if 'mad.dorun' in dirName and not (dirName.split('/')[-1] in a):
         print 'found new mad run',dirName.split('/')[-1]
         for files in fileList:
           if not (files.endswith('.mask') or 'out' in files
@@ -303,23 +338,23 @@ class SixDB(object):
           head = int(files.split('_')[1].replace('.gz', ''))
           if head not in rows.keys():
             rows[head] = [newid, head]
-          if '2' in files:
+          if 'fort.2' in files:
             rows[head].insert(2, sqlite3.Binary(open(
               os.path.join(dirName, files), 'r'
             ).read()
             )
             )
-          elif '8' in files:
+          if 'fort.8' in files:
             rows[head].insert(3, sqlite3.Binary(open(
               os.path.join(dirName, files), 'r'
             ).read()
             )
             )
-          else:
+          if 'fort.16' in files:
             rows[head].extend([sqlite3.Binary(open(
               os.path.join(dirName, files), 'r'
             ).read()
-            )
+            ),os.path.getmtime(os.path.join(dirName, files))
             ])
       if rows:
         lst = dict_to_list(rows)
@@ -387,8 +422,8 @@ class SixDB(object):
     workdir = os.path.join(env_var['sixdesktrack'],env_var['LHCDescrip'])
     extra_files = []
     rows = []
-    cur.execute('SELECT id from six_input order by id DESC limit 1')
-    six_id = cur.fetchone()
+    cur.execute('SELECT max(id) from six_input limit 1')
+    six_id = cur.fetchone()[0]
     if six_id is not None:
       six_id += 1
     else:
@@ -652,7 +687,7 @@ class SixDB(object):
     return table
 
 if __name__ == '__main__':
-  a = SixDB('./files/w7/sixjobs/studies/jobslhc31b_inj55_itv19/')
+  a = SixDB('/home/monis/Desktop/GSOC/files/w7/sixjobs/studies/jobslhc31b_inj55_itv19/')
   a.st_control()
   a.st_mask()
   a.st_mad6t_run()
@@ -660,6 +695,7 @@ if __name__ == '__main__':
   a.st_mad6t_results()
   a.st_six_beta()
   a.st_six_input()
+  exit(0)
   a.st_six_results()
   a.get_missing_fort10()
   # exit(0)

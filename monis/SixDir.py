@@ -4,6 +4,7 @@ from sys import platform as _platform
 import sys
 import sixdeskdir
 import sixdeskdb
+import cStringIO
 
 def load_dict(cur,table,idcol,idnum):
     sql='SELECT key,value from %s WHERE %s=%d'%(table,idcol,idnum)
@@ -14,9 +15,15 @@ def load_dict(cur,table,idcol,idnum):
         dict[str(row[0])] = str(row[1]) 
     return dict 
 
+def decompressBuf(buf):
+    zbuf = StringIO.StringIO(buf)
+    f = gzip.GzipFile(fileobj=zbuf)
+    return f.read()
+
 class SixDir(object):
-    def __init__(self,studyName):
+    def __init__(self,studyName,basedir='.'):
         self.studyName = studyName
+        self.basedir = basedir
         db = studyName+".db"
         if not os.path.isfile(db):
             print "%s does'nt exist "%(db)
@@ -54,6 +61,7 @@ class SixDir(object):
         conn = self.conn
         cur = conn.cursor()
         env_var = self.env_var
+        basedir = self.basedir
         id = self.id
         cur.execute("begin IMMEDIATE transaction")
         sql = """SELECT path,content from files where env_id = ?"""
@@ -61,15 +69,15 @@ class SixDir(object):
         files = cur.fetchall()
         #print len(files)
         for file in files:
-            path = os.path.dirname(str(file[0]))
+            path = os.path.join(basedir,str(file[0])[1:])
             if not os.path.exists(path):
                 os.makedirs(path)
-            if not 'gz' in str(file[0]):
-                f = open(str(file[0]),'w')
+            f = open(path,'w')
+            if '.gz' in path:
+                f.write(str(file[1]))
             else:
-                f = gzip.open(str(file[0]),'w')
-            f.write(str(file[1]))
-            f.close()
+                f.write(decompressBuf(str(file[1])))
+        f.close()
 
     def load_mad6t_run(self):
         conn = self.conn
@@ -85,11 +93,12 @@ class SixDir(object):
                     os.makedirs(path)
             mad_in,mad_out,mad_lsf = [str(file[i]) for i in range(3,6)]
             f = open(path+'/'+env_var['LHCDescrip']+'.'+str(file[2]),'w')
-            f.write(mad_in)
+            f.write(decompressBuf(mad_in))
             f = open(path+'/'+env_var['LHCDescrip']+'.out.'+str(file[2]),'w')
-            f.write(mad_out)
+            f.write(decompressBuf(mad_out))
             f = open(path+'/mad6t_'+str(file[2])+'.lsf','w')
-            f.write(mad_lsf)
+            f.write(decompressBuf(mad_lsf))
+            f = open(path+'/'+env_var)
         f.close()
 
     def load_mad6t_run2(self):
