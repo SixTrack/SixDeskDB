@@ -14,7 +14,7 @@ class Mad_Run(object):
   ('mad_out','blob','mad_out file'),
   ('mad_lsf','blob','mad_lsf file'),
   ('mad_log','blob','mad_log file'),
-  ('mtime','double','last modification time')]
+  ('mad_out_mtime','double','last modification time')]
   key=['env_id','run_id','seed']
 
 class Mad_Run2(object):
@@ -33,7 +33,7 @@ class Mad_Res(object):
   ('fort2','blob','fort2 file'),
   ('fort8','blob','fort8 file'),
   ('fort16','blob','fort16 file'),
-  ('mtime','double','last modification time')]
+  ('fort_mtime','double','last modification time')]
   key=['env_id','seed']
 
 class Six_Be(object):
