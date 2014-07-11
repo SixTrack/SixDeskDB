@@ -456,22 +456,24 @@ class SixDB(object):
     workdir = os.path.join(env_var['sixdesktrack'],env_var['LHCDescrip'])
     extra_files = []
     rows = []
-    six_id = -1
+    # six_id = -1
     try:
       six_id = self.execute("""select value from env where 
         key='six_input_id' and env_id=%s"""%(newid))[0][0]
     except IndexError:
-      cur.execute('SELECT max(id) from six_input limit 1')
-      six_id = cur.fetchone()[0][0]
+      six_id = self.execute('SELECT max(id) from six_input limit 1')[0][0]
+      # print six_id
       if six_id is not None:
         six_id += 1
+        # print six_id
+        # exit(0)
       else:
         six_id = 1
       cur.execute("Replace into env values(?,?,?)",[newid,'six_input_id',
         six_id])
     cmd = """find %s -name 'fort.3.gz' -o -name '*.lsf' -o \
     -name '*.log'"""%(workdir)
-    print six_id
+    # print six_id
     print cmd
     a = os.popen(cmd).read().split('\n')[:-1]
     for dirName in a:
