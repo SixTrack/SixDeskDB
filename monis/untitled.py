@@ -185,7 +185,7 @@ class SixDB(object):
     upflag = 0
     for i in lst:
       if not ('env_timestamp' in str(i[0]) or 'six_input_id' in str(i[0])):
-        if str(i[0]) in env_var.keys():
+        if (str(i[0]) in tables.acc_var and str(i[0]) in env_var.keys()):
           if str(i[1]) != env_var[str(i[0])]:
             if is_number(str(i[1])) and is_number(env_var[str(i[0])]):
               if float(str(i[1])) != float(env_var[str(i[0])]):
@@ -196,7 +196,7 @@ class SixDB(object):
               print 'variable',str(i[0]),'already present updating value from',
               print env_var[str(i[0])],'to',str(i[1])
               flag = 1
-        else:
+        if str(i[0]) not in env_var.keys():
           print 'variable',str(i[0]),'not present adding'
           flag = 1
         env_var[str(i[0])] = str(i[1])
