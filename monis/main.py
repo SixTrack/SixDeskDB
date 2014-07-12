@@ -31,7 +31,7 @@ if __name__ == "__main__":
 			if len(args)==2:
 				a = SixDB(args[1])
 				a.st_control()
-				a.st_mask()
+				# a.st_mask()
 				a.st_env()
 				a.st_mad6t_run()
 				a.st_mad6t_run2()

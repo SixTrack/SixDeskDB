@@ -97,7 +97,6 @@ class SixDB(object):
     self.env_var['env_timestamp']=str(time.time())
     env_var = self.env_var
     db = self.env_var['LHCDescrip'] + ".db"
-    db = 'test.db'
     self.conn = sqlite3.connect(db, isolation_level="IMMEDIATE")
     cur = self.conn.cursor()
     cur.execute("PRAGMA synchronous = OFF")
@@ -152,22 +151,16 @@ class SixDB(object):
     tab1 = SQLTable(conn,'files',cols,tables.Files.key)
     cur = self.conn.cursor()
     env_var = self.env_var
-    workdir = os.path.join(
-      env_var['sixdeskhome'],'studies',env_var['LHCDescrip']
-      )
-    flag = 0
-    for dirName, subdirList, fileList in os.walk(workdir):
-      for files in fileList:
-        if ('sixdeskenv' in files or 'sysenv' in files) and flag == 0:
-          env_var['env_timestamp']=str(time.time())
-          env_var = [[newid,i,env_var[i]] for i in env_var.keys()]
-          tab.insertl(env_var)
-          flag = 1
-        path = os.path.join(dirName, files)
-        content = sqlite3.Binary(compressBuf(path))
-        # extra_files.append([self.newid, path, content])
-        extra_files.append([newid, path, content])
-        tab1.insertl(extra_files)
+    env_var['env_timestamp']=str(time.time())
+    env_var = [[newid,i,env_var[i]] for i in env_var.keys()]
+    tab.insertl(env_var)
+    path = os.path.join(self.studyDir, 'sixdeskenv')
+    content = sqlite3.Binary(compressBuf(path))
+    extra_files.append([newid, path, content])
+    path = os.path.join(self.studyDir, 'sysenv')
+    content = sqlite3.Binary(compressBuf(path))
+    extra_files.append([newid, path, content])
+    tab1.insertl(extra_files)
 
   def execute(self, sql):
     cur = self.conn.cursor()
@@ -184,8 +177,9 @@ class SixDB(object):
     flag = 0
     upflag = 0
     for i in lst:
-      if not ('env_timestamp' in str(i[0]) or 'six_input_id' in str(i[0])):
-        if (str(i[0]) in tables.acc_var and str(i[0]) in env_var.keys()):
+      if not ('env_timestamp' in str(i[0]) or 'six_input_id' in str(i[0]) or \
+        str(i[0] in tables.def_var)):
+        if str(i[0]) in env_var.keys():
           if str(i[1]) != env_var[str(i[0])]:
             if is_number(str(i[1])) and is_number(env_var[str(i[0])]):
               if float(str(i[1])) != float(env_var[str(i[0])]):
@@ -196,7 +190,7 @@ class SixDB(object):
               print 'variable',str(i[0]),'already present updating value from',
               print env_var[str(i[0])],'to',str(i[1])
               flag = 1
-        if str(i[0]) not in env_var.keys():
+        else:
           print 'variable',str(i[0]),'not present adding'
           flag = 1
         env_var[str(i[0])] = str(i[1])
@@ -241,21 +235,21 @@ class SixDB(object):
     extra_files.append([newid, path, content])
     tab.insertl(extra_files)
 
-  def st_mask(self):
-    extra_files = []
-    env_var = self.env_var
-    newid = self.newid
-    conn = self.conn
-    cols = SQLTable.cols_from_fields(tables.Files.fields)
-    tab = SQLTable(conn,'files',cols,tables.Files.key)
-    workdir = env_var['sixdeskhome']
-    files = str(env_var['LHCDescrip']) + '.mask'
-    path = os.path.join(workdir, 'mask', files)
-    content = sqlite3.Binary(compressBuf(path))
-    path = path.replace(
-      env_var['basedir'],'')
-    extra_files.append([newid, path, content])
-    tab.insertl(extra_files)
+  # def st_mask(self):
+  #   extra_files = []
+  #   env_var = self.env_var
+  #   newid = self.newid
+  #   conn = self.conn
+  #   cols = SQLTable.cols_from_fields(tables.Files.fields)
+  #   tab = SQLTable(conn,'files',cols,tables.Files.key)
+  #   workdir = env_var['sixdeskhome']
+  #   files = str(env_var['LHCDescrip']) + '.mask'
+  #   path = os.path.join(workdir, 'mask', files)
+  #   content = sqlite3.Binary(compressBuf(path))
+  #   path = path.replace(
+  #     env_var['basedir'],'')
+  #   extra_files.append([newid, path, content])
+  #   tab.insertl(extra_files)
 
   def st_mad6t_run(self):
     conn = self.conn
@@ -305,7 +299,7 @@ class SixDB(object):
               [newid, run_id, seed, mad_in, mad_out, mad_lsf, 
               mad_log, time]
               )
-          if files.endswith('.log'):
+          if files.endswith('.log') or files.endswith('.mask'):
             path = os.path.join(dirName, files)
             content = sqlite3.Binary(compressBuf(path))
             path = path.replace(
