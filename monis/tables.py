@@ -1,9 +1,9 @@
 class Env(object):
   fields=[
   ('env_id','int','study id'),
-  ('key','str','key'),
+  ('keyname','str','key'),
   ('value','str','value')]
-  key=['env_id','key']
+  key=['env_id','keyname']
 
 class Mad_Run(object):
   fields=[

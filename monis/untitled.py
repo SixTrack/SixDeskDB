@@ -67,7 +67,7 @@ def store_dict(cur, colName, table, data):
 
 
 def load_dict(cur, table, idcol, idnum):
-  sql = 'SELECT key,value from %s WHERE %s=%d' % (table, idcol, idnum)
+  sql = 'SELECT keyname,value from %s WHERE %s=%d' % (table, idcol, idnum)
   cur.execute(sql)
   a = cur.fetchall()
   dict = {}
@@ -110,13 +110,13 @@ class SixDB(object):
     print "Opened database successfully"
     cols=SQLTable.cols_from_fields(tables.Env.fields)
     tab = SQLTable(self.conn,'env',cols,tables.Env.key)
-    temp = tab.select('max(env_id)',"""key='LHCDescrip' and value = 
+    temp = tab.select('max(env_id)',"""keyname='LHCDescrip' and value = 
       \'%s\'"""%(env_var['LHCDescrip']))[0][0]
     if temp is not None:
       print "study found updating..."
       newid = int(temp)
       self.newid = newid
-      lst = self.execute("select key,value from env where env_id=%s"%(newid))
+      lst = self.execute("select keyname,value from env where env_id=%s"%(newid))
       self.set_variable(lst)
       # d = DictDiffer(tempenv,env_var)
       # print "Added:", d.added()
@@ -299,7 +299,7 @@ class SixDB(object):
               [newid, run_id, seed, mad_in, mad_out, mad_lsf, 
               mad_log, time]
               )
-          if files.endswith('.log') or files.endswith('.mask'):
+          if files.endswith('.log') or files.endswith('.mask'):  
             path = os.path.join(dirName, files)
             content = sqlite3.Binary(compressBuf(path))
             path = path.replace(
@@ -453,7 +453,7 @@ class SixDB(object):
     # six_id = -1
     try:
       six_id = self.execute("""select value from env where 
-        key='six_input_id' and env_id=%s"""%(newid))[0][0]
+        keyname='six_input_id' and env_id=%s"""%(newid))[0][0]
     except IndexError:
       six_id = self.execute('SELECT max(id) from six_input limit 1')[0][0]
       # print six_id
@@ -592,7 +592,7 @@ class SixDB(object):
         c.row_num"""
     sql="""SELECT DISTINCT %s FROM six_input as a,env as b,six_results as c
         where a.env_id=b.env_id and a.id=c.six_input_id and 
-        b.key='LHCDescrip'"""%names
+        b.keyname='LHCDescrip'"""%names
     return self.conn.cursor().execute(sql)
     
   def iter_job_params_comp(self):
