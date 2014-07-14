@@ -7,7 +7,7 @@ import sixdeskdb
 import cStringIO
 
 def load_dict(cur,table,idcol,idnum):
-    sql='SELECT key,value from %s WHERE %s=%d'%(table,idcol,idnum)
+    sql='SELECT keyname,value from %s WHERE %s=%d'%(table,idcol,idnum)
     cur.execute(sql)
     a = cur.fetchall()
     dict = {}
@@ -46,7 +46,8 @@ class SixDir(object):
     def load_env_var(self):
         conn = self.conn
         cur = conn.cursor()
-        sql = """SELECT env_id from env where key='LHCDescrip' and value='%s'"""
+        sql = """SELECT max(env_id) from env where keyname='LHCDescrip' 
+        and value='%s'"""
         cur.execute(sql%self.studyName)
         temp = cur.fetchone()[0]
         if temp is not None:
@@ -56,6 +57,15 @@ class SixDir(object):
             return
         self.env_var = load_dict(cur,"env","env_id",id)
         self.id = id
+
+    def info(self):     
+        var = ['LHCDescrip', 'platform', 'madlsfq', 'lsfq', 'runtype', 'e0',
+        'gamma', 'beam', 'dpini', 'istamad', 'iendmad', 'ns1l', 'ns2l', 
+        'nsincl','sixdeskpairs', 'turnsl', 'turnsle', 'writebinl', 'kstep', 
+        'kendl', 'kmaxl','trackdir', 'sixtrack_input']
+        env_var = self.env_var
+        for keys in var:
+          print '%s=%s'%(keys,env_var[keys])
 
     def load_extra(self):
         conn = self.conn

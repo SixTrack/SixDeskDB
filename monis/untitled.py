@@ -299,7 +299,7 @@ class SixDB(object):
               [newid, run_id, seed, mad_in, mad_out, mad_lsf, 
               mad_log, time]
               )
-          if files.endswith('.log') or files.endswith('.mask'):  
+          if files.endswith('.mask'):  
             path = os.path.join(dirName, files)
             content = sqlite3.Binary(compressBuf(path))
             path = path.replace(

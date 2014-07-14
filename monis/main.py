@@ -8,81 +8,91 @@ from mad6t import *
 import os
 
 if __name__ == "__main__":
-	args = sys.argv[1:]
-	# try:
-	# 	opts, args = getopt.getopt(sys.argv[1:], "h", ["help","loaddir","loaddb","DA","mad","join10"])
-	# 	# print 'opts',opts
-	# 	# print 'args',args
-	# except getopt.error, msg:
-	# 	print msg
-	# 	print "for help use help"
-	# 	sys.exit(2)
-	if args:
-		if args[0] in ("h", "help"):
-				print "use: main <option>" 
-				print "loaddir <optional: studydir> LOAD A COMPLETE OR UPDATED STUDY INTO DATABASE"
-				print "loaddb <studyname> CREATE STUDY FROM DATABASE"
-				print "DA <studyname> CREATE DARE FILES FOR STUDIES"
-				print "mad <studyname> MAD RUN ANALYSIS AND CHECK"
-				print "join10 <studyname> PERFORM RUN_JOIN10 FOR STUDY PROVIDED"
-		if args[0] in ("loaddir","loaddir"):
-			if len(args)==1:
-				a = SixDB()
-			if len(args)==2:
-				a = SixDB(args[1])
-				a.st_control()
-				# a.st_mask()
-				a.st_env()
-				a.st_mad6t_run()
-				a.st_mad6t_run2()
-				a.st_mad6t_results()
-				a.st_six_beta()
-				a.st_six_input()
-				a.st_six_results()
-			else:
-				print "too many arguments see help with h or help"
-				sys.exit(0)
-		elif args[0] in ("loaddb","loaddb"):
-			if len(args)==2:
-				a = SixDir(args[1])
-				a.load_extra()
-				a.load_mad6t_run()
-				a.load_mad6t_run2()
-				a.load_mad6t_results()
-				a.load_six_beta()
-				a.load_six_input_results()
-			else:
-				print "invalid see help with h or help"
-				sys.exit(0)
-		elif args[0] in ("DA","DA"):
-			if len(args)==2:
-				main2(args[1])
-				main1(args[1])
-			else:
-				print "invalid see help with h or help"
-				sys.exit(0)
-		elif args[0] in ("mad","mad"):
-			if len(args)==2:
-				a = SixDir(args[1])
-				m = Mad6tOut(**a.env_var)
-				m.check_all()
-			else:
-				print "invalid see help with h or help"
-				sys.exit(0)
-		elif args[0] in ("join10","join10"):
-			if len(args)==2:
-				a = SixDir(args[1])
-				if a.get_missing_fort10 == 0 and a.get_incomplete_fort10 == 0:
-					a.join10
-			else:
-				print "invalid see help with h or help"
-				sys.exit(0)
-		else:
-			print 'invalid for help use help or h'
+  args = sys.argv[1:]
+  # try:
+  #   opts, args = getopt.getopt(sys.argv[1:], "h", ["help","loaddir","loaddb",/
+  #   "DA","mad","join10"])
+  #   # print 'opts',opts
+  #   # print 'args',args
+  # except getopt.error, msg:
+  #   print msg
+  #   print "for help use help"
+  #   sys.exit(2)
+  if args:
+    if args[0] in ("h", "help"):
+        print "use: main <option>" 
+        print """loaddir <optional: studydir> LOAD A COMPLETE OR UPDATED STUDY 
+        INTO DATABASE"""
+        print "loaddb <studyname> CREATE STUDY FROM DATABASE"
+        print "DA <studyname> CREATE DARE FILES FOR STUDIES"
+        print "mad <studyname> MAD RUN ANALYSIS AND CHECK"
+        print "join10 <studyname> PERFORM RUN_JOIN10 FOR STUDY PROVIDED"
+        print "info <studyname> GET INFO FOR STUDY PROVIDED"
+    if args[0] in ("loaddir","loaddir"):
+      if len(args)==1:
+        a = SixDB()
+      if len(args)==2:
+        a = SixDB(args[1])
+        a.st_control()
+        # a.st_mask()
+        a.st_env()
+        a.st_mad6t_run()
+        a.st_mad6t_run2()
+        a.st_mad6t_results()
+        a.st_six_beta()
+        a.st_six_input()
+        a.st_six_results()
+      else:
+        print "too many arguments see help with h or help"
+        sys.exit(0)
+    elif args[0] in ("loaddb","loaddb"):
+      if len(args)==2:
+        a = SixDir(args[1])
+        a.load_extra()
+        a.load_mad6t_run()
+        a.load_mad6t_run2()
+        a.load_mad6t_results()
+        a.load_six_beta()
+        a.load_six_input_results()
+      else:
+        print "invalid see help with h or help"
+        sys.exit(0)
+    elif args[0] in ("info"):
+      if len(args)==2:
+        a = SixDir(args[1])
+        a.info()
+      else:
+        print "invalid see help with h or help"
+        sys.exit(0)
+    elif args[0] in ("DA","DA"):
+      if len(args)==2:
+        main2(args[1])
+        main1(args[1])
+      else:
+        print "invalid see help with h or help"
+        sys.exit(0)
+    elif args[0] in ("mad","mad"):
+      if len(args)==2:
+        a = SixDir(args[1])
+        m = Mad6tOut(**a.env_var)
+        m.check_all()
+      else:
+        print "invalid see help with h or help"
+        sys.exit(0)
+    elif args[0] in ("join10","join10"):
+      if len(args)==2:
+        a = SixDir(args[1])
+        if a.get_missing_fort10 == 0 and a.get_incomplete_fort10 == 0:
+          a.join10
+      else:
+        print "invalid see help with h or help"
+        sys.exit(0)
+    else:
+      print 'invalid for help use help or h'
 
-	else:
-	    print "too few options: please see help with h or help"
-	    sys.exit()
+  else:
+      print "too few options: please see help with h or help"
+      sys.exit()
 # print opts
 # print args
 # a = SixDB('./files/w7/sixjobs/') #SixDB.py
