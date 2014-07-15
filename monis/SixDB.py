@@ -311,6 +311,7 @@ class SixDB(object):
     workdir = env_var['sixtrack_input']
     rows = {}
     col = col_count(cur, 'mad6t_results')
+    print col
     for dirName, subdirList, fileList in os.walk(workdir):
       for files in fileList:
         if 'fort' in files and files.endswith('.gz'):
@@ -335,6 +336,8 @@ class SixDB(object):
             ).read()
             ),os.path.getmtime(os.path.join(dirName, files))
             ])
+          if len(rows[head]) == 5:
+            print rows[head]
       if rows:
         lst = dict_to_list(rows)
         print "length of row of result is",len(lst)
