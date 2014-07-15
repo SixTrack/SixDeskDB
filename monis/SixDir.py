@@ -6,8 +6,8 @@ import sixdeskdir
 import sixdeskdb
 import cStringIO
 
-def load_dict(cur,table,idcol,idnum):
-    sql='SELECT keyname,value from %s WHERE %s=%d'%(table,idcol,idnum)
+def load_dict(cur,table):
+    sql='SELECT keyname,value from %s'%(table)
     cur.execute(sql)
     a = cur.fetchall()
     dict = {}
@@ -46,17 +46,14 @@ class SixDir(object):
     def load_env_var(self):
         conn = self.conn
         cur = conn.cursor()
-        sql = """SELECT max(env_id) from env where keyname='LHCDescrip' 
+        sql = """SELECT count(*) from env where keyname='LHCDescrip' 
         and value='%s'"""
         cur.execute(sql%self.studyName)
-        temp = cur.fetchone()[0]
-        if temp is not None:
-            id = int(temp)
-        else:   
+        temp = list(cur)[0][0]
+        if temp == 0:
             'studyname not found'
             return
-        self.env_var = load_dict(cur,"env","env_id",id)
-        self.id = id
+        self.env_var = load_dict(cur,"env")
 
     def info(self):     
         var = ['LHCDescrip', 'platform', 'madlsfq', 'lsfq', 'runtype', 'e0',
@@ -72,10 +69,9 @@ class SixDir(object):
         cur = conn.cursor()
         env_var = self.env_var
         basedir = self.basedir
-        id = self.id
         cur.execute("begin IMMEDIATE transaction")
-        sql = """SELECT path,content from files where env_id = ?"""
-        cur.execute(sql,[id])
+        sql = """SELECT path,content from files"""
+        cur.execute(sql)
         files = cur.fetchall()
         #print len(files)
         for file in files:
@@ -93,61 +89,65 @@ class SixDir(object):
         conn = self.conn
         cur = conn.cursor()
         env_var = self.env_var
-        id = self.id
-        sql = """SELECT * from mad6t_run where env_id = ?"""
-        cur.execute(sql,[id])
+        sql = """SELECT * from mad6t_run"""
+        cur.execute(sql)
         files = cur.fetchall()
         for file in files:
-            path = os.path.join(env_var['sixtrack_input'],str(file[1]))
+            path = os.path.join(env_var['sixtrack_input'],str(file[0]))
             if not os.path.exists(path):
                     os.makedirs(path)
-            mad_in,mad_out,mad_lsf = [str(file[i]) for i in range(3,6)]
-            f = open(path+'/'+env_var['LHCDescrip']+'.'+str(file[2]),'w')
+            mad_in,mad_out,mad_lsf,mad_log = [str(file[i]) for i in range(2,6)]
+            f = open(
+                path+'/'+env_var['LHCDescrip']+'.'+str(file[1]),'w')
             f.write(decompressBuf(mad_in))
-            f = open(path+'/'+env_var['LHCDescrip']+'.out.'+str(file[2]),'w')
+            f = open(
+                path+'/'+env_var['LHCDescrip']+'.out.'+str(file[1]),'w')
             f.write(decompressBuf(mad_out))
-            f = open(path+'/mad6t_'+str(file[2])+'.lsf','w')
+            f = open(
+                path+'/mad6t_'+str(file[1])+'.lsf','w')
             f.write(decompressBuf(mad_lsf))
+            f = open(
+                path+'/'+env_var['LHCDescrip']+'_mad_'+str(file[1]+'.log'),'w')
+            f.write(decompressBuf(mad_in))
             f = open(path+'/'+env_var)
         f.close()
 
-    def load_mad6t_run2(self):
-        conn = self.conn
-        cur = conn.cursor()
-        env_var = self.env_var
-        id = self.id
-        sql = """SELECT * from mad6t_run2 where env_id = ?"""
-        cur.execute(sql,[id])
-        fort3 = cur.fetchone()
-        aux,mad,m1,m2 = [str(fort3[i]) for i in range(1,5)]
-        path = env_var['sixtrack_input']
-        f = open(path+'/fort.3.aux','w')
-        f.write(aux)
-        f = open(path+'/fort.3.mad','w')
-        f.write(mad)
-        f = open(path+'/fort.3.mother1','w')
-        f.write(m1)
-        f = open(path+'/fort.3.mother2','w')
-        f.write(m2)
-        f.close()
+    # def load_mad6t_run2(self):
+    #     conn = self.conn
+    #     cur = conn.cursor()
+    #     env_var = self.env_var
+    #     id = self.id
+    #     sql = """SELECT * from mad6t_run2 where env_id = ?"""
+    #     cur.execute(sql,[id])
+    #     fort3 = cur.fetchone()
+    #     aux,mad,m1,m2 = [str(fort3[i]) for i in range(1,5)]
+    #     path = env_var['sixtrack_input']
+    #     f = open(path+'/fort.3.aux','w')
+    #     f.write(aux)
+    #     f = open(path+'/fort.3.mad','w')
+    #     f.write(mad)
+    #     f = open(path+'/fort.3.mother1','w')
+    #     f.write(m1)
+    #     f = open(path+'/fort.3.mother2','w')
+    #     f.write(m2)
+    #     f.close()
 
     def load_mad6t_results(self):
         conn = self.conn
         cur = conn.cursor()
         env_var = self.env_var
-        id = self.id
         cur.execute("begin IMMEDIATE transaction")
-        sql = """SELECT * from mad6t_results where env_id = ?"""
-        cur.execute(sql,[id])
+        sql = """SELECT * from mad6t_results"""
+        cur.execute(sql)
         forts = cur.fetchall()
         path = env_var['sixtrack_input']
         for fort in forts:
-            seed,f2,f8,f16 = [str(fort[i]) for i in range(1,5)]
-            f = gzip.open(path+'/fort.2_'+seed+'.gz','w')
+            seed,f2,f8,f16 = [str(fort[i]) for i in range(0,4)]
+            f = open(path+'/fort.2_'+seed+'.gz','w')
             f.write(f2)
-            f = gzip.open(path+'/fort.8_'+seed+'.gz','w')
+            f = open(path+'/fort.8_'+seed+'.gz','w')
             f.write(f8)
-            f = gzip.open(path+'/fort.16_'+seed+'.gz','w')
+            f = open(path+'/fort.16_'+seed+'.gz','w')
             f.write(f16)
         f.close()
 
@@ -155,30 +155,29 @@ class SixDir(object):
         conn = self.conn
         cur = conn.cursor()
         env_var = self.env_var
-        id = self.id
         path = env_var['sixdesktrack']
         cur.execute("begin IMMEDIATE transaction")
-        sql = """SELECT * from six_beta where env_id = ?"""
-        cur.execute(sql,[id])
+        sql = """SELECT * from six_beta"""
+        cur.execute(sql)
         beta = cur.fetchall()
         for row in beta:
-            sql = """SELECT simul from six_input where env_id=? and seed=? and 
+            sql = """SELECT simul from six_input where seed=? and 
                     tunex=? and tuney=?"""
-            cur.execute(sql,row[0:4])
+            cur.execute(sql,row[0:3])
             simul = cur.fetchone()[0]
             path1 = os.path.join(
-                path,str(row[1]),simul,str(row[2])+'_'+str(row[3])
+                path,str(row[0]),simul,str(row[1])+'_'+str(row[2])
                 )
             if not os.path.exists(path1):
                 os.makedirs(path1)
-            stri = ' '.join([str(row[i]) for i in range(5,19)])
+            stri = ' '.join([str(row[i]) for i in range(3,17)])
             f = open(path1+'/betavalues','w')
             f.write(stri)
-            stri = str(row[11])+' '+str(row[12])
+            stri = str(row[9])+' '+str(row[10])
             f = open(path1+'/mychrom','w')
             f.write(stri)
-            stri = str(row[20])+'\n'+str(row[21])+' '+str(row[22])+'\n'
-            stri += str(row[23])+' '+str(row[24])
+            stri = str(row[19])+'\n'+str(row[20])+' '+str(row[21])+'\n'
+            stri += str(row[22])+' '+str(row[23])
             f = open(path1+'/sixdesktunes','w')
             f.write(stri)
         f.close()
@@ -187,17 +186,16 @@ class SixDir(object):
         conn = self.conn
         cur = conn.cursor()
         env_var = self.env_var
-        id = self.id
         path = env_var['sixdesktrack']
         cur.execute("begin IMMEDIATE transaction")
-        sql = """SELECT * from six_input where env_id=?"""
-        cur.execute(sql,[id])
+        sql = """SELECT * from six_input"""
+        cur.execute(sql)
         six = cur.fetchall()
         for row in six:
             path1 = os.path.join(
-                path,str(row[2]),str(row[3]),str(row[4])+'_'+str(row[5]),
-                str(int(float(row[6])))+'_'+str(int(float(row[7]))),
-                str(row[8]),str(int(float(row[9])))
+                path,str(row[1]),str(row[2]),str(row[3])+'_'+str(row[4]),
+                str(int(float(row[5])))+'_'+str(int(float(row[6]))),
+                str(row[7]),str(int(float(row[8])))
                 )
             if not os.path.exists(path1):
                 os.makedirs(path1)
@@ -253,7 +251,6 @@ class SixDir(object):
         conn = self.conn
         cur = conn.cursor()
         env_var = self.env_var
-        id = self.id
         ista = int(env_var['ista'])
         iend = int(env_var['iend'])
         tuney = float(env_var['tuney'])
@@ -279,12 +276,11 @@ class SixDir(object):
             #print join
             for amp in range(amp1,amp2,ampd):
                 sql = """SELECT * from six_input,six_results 
-                where six_input_id=id and seed=? and amp1=? and amp2=? 
-                and env_id=?"""
-                cur.execute(sql,[seed,amp,amp+2,id])
+                where six_input_id=id and seed=? and amp1=? and amp2=?"""
+                cur.execute(sql,[seed,amp,amp+2])
                 data = cur.fetchall()
                 while data:
-                    path = os.path.join(join,str(data[0][8]),str(data[0][9]))
+                    path = os.path.join(join,str(data[0][7]),str(data[0][8]))
                     if not os.path.exists(path):
                         os.makedirs(path)
                     if amp == amp1:
@@ -294,7 +290,7 @@ class SixDir(object):
                         f = gzip.open(os.path.join(path,'fort.10.gz'),'a')
                     for j in xrange(30):
                         str1 = '\t'.join(
-                            [str(data[0][i]) for i in range(13,73)]
+                            [str(data[0][i]) for i in range(12,72)]
                             )
                         str1 += '\n'
                         f.write(str1)

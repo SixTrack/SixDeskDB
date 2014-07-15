@@ -11,7 +11,7 @@ import lsfqueue
 import numpy as np
 import matplotlib.pyplot as pl
 import scipy.signal
-import tables
+import testtables
 from sqltable import *  
 
 def compressBuf(file):
@@ -27,6 +27,12 @@ def decompressBuf(buf):
   f = gzip.GzipFile(fileobj=zbuf)
   return f.read()
 
+def is_number(s):
+  try:
+    float(s)
+    return True
+  except ValueError:
+    pass
 
 def col_count(cur, table):
   sql = 'pragma table_info(%s)' % (table)
@@ -61,7 +67,7 @@ def store_dict(cur, colName, table, data):
 
 
 def load_dict(cur, table, idcol, idnum):
-  sql = 'SELECT key,value from %s WHERE %s=%d' % (table, idcol, idnum)
+  sql = 'SELECT keyname,value from %s WHERE %s=%d' % (table, idcol, idnum)
   cur.execute(sql)
   a = cur.fetchall()
   dict = {}
@@ -79,7 +85,6 @@ def guess_range(l):
   stop=l[-1]
   return start,stop,step
 
-
 class SixDB(object):
   def __init__(self, studyDir='.'):
     print studyDir
@@ -89,6 +94,7 @@ class SixDB(object):
       print "sixdeskenv and sysenv should both be present"
       sys.exit(0)
     self.env_var = sixdeskdir.parse_env(studyDir)
+    self.env_var['env_timestamp']=str(time.time())
     env_var = self.env_var
     db = self.env_var['LHCDescrip'] + ".db"
     self.conn = sqlite3.connect(db, isolation_level="IMMEDIATE")
@@ -100,57 +106,37 @@ class SixDB(object):
     cur.execute("PRAGMA count_changes = OFF")
     cur.execute("PRAGMA mmap_size=2335345345")
     self.conn.text_factory=str
-    #os.system("clear")
     print "Opened database successfully"
-    cols=SQLTable.cols_from_fields(tables.Env.fields)
-    tab = SQLTable(self.conn,'env',cols,tables.Env.key)
-    temp = tab.select('max(env_id)',"""key='LHCDescrip' and value = 
-      \'%s\'"""%(env_var['LHCDescrip']))
-    if temp:
-      if temp[0][0] is not None:
-        print "study found updating..."
-        newid = int(temp[0][0])
-      else:
-        print "study not found inserting..."
-        newid = 1
+    cols=SQLTable.cols_from_fields(testtables.Env.fields)
+    tab = SQLTable(self.conn,'env',cols,testtables.Env.key)
+    temp = tab.select('count(*)')[0][0]
+    if temp > 0:
+      print "study found updating..."
+      lst = self.execute("select keyname,value from env")
+      self.set_variable(lst)  
     else:
       print "study not found inserting..."
-      temp = self.execute("SELECT max(env_id)+1 from env")[0]
-      if temp[0]:
-        if temp[0] is None:
-          newid = 1
-        else:
-          newid = int(temp[0])
-      else:
-        newid = 1
-    self.newid = newid
-    # self.create_empty_tables()
     self.st_env()
 
   def st_env(self):
     extra_files = []
     conn = self.conn
-    newid = self.newid
-    cols=SQLTable.cols_from_fields(tables.Env.fields)
-    tab = SQLTable(conn,'env',cols,tables.Env.key)
-    cols=SQLTable.cols_from_fields(tables.Files.fields)
-    tab1 = SQLTable(conn,'files',cols,tables.Files.key)
+    cols=SQLTable.cols_from_fields(testtables.Env.fields)
+    tab = SQLTable(conn,'env',cols,testtables.Env.key)
+    cols=SQLTable.cols_from_fields(testtables.Files.fields)
+    tab1 = SQLTable(conn,'files',cols,testtables.Files.key)
     cur = self.conn.cursor()
     env_var = self.env_var
-    workdir = env_var['sixdeskhome']
-    flag = 0
-    for dirName, subdirList, fileList in os.walk(workdir + '/studies'):
-      for files in fileList:
-        if ('sixdeskenv' in files or 'sysenv' in files) and flag == 0:
-          env_var['env_timestamp']=str(time.time())
-          env_var = [[newid,i,env_var[i]] for i in env_var.keys()]
-          tab.insertl(env_var)
-          flag = 1
-        path = os.path.join(dirName, files)
-        content = sqlite3.Binary(compressBuf(path))
-        # extra_files.append([self.newid, path, content])
-        extra_files.append([newid, path, content])
-        tab1.insertl(extra_files)
+    env_var['env_timestamp']=str(time.time())
+    env_var = [[i,env_var[i]] for i in env_var.keys()]
+    tab.insertl(env_var)
+    path = os.path.join(self.studyDir, 'sixdeskenv')
+    content = sqlite3.Binary(compressBuf(path))
+    extra_files.append([path, content])
+    path = os.path.join(self.studyDir, 'sysenv')
+    content = sqlite3.Binary(compressBuf(path))
+    extra_files.append([path, content])
+    tab1.insertl(extra_files)
 
   def execute(self, sql):
     cur = self.conn.cursor()
@@ -161,18 +147,32 @@ class SixDB(object):
   def set_variable(self, lst):
     conn = self.conn
     env_var = self.env_var
-    newid = self.newid
-    cols=SQLTable.cols_from_fields(tables.Env.fields)
-    tab = SQLTable(conn,'env',cols,tables.Env.key)
+    cols=SQLTable.cols_from_fields(testtables.Env.fields)
+    tab = SQLTable(conn,'env',cols,testtables.Env.key)
+    flag = 0
+    upflag = 0
     for i in lst:
-      if str(i[0]) in env_var.keys():
-        print 'variable already present updating value'
-      env_var[str(i[0])] = str(i[1])
-    newid += 1
-    env_var['env_timestamp']=str(time.time())
-    env_var = [[newid,i,env_var[i]] for i in env_var.keys()]
+      if not ('env_timestamp' in str(i[0]) or str(i[0] in testtables.def_var)):
+        if str(i[0]) in env_var.keys():
+          if str(i[1]) != env_var[str(i[0])]:
+            if is_number(str(i[1])) and is_number(env_var[str(i[0])]):
+              if float(str(i[1])) != float(env_var[str(i[0])]):
+                upflag = 1
+            else:
+              upflag = 1
+            if upflag == 1:
+              print 'variable',str(i[0]),'already present updating value from',
+              print env_var[str(i[0])],'to',str(i[1])
+              flag = 1
+        else:
+          print 'variable',str(i[0]),'not present adding'
+          flag = 1
+        env_var[str(i[0])] = str(i[1])
+        upflag = 0
+    if flag == 1:
+      env_var['env_timestamp']=str(time.time())
+    env_var = [[i,env_var[i]] for i in env_var.keys()]
     tab.insertl(env_var) 
-    self.newid = newid
 
   def info(self):     
     var = ['LHCDescrip', 'platform', 'madlsfq', 'lsfq', 'runtype', 'e0',
@@ -186,9 +186,8 @@ class SixDB(object):
   def st_control(self):
     extra_files = []
     conn = self.conn
-    newid = self.newid
-    cols = SQLTable.cols_from_fields(tables.Files.fields)
-    tab = SQLTable(conn,'files',cols,tables.Files.key)
+    cols = SQLTable.cols_from_fields(testtables.Files.fields)
+    tab = SQLTable(conn,'files',cols,testtables.Files.key)
     env_var = self.env_var
     workdir = env_var['sixdeskhome']
     beam = env_var['beam']
@@ -204,34 +203,33 @@ class SixDB(object):
     content = sqlite3.Binary(compressBuf(path))
     path = path.replace(
       env_var['basedir'],'')
-    extra_files.append([newid, path, content])
+    extra_files.append([path, content])
     tab.insertl(extra_files)
 
-  def st_mask(self):
-    extra_files = []
-    env_var = self.env_var
-    newid = self.newid
-    conn = self.conn
-    cols = SQLTable.cols_from_fields(tables.Files.fields)
-    tab = SQLTable(conn,'files',cols,tables.Files.key)
-    workdir = env_var['sixdeskhome']
-    files = str(env_var['LHCDescrip']) + '.mask'
-    path = os.path.join(workdir, 'mask', files)
-    content = sqlite3.Binary(compressBuf(path))
-    path = path.replace(
-      env_var['basedir'],'')
-    extra_files.append([newid, path, content])
-    tab.insertl(extra_files)
+  # def st_mask(self):
+  #   extra_files = []
+  #   env_var = self.env_var
+  #   newid = self.newid
+  #   conn = self.conn
+  #   cols = SQLTable.cols_from_fields(testtables.Files.fields)
+  #   tab = SQLTable(conn,'files',cols,testtables.Files.key)
+  #   workdir = env_var['sixdeskhome']
+  #   files = str(env_var['LHCDescrip']) + '.mask'
+  #   path = os.path.join(workdir, 'mask', files)
+  #   content = sqlite3.Binary(compressBuf(path))
+  #   path = path.replace(
+  #     env_var['basedir'],'')
+  #   extra_files.append([newid, path, content])
+  #   tab.insertl(extra_files)
 
   def st_mad6t_run(self):
     conn = self.conn
     cur = conn.cursor()
     env_var = self.env_var
-    newid = self.newid
-    cols = SQLTable.cols_from_fields(tables.Mad_Run.fields)
-    tab = SQLTable(conn,'mad6t_run',cols,tables.Mad_Run.key)
-    cols = SQLTable.cols_from_fields(tables.Files.fields)
-    tab1 = SQLTable(conn,'files',cols,tables.Files.key)
+    cols = SQLTable.cols_from_fields(testtables.Mad_Run.fields)
+    tab = SQLTable(conn,'mad6t_run',cols,testtables.Mad_Run.key)
+    cols = SQLTable.cols_from_fields(testtables.Files.fields)
+    tab1 = SQLTable(conn,'files',cols,testtables.Files.key)
     rows = {}
     extra_files = []
     a = []
@@ -268,15 +266,15 @@ class SixDB(object):
               )
             rows[seed] = []
             rows[seed].append(
-              [newid, run_id, seed, mad_in, mad_out, mad_lsf, 
+              [run_id, seed, mad_in, mad_out, mad_lsf, 
               mad_log, time]
               )
-          if files.endswith('.log'):
+          if files.endswith('.mask'):  
             path = os.path.join(dirName, files)
             content = sqlite3.Binary(compressBuf(path))
             path = path.replace(
               env_var['basedir'],'')
-            extra_files.append([newid, path, content])
+            extra_files.append([path, content])
       if rows:
         lst = dict_to_list(rows)
         tab.insertl(lst)
@@ -288,37 +286,19 @@ class SixDB(object):
     conn = self.conn
     cur = conn.cursor()
     env_var = self.env_var
-    newid = self.newid
-    cols = SQLTable.cols_from_fields(tables.Mad_Run2.fields)
-    tab = SQLTable(conn,'mad6t_run2',cols,tables.Mad_Run2.key)
-    cols = SQLTable.cols_from_fields(tables.Files.fields)
-    tab1 = SQLTable(conn,'files',cols,tables.Files.key)
+    cols = SQLTable.cols_from_fields(testtables.Files.fields)
+    tab1 = SQLTable(conn,'files',cols,testtables.Files.key)
     workdir = env_var['sixtrack_input']
-    fort3 = {}
     extra_files = []
     col = col_count(cur, 'mad6t_run2')
     for dirName, subdirList, fileList in os.walk(workdir):
       for files in fileList:
-        if 'fort.3' in files and not files.endswith('.tmp'):
-          fort3[files.replace('fort.3.', '')] = sqlite3.Binary(
-            compressBuf(os.path.join(dirName, files))
-          )
-        if files.endswith('.tmp'):
+        if 'fort.3' in files or files.endswith('.tmp'):
           path = os.path.join(dirName, files)
           content = sqlite3.Binary(compressBuf(path))
           path = path.replace(
             env_var['basedir'],'')
-          extra_files.append([newid, path, content])
-      if fort3 and len(fort3.keys()) == 4:
-        lst = [newid,fort3['aux'],fort3['mad'],fort3['mother1'],
-            fort3['mother2']]
-        tab.insertl(lst)
-        fort3 = {}
-      if fort3 and len(fort3.key()) < 4:
-        print "files from fort.3.aux ,fort.3.mad ,fort.3.mother1 or",
-        print "fort.3.mother2 missing"
-        print "please check and run again"
-        exit(0)
+          extra_files.append([path, content])
     if extra_files:
       tab1.insertl(extra_files)
 
@@ -326,9 +306,8 @@ class SixDB(object):
     conn = self.conn
     cur = conn.cursor()
     env_var = self.env_var
-    newid = self.newid
-    cols = SQLTable.cols_from_fields(tables.Mad_Res.fields)
-    tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
+    cols = SQLTable.cols_from_fields(testtables.Mad_Res.fields)
+    tab = SQLTable(conn,'mad6t_results',cols,testtables.Mad_Res.key)
     workdir = env_var['sixtrack_input']
     rows = {}
     col = col_count(cur, 'mad6t_results')
@@ -337,7 +316,7 @@ class SixDB(object):
         if 'fort' in files and files.endswith('.gz'):
           head = int(files.split('_')[1].replace('.gz', ''))
           if head not in rows.keys():
-            rows[head] = [newid, head]
+            rows[head] = [head]
           if 'fort.2' in files:
             rows[head].insert(2, sqlite3.Binary(open(
               os.path.join(dirName, files), 'r'
@@ -365,11 +344,10 @@ class SixDB(object):
     conn = self.conn
     cur = conn.cursor()
     env_var = self.env_var
-    newid = self.newid
-    cols = SQLTable.cols_from_fields(tables.Six_Be.fields)
-    tab = SQLTable(conn,'six_beta',cols,tables.Six_Be.key)
-    cols = SQLTable.cols_from_fields(tables.Files.fields)
-    tab1 = SQLTable(conn,'files',cols,tables.Files.key)
+    cols = SQLTable.cols_from_fields(testtables.Six_Be.fields)
+    tab = SQLTable(conn,'six_beta',cols,testtables.Six_Be.key)
+    cols = SQLTable.cols_from_fields(testtables.Files.fields)
+    tab1 = SQLTable(conn,'files',cols,testtables.Files.key)
     workdir = os.path.join(env_var['sixdesktrack'],env_var['LHCDescrip'])
     rows = {}
     extra_files = []
@@ -385,7 +363,7 @@ class SixDB(object):
           content = sqlite3.Binary(compressBuf(path))
           path = path.replace(
             env_var['basedir'],'')
-          extra_files.append([newid, path, content])
+          extra_files.append([path, content])
         if 'betavalues' in files or 'sixdesktunes' in files:
           dirn = dirName.replace(workdir + '/', '')
           dirn = dirn.split('/')
@@ -393,7 +371,7 @@ class SixDB(object):
           tunex, tuney = [i for i in dirn[2].split('_')]
           if not (seed in rows.keys()):
             rows[seed] = []
-          temp = [newid, seed, tunex, tuney]
+          temp = [seed, tunex, tuney]
           if 'betavalues' in files:
             f = open(os.path.join(dirName, files), 'r')
             beta = [float(i) for i in f.read().split()]
@@ -414,41 +392,39 @@ class SixDB(object):
     conn = self.conn
     cur = conn.cursor()
     env_var = self.env_var
-    newid = self.newid
-    cols = SQLTable.cols_from_fields(tables.Six_In.fields)
-    tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
-    cols = SQLTable.cols_from_fields(tables.Files.fields)
-    tab1 = SQLTable(conn,'files',cols,tables.Files.key)
+    cols = SQLTable.cols_from_fields(testtables.Six_In.fields)
+    tab = SQLTable(conn,'six_input',cols,testtables.Six_In.key)
+    cols = SQLTable.cols_from_fields(testtables.Files.fields)
+    tab1 = SQLTable(conn,'files',cols,testtables.Files.key)
     workdir = os.path.join(env_var['sixdesktrack'],env_var['LHCDescrip'])
     extra_files = []
     rows = []
-    cur.execute('SELECT max(id) from six_input limit 1')
-    six_id = cur.fetchone()[0]
-    if six_id is not None:
-      six_id += 1
-    else:
-      six_id = 1
-    col = col_count(cur, 'six_input')
-    for dirName, subdirList, fileList in os.walk(workdir):
-      for files in fileList:
-        if 'fort.3' in files and not ('-' in dirName):
-          dirn = dirName.replace(workdir + '/', '')
-          dirn = re.split('/|_', dirn)
-          dirn = [six_id, newid] + dirn
-          dirn.extend([sqlite3.Binary(open(
-            os.path.join(dirName, files), 'r'
-          ).read()
-          )])
-          rows.append(dirn)
-          dirn = []
-          six_id += 1
-        if files.endswith('.log') or files.endswith('.lsf'):
-          path = os.path.join(dirName, files)
-          content = sqlite3.Binary(compressBuf(path))
-          path = path.replace(
-            env_var['basedir'],'')
-          extra_files.append([newid, path, content])
-      if len(rows) > 3000:
+    six_id = 1
+    cmd = """find %s -name 'fort.3.gz' -o -name '*.lsf' -o \
+    -name '*.log'"""%(workdir)
+    print cmd
+    a = os.popen(cmd).read().split('\n')[:-1]
+    for dirName in a:
+      files = dirName.split('/')[-1]
+      dirName = dirName.replace('/'+files,'')
+      if 'fort.3' in files and not ('-' in dirName):
+        dirn = dirName.replace(workdir + '/', '')
+        dirn = re.split('/|_', dirn)
+        dirn = [six_id] + dirn
+        dirn.extend([sqlite3.Binary(open(
+          os.path.join(dirName, files), 'r'
+        ).read()
+        )])
+        rows.append(dirn)
+        dirn = []
+        six_id += 1
+      if files.endswith('.log') or files.endswith('.lsf'):
+        path = os.path.join(dirName, files)
+        content = sqlite3.Binary(compressBuf(path))
+        path = path.replace(
+          env_var['basedir'],'')
+        extra_files.append([path, content])
+      if len(rows) > 6000:
         tab.insertl(rows)
         rows = []
     if rows:
@@ -460,43 +436,46 @@ class SixDB(object):
     conn = self.conn
     cur = conn.cursor()
     env_var = self.env_var
-    newid = self.newid
-    cols = SQLTable.cols_from_fields(tables.Six_In.fields)
-    tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
+    cols = SQLTable.cols_from_fields(testtables.Six_In.fields)
+    tab = SQLTable(conn,'six_input',cols,testtables.Six_In.key)
     workdir = os.path.join(env_var['sixdesktrack'],env_var['LHCDescrip'])
     rows = []
     col = col_count(cur,'six_results')
     inp = tab.select("""distinct id,seed,simul,tunex,tuney,amp1,amp2,turns,
-        angle""","env_id=%d"%(newid))
+        angle""")
     inp = [[str(i) for i in j] for j in inp]
-    cols = SQLTable.cols_from_fields(tables.Six_Res.fields)
-    tab = SQLTable(conn,'six_results',cols,tables.Six_Res.key)
-    for dirName, subdirList, fileList in os.walk(workdir):
-      for files in fileList:
-        if 'fort.10' in files and not '-' in dirName:
-          dirn = dirName.replace(workdir+'/','')
-          dirn = re.split('/|_',dirn)
-          for i in [2,3,4,5,7]:
-            if not ('.' in str(dirn[i])): 
-              dirn[i] += '.0'
-          for i in xrange(len(inp)+1):
-            if i == len(inp):
-              print 'fort.3 file missing for',
-              print dirName.replace(env_var['sixdesktrack']+'/','')
-              print 'create file and run again'
-              print dirn
-              exit(0)
-            if dirn == inp[i][1:]:
-              six_id = inp[i][0]
-              break
-          with gzip.open(os.path.join(dirName,files),"r") as FileObj:
-            count = 1
-            for lines in FileObj:
-              rows.append([six_id,count]+lines.split())
-              count += 1
-          if len(rows) > 90000:
-            tab.insertl(rows)
-            rows = []
+    cols = SQLTable.cols_from_fields(testtables.Six_Res.fields)
+    tab = SQLTable(conn,'six_results',cols,testtables.Six_Res.key)
+    cmd = "find %s -name 'fort.10.gz'"%(workdir)
+    print cmd
+    a = os.popen(cmd).read().split('\n')[:-1]
+    for dirName in a:
+      files = dirName.split('/')[-1]
+      dirName = dirName.replace('/fort.10.gz','')
+      if 'fort.10' in files and not '-' in dirName:
+        dirn = dirName.replace(workdir+'/','')
+        dirn = re.split('/|_',dirn)
+        for i in [2,3,4,5,7]:
+          if not ('.' in str(dirn[i])): 
+            dirn[i] += '.0'
+        for i in xrange(len(inp)+1):
+          if i == len(inp):
+            print 'fort.3 file missing for',
+            print dirName.replace(env_var['sixdesktrack']+'/','')
+            print 'create file and run again'
+            print dirn
+            exit(0)
+          if dirn == inp[i][1:]:
+            six_id = inp[i][0]
+            break
+        with gzip.open(os.path.join(dirName,files),"r") as FileObj:
+          count = 1
+          for lines in FileObj:
+            rows.append([six_id,count]+lines.split())
+            count += 1
+        if len(rows) > 180000:
+          tab.insertl(rows)
+          rows = []
     if rows:
       tab.insertl(rows)
 
@@ -545,8 +524,7 @@ class SixDB(object):
     names="""b.value,a.seed,a.tunex,a.tuney,a.amp1,a.amp2,a.turns,a.angle,
         c.row_num"""
     sql="""SELECT DISTINCT %s FROM six_input as a,env as b,six_results as c
-        where a.env_id=b.env_id and a.id=c.six_input_id and 
-        b.key='LHCDescrip'"""%names
+        where a.id=c.six_input_id and b.keyname='LHCDescrip'"""%names
     return self.conn.cursor().execute(sql)
     
   def iter_job_params_comp(self):
@@ -687,16 +665,16 @@ class SixDB(object):
     return table
 
 if __name__ == '__main__':
-  a = SixDB('/home/monis/Desktop/GSOC/files/w7/sixjobs/studies/jobslhc31b_inj55_itv19/')
+  a = SixDB('/home/monis/Desktop/GSOC/files/w7/sixjobs/')
   a.st_control()
-  a.st_mask()
+  # a.st_mask()
   a.st_mad6t_run()
   a.st_mad6t_run2()
   a.st_mad6t_results()
   a.st_six_beta()
   a.st_six_input()
-  exit(0)
   a.st_six_results()
+  exit(0)
   a.get_missing_fort10()
   # exit(0)
   # print a.get_num_results()
