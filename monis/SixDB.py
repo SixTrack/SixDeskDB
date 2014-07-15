@@ -337,6 +337,7 @@ class SixDB(object):
             ])
       if rows:
         lst = dict_to_list(rows)
+        print lst[0]
         tab.insertl(lst)
         rows = {}
 

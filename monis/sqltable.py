@@ -1,6 +1,5 @@
 import sqlite3
 import numpy as np
-from fort10 import *
 import sixdeskdir
 
 class SQLTable(object):
