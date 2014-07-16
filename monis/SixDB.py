@@ -309,40 +309,88 @@ class SixDB(object):
     cols = SQLTable.cols_from_fields(testtables.Mad_Res.fields)
     tab = SQLTable(conn,'mad6t_results',cols,testtables.Mad_Res.key)
     workdir = env_var['sixtrack_input']
-    rows = {}
-    col = col_count(cur, 'mad6t_results')
-    print col
-    for dirName, subdirList, fileList in os.walk(workdir):
-      for files in fileList:
-        if 'fort' in files and files.endswith('.gz'):
-          head = int(files.split('_')[1].replace('.gz', ''))
-          if head not in rows.keys():
-            rows[head] = [head]
-          if 'fort.2' in files:
-            rows[head].insert(2, sqlite3.Binary(open(
-              os.path.join(dirName, files), 'r'
+    res = []
+    rows = []
+    ista = int(env_var['ista'])
+    iend = int(env_var['iend'])
+    flag = 0
+    for i in range(ista,iend+1):
+      rows = [i]
+      files = 'fort.2_' + str(i) + '.gz'
+      if os.path.exists(os.path.join(workdir,files)):
+        rows.extend([sqlite3.Binary(open(
+              os.path.join(workdir, files), 'r'
             ).read()
             )
-            )
-          if 'fort.8' in files:
-            rows[head].insert(3, sqlite3.Binary(open(
-              os.path.join(dirName, files), 'r'
-            ).read()
-            )
-            )
-          if 'fort.16' in files:
-            rows[head].extend([sqlite3.Binary(open(
-              os.path.join(dirName, files), 'r'
-            ).read()
-            ),os.path.getmtime(os.path.join(dirName, files))
             ])
-          if len(rows[head]) == 5:
-            print rows[head]
-      if rows:
-        lst = dict_to_list(rows)
-        print "length of row of result is",len(lst)
-        tab.insertl(lst)
-        rows = {}
+        flag = 2
+      else:
+        print files,'missing insert null instead'
+        rows.extend([''])
+      files = files.replace('fort.2','fort.8')
+      if os.path.exists(os.path.join(workdir,files)):
+        rows.extend([sqlite3.Binary(open(
+              os.path.join(workdir, files), 'r'
+            ).read()
+            )
+            ])
+        flag = 8
+      else:
+        print files,'missing insert null instead'
+        rows.extend([''])
+      files = files.replace('fort.8','fort.16')
+      if os.path.exists(os.path.join(workdir,files)):
+        rows.extend([sqlite3.Binary(open(
+              os.path.join(workdir, files), 'r'
+            ).read()
+            )
+            ])
+        flag = 16
+      else:
+        print files,'missing insert null instead'
+        rows.extend([''])
+      if flag > 0:
+        rows.extend(
+          [os.path.getmtime(
+            os.path.join(workdir, files.replace('fort.16','fort.'+str(flag)))
+            )]
+          )
+      else:
+        rows.extend([time.time()])
+      res.append(rows)
+      rows = []
+
+    # for dirName, subdirList, fileList in os.walk(workdir):
+    #   for files in fileList:
+    #     if 'fort' in files and files.endswith('.gz'):
+    #       head = int(files.split('_')[1].replace('.gz', ''))
+    #       if head not in rows.keys():
+    #         rows[head] = [head]
+    #       if 'fort.2' in files:
+    #         rows[head].insert(2, sqlite3.Binary(open(
+    #           os.path.join(dirName, files), 'r'
+    #         ).read()
+    #         )
+    #         )
+    #       if 'fort.8' in files:
+    #         rows[head].insert(3, sqlite3.Binary(open(
+    #           os.path.join(dirName, files), 'r'
+    #         ).read()
+    #         )
+    #         )
+    #       if 'fort.16' in files:
+    #         rows[head].extend([sqlite3.Binary(open(
+    #           os.path.join(dirName, files), 'r'
+    #         ).read()
+    #         ),os.path.getmtime(os.path.join(dirName, files))
+    #         ])
+    #       if len(rows[head]) == 5:
+    #         print rows[head]
+    if res:
+      # lst = dict_to_list(rows)
+      print "length of row of result is",len(res)
+      tab.insertl(res)
+      rows = {}
 
   def st_six_beta(self):
     conn = self.conn
@@ -404,14 +452,13 @@ class SixDB(object):
     extra_files = []
     rows = []
     six_id = 1
-    cmd = """find %s -name 'fort.3.gz' -o -name '*.lsf' -o \
-    -name '*.log'"""%(workdir)
+    cmd = """find %s -name 'fort.3.gz'"""%(workdir)
     print cmd
     a = os.popen(cmd).read().split('\n')[:-1]
     for dirName in a:
       files = dirName.split('/')[-1]
       dirName = dirName.replace('/'+files,'')
-      if 'fort.3' in files and not ('-' in dirName):
+      if not ('-' in dirName):
         dirn = dirName.replace(workdir + '/', '')
         dirn = re.split('/|_', dirn)
         dirn = [six_id] + dirn
@@ -422,17 +469,21 @@ class SixDB(object):
         rows.append(dirn)
         dirn = []
         six_id += 1
-      if files.endswith('.log') or files.endswith('.lsf'):
-        path = os.path.join(dirName, files)
-        content = sqlite3.Binary(compressBuf(path))
-        path = path.replace(
-          env_var['basedir'],'')
-        extra_files.append([path, content])
-      if len(rows) > 6000:
-        tab.insertl(rows)
-        rows = []
     if rows:
       tab.insertl(rows)
+      rows = []
+    cmd = """find %s -name '*.log' -o -name '*.lsf'"""%(workdir)
+    print cmd
+    a = os.popen(cmd).read().split('\n')[:-1]
+    for dirName in a:
+      files = dirName.split('/')[-1]
+      dirName = dirName.replace('/'+files,'')
+      path = os.path.join(dirName, files)
+      content = sqlite3.Binary(compressBuf(path))
+      path = path.replace(env_var['basedir'],'')
+      extra_files.append([path, content])  
+    # if rows:
+    #   tab.insertl(rows)
     if extra_files:
       tab1.insertl(extra_files)
 
@@ -538,7 +589,61 @@ class SixDB(object):
   
   def get_num_results(self):
     return self.execute('SELECT count(*) from six_results')[0][0]/30
-    
+
+  def get_seeds(self):
+    env_var = self.env_var
+    ista = int(env_var['ista'])
+    iend = int(env_var['iend'])
+    return range(ista,iend+1)
+
+  def get_angles(self):
+    env_var = self.env_var
+    kmaxl = int(env_var['kmaxl'])
+    kinil = int(env_var['kinil'])
+    kendl = int(env_var['kendl'])
+    kstep = int(env_var['kstep'])
+    s=90./(kmaxl+1)
+    return np.arange(kinil,kendl+1,kstep)*s
+
+  def get_amplitudes(self):
+    env_var = self.env_var
+    nsincl = float(env_var['nsincl'])
+    ns1l = float(env_var['ns1l'])
+    ns2l = float(env_var['ns2l'])
+    return [(a,a+nsincl) for a in np.arange(ns1l,ns2l,nsincl)]
+
+  def iter_tunes(self):
+    env_var = self.env_var
+    qx = float(env_var['tunex'])
+    qy = float(env_var['tuney'])
+    while qx <= float(env_var['tunex1']) and qy <= float(env_var['tuney1']):
+      yield qx,qy
+      qx += float(env_var['deltax'])
+      qy += float(env_var['deltay'])
+
+  def get_tunes(self):
+    return list(self.iter_tunes())
+
+  def gen_job_params(self):
+    turnsl = '%E'%(float(self.env_var['turnsl']))
+    turnsl = 'e'+str(int(turnsl.split('+')[1]))
+    for seed in self.get_seeds():
+      for tunex,tuney in self.get_tunes():
+        for amp1,amp2 in self.get_amplitudes():
+          for angle in self.get_angles():
+            yield (seed,tunex,tuney,amp1,amp2,turnsl,angle)
+
+  def get_missing_jobs(self):
+    cur = self.conn.cursor()
+    turnsl = '%E'%(float(self.env_var['turnsl']))
+    turnsl = 'e'+str(int(turnsl.split('+')[1]))
+    a = self.execute("""SELECT seed,tunex,tuney,amp1,amp2,turns,angle from 
+      six_input where turns='%s'"""%(turnsl))
+    print a[0]
+    for rows in self.gen_job_params():
+      if rows not in a:
+        print 'missing job',rows
+
   def inspect_jobparams(self):
     data=list(self.iter_job_params())
     names='study,seed,tunex,tuney,amp1,amp2,turns,angle,row'.split(',')
@@ -679,6 +784,7 @@ if __name__ == '__main__':
   a.st_six_input()
   a.st_six_results()
   exit(0)
+  a.get_missing_jobs()
   a.get_missing_fort10()
   # exit(0)
   # print a.get_num_results()
