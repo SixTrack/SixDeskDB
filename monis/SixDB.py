@@ -94,6 +94,9 @@ class SixDB(object):
       print "sixdeskenv and sysenv should both be present"
       sys.exit(0)
     self.env_var = sixdeskdir.parse_env(studyDir)
+    for key in self.env_var.keys():
+      if key not in testtables.acc_var:
+        del self.env_var[key]
     self.env_var['env_timestamp']=str(time.time())
     env_var = self.env_var
     db = self.env_var['LHCDescrip'] + ".db"
@@ -357,6 +360,7 @@ class SixDB(object):
           )
       else:
         rows.extend([time.time()])
+      print rows
       res.append(rows)
       rows = []
 
@@ -472,20 +476,20 @@ class SixDB(object):
     if rows:
       tab.insertl(rows)
       rows = []
-    cmd = """find %s -name '*.log' -o -name '*.lsf'"""%(workdir)
-    print cmd
-    a = os.popen(cmd).read().split('\n')[:-1]
-    for dirName in a:
-      files = dirName.split('/')[-1]
-      dirName = dirName.replace('/'+files,'')
-      path = os.path.join(dirName, files)
-      content = sqlite3.Binary(compressBuf(path))
-      path = path.replace(env_var['basedir'],'')
-      extra_files.append([path, content])  
-    # if rows:
-    #   tab.insertl(rows)
-    if extra_files:
-      tab1.insertl(extra_files)
+    # cmd = """find %s -name '*.log' -o -name '*.lsf'"""%(workdir)
+    # print cmd
+    # a = os.popen(cmd).read().split('\n')[:-1]
+    # for dirName in a:
+    #   files = dirName.split('/')[-1]
+    #   dirName = dirName.replace('/'+files,'')
+    #   path = os.path.join(dirName, files)
+    #   content = sqlite3.Binary(compressBuf(path))
+    #   path = path.replace(env_var['basedir'],'')
+    #   extra_files.append([path, content])  
+    if rows:
+      tab.insertl(rows)
+    # if extra_files:
+    #   tab1.insertl(extra_files)
 
   def st_six_results(self):
     conn = self.conn
