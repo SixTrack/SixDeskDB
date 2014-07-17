@@ -37,7 +37,7 @@ if __name__ == "__main__":
           a = SixDB()
         if len(args)==2:
           a = SixDB(args[1])
-          a.st_control()
+          # a.st_control()
           # a.st_mask()
           a.st_env()
           a.st_mad6t_run()
@@ -66,7 +66,8 @@ if __name__ == "__main__":
           sys.exit(0)
         if a:
           a.load_extra()
-          exit(0)
+          print a.basedir
+          # exit(0)
           a.load_mad6t_run()
           # a.load_mad6t_run2()
           a.load_mad6t_results()

@@ -4,7 +4,7 @@ from sys import platform as _platform
 import sys
 import sixdeskdir
 import sixdeskdb
-import cStringIO
+import StringIO
 
 def load_dict(cur,table):
   sql='SELECT keyname,value from %s'%(table)
@@ -46,6 +46,18 @@ class SixDir(object):
     print "Opened database successfully"
     self.conn = conn
     self.load_env_var()
+    env_var = self.env_var
+    if self.basedir == '.':
+      self.basedir = os.path.realpath(__file__).replace("SixDir.py","")
+    if not self.basedir.endswith('/'):
+      self.basedir += '/'
+    if env_var['basedir'] != self.basedir:
+      for i in env_var.keys():
+        if env_var['basedir'] in self.env_var[i]:
+          # print 'old =',self.env_var[i],i
+          self.env_var[i] = self.env_var[i].replace(
+            env_var['basedir']+'/',self.basedir)
+          # print 'new = ',self.env_var[i]
 
   def execute(self,sql):
     cur= self.conn.cursor()
@@ -174,19 +186,28 @@ class SixDir(object):
       if verbose:
         print 'creating fort.2_%s.gz at %s'%(seed,path)
       if not dryrun:
-        f = open(path+'/fort.2_'+seed+'.gz','w')
-        f.write(f2)
+        if f2:
+          f = open(path+'/fort.2_'+seed+'.gz','w')
+          f.write(f2)
+        else:
+          print 'fort.2_%s.gz was not created at %s',(seed,path)
       if verbose:
         print 'creating fort.8_%s.gz at %s'%(seed,path)
       if not dryrun:
-        f = open(path+'/fort.8_'+seed+'.gz','w')
-        f.write(f8)
+        if f8:
+          f = open(path+'/fort.8_'+seed+'.gz','w')
+          f.write(f8)
+        else:
+          print 'fort.8_%s.gz was not created at %s',(seed,path)
       if verbose:
         print 'creating fort.16_%s.gz at %s'%(seed,path)
       if not dryrun:
-        f = open(path+'/fort.16_'+seed+'.gz','w')
-        f.write(f16)
-        f.close()
+        if f16:
+          f = open(path+'/fort.16_'+seed+'.gz','w')
+          f.write(f16)
+          f.close()
+        else:
+          print 'fort.16_%s.gz was not created at %s',(seed,path)
 
   def load_six_beta(self):
     verbose = self.verbose

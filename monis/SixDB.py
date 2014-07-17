@@ -4,6 +4,7 @@ import os
 import re
 import gzip
 import cStringIO
+import StringIO
 from sys import platform as _platform
 import sys
 import sixdeskdir
@@ -186,28 +187,28 @@ class SixDB(object):
     for keys in var:
       print '%s=%s'%(keys,env_var[keys])
 
-  def st_control(self):
-    extra_files = []
-    conn = self.conn
-    cols = SQLTable.cols_from_fields(testtables.Files.fields)
-    tab = SQLTable(conn,'files',cols,testtables.Files.key)
-    env_var = self.env_var
-    workdir = env_var['sixdeskhome']
-    beam = env_var['beam']
-    if beam == "" or beam == "b1" or beam == "B1":
-      appendbeam = ""
-    elif beam == "b2" or beam == "B2":
-      appendbeam = "_b2"
-    else:
-      print 'Unrecognised beam option must be null,b1,B1,b2 or B2'
-      return
-    files = 'fort.3.mother2_' + str(env_var['runtype']) + appendbeam
-    path = os.path.join(workdir, 'control_files', files)
-    content = sqlite3.Binary(compressBuf(path))
-    path = path.replace(
-      env_var['basedir'],'')
-    extra_files.append([path, content])
-    tab.insertl(extra_files)
+  # def st_control(self):
+  #   extra_files = []
+  #   conn = self.conn
+  #   cols = SQLTable.cols_from_fields(testtables.Files.fields)
+  #   tab = SQLTable(conn,'files',cols,testtables.Files.key)
+  #   env_var = self.env_var
+  #   workdir = env_var['sixdeskhome']
+  #   beam = env_var['beam']
+  #   if beam == "" or beam == "b1" or beam == "B1":
+  #     appendbeam = ""
+  #   elif beam == "b2" or beam == "B2":
+  #     appendbeam = "_b2"
+  #   else:
+  #     print 'Unrecognised beam option must be null,b1,B1,b2 or B2'
+  #     return
+  #   files = 'fort.3.mother2_' + str(env_var['runtype']) + appendbeam
+  #   path = os.path.join(workdir, 'control_files', files)
+  #   content = sqlite3.Binary(compressBuf(path))
+  #   path = path.replace(
+  #     env_var['basedir'],'')
+  #   extra_files.append([path, content])
+  #   tab.insertl(extra_files)
 
   # def st_mask(self):
   #   extra_files = []
@@ -317,52 +318,105 @@ class SixDB(object):
     ista = int(env_var['ista'])
     iend = int(env_var['iend'])
     flag = 0
-    for i in range(ista,iend+1):
-      rows = [i]
-      files = 'fort.2_' + str(i) + '.gz'
-      if os.path.exists(os.path.join(workdir,files)):
-        rows.extend([sqlite3.Binary(open(
-              os.path.join(workdir, files), 'r'
-            ).read()
-            )
-            ])
-        flag = 2
+    cmd = "find %s -name 'fort.%s*.gz'"
+    rows = []
+    a = os.popen(cmd%(env_var['sixtrack_input'],'2')).read().split('\n')[:-1]
+    b = os.popen(cmd%(env_var['sixtrack_input'],'8')).read().split('\n')[:-1]
+    c = os.popen(cmd%(env_var['sixtrack_input'],'16')).read().split('\n')[:-1]
+    print 'fort.2 files =',len(a)
+    print 'fort.8 files =',len(b)
+    print 'fort.16 files =',len(c)
+    for i in a:
+      seed = i.split('/')[-1].split('_')[1].replace(".gz","")
+      row = [seed,sqlite3.Binary(open(i, 'r').read())]
+      f8 = i.replace("fort.2","fort.8")
+      mtime = os.path.getmtime(i)
+      if f8 in b:
+        row.extend([sqlite3.Binary(open(f8, 'r').read())])
+        del b[b.index(f8)]
       else:
-        print files,'missing insert null instead'
-        rows.extend([''])
-      files = files.replace('fort.2','fort.8')
-      if os.path.exists(os.path.join(workdir,files)):
-        rows.extend([sqlite3.Binary(open(
-              os.path.join(workdir, files), 'r'
-            ).read()
-            )
-            ])
-        flag = 8
+        row.extend([""])
+        print 'missing file',f8,'inserting null instead'
+      f16 = i.replace("fort.2","fort.16")
+      if f16 in c:
+        row.extend([sqlite3.Binary(open(f16, 'r').read())])
+        del c[c.index(f16)]
       else:
-        print files,'missing insert null instead'
-        rows.extend([''])
-      files = files.replace('fort.8','fort.16')
-      if os.path.exists(os.path.join(workdir,files)):
-        rows.extend([sqlite3.Binary(open(
-              os.path.join(workdir, files), 'r'
-            ).read()
-            )
-            ])
-        flag = 16
+        row.extend([""])
+        print 'missing file',f16,'inserting null instead'
+      row.extend([mtime])
+      rows.append(row)
+    for i in b:
+      seed = i.split('/')[-1].split('_')[1].replace(".gz","")
+      print 'missing file',
+      print '%s inserting null instead'%(i.replace('fort.8','fort.2'))
+      row = [seed,"",sqlite3.Binary(open(i, 'r').read())]
+      mtime = os.path.getmtime(i)
+      f16 = i.replace('fort.8','fort.16')
+      if f16 in c:
+        row.extend([sqlite3.Binary(open(f16, 'r').read())])
+        del c[c.index(f16)]
       else:
-        print files,'missing insert null instead'
-        rows.extend([''])
-      if flag > 0:
-        rows.extend(
-          [os.path.getmtime(
-            os.path.join(workdir, files.replace('fort.16','fort.'+str(flag)))
-            )]
-          )
-      else:
-        rows.extend([time.time()])
-      print rows
-      res.append(rows)
-      rows = []
+        row.extend([""])
+        print 'missing file',f16,'inserting null instead'
+      row.extend([mtime])
+      rows.append(row)
+    for i in c:
+      seed = i.split('/')[-1].split('_')[1].replace(".gz","")
+      print 'missing file',
+      print '%s inserting null instead'%(i.replace('fort.16','fort.2'))
+      print 'missing file',
+      print '%s inserting null instead'%(i.replace('fort.16','fort.8'))
+      row = [seed,"","",sqlite3.Binary(open(i, 'r').read())]
+      mtime = os.path.getmtime(i)
+      row.extend([mtime])
+      rows.append(row)
+    # for i in range(ista,iend+1):
+    #   rows = [i]
+    #   files = 'fort.2_' + str(i) + '.gz'
+    #   if os.path.exists(os.path.join(workdir,files)):
+    #     rows.extend([sqlite3.Binary(open(
+    #           os.path.join(workdir, files), 'r'
+    #         ).read()
+    #         )
+    #         ])
+    #     flag = 2
+    #   else:
+    #     print files,'missing insert null instead'
+    #     rows.extend([''])
+    #   files = files.replace('fort.2','fort.8')
+    #   if os.path.exists(os.path.join(workdir,files)):
+    #     rows.extend([sqlite3.Binary(open(
+    #           os.path.join(workdir, files), 'r'
+    #         ).read()
+    #         )
+    #         ])
+    #     flag = 8
+    #   else:
+    #     print files,'missing insert null instead'
+    #     rows.extend([''])
+    #   files = files.replace('fort.8','fort.16')
+    #   if os.path.exists(os.path.join(workdir,files)):
+    #     rows.extend([sqlite3.Binary(open(
+    #           os.path.join(workdir, files), 'r'
+    #         ).read()
+    #         )
+    #         ])
+    #     flag = 16
+    #   else:
+    #     print files,'missing insert null instead'
+    #     rows.extend([''])
+    #   if flag > 0:
+    #     rows.extend(
+    #       [os.path.getmtime(
+    #         os.path.join(workdir, files.replace('fort.16','fort.'+str(flag)))
+    #         )]
+    #       )
+    #   else:
+    #     rows.extend([time.time()])
+    #   print rows
+    #   res.append(rows)
+    #   rows = []
 
     # for dirName, subdirList, fileList in os.walk(workdir):
     #   for files in fileList:
@@ -390,10 +444,10 @@ class SixDB(object):
     #         ])
     #       if len(rows[head]) == 5:
     #         print rows[head]
-    if res:
+    if rows:
       # lst = dict_to_list(rows)
-      print "length of row of result is",len(res)
-      tab.insertl(res)
+      # print "length of row of result is",len(rows)
+      tab.insertl(rows)
       rows = {}
 
   def st_six_beta(self):
@@ -457,8 +511,8 @@ class SixDB(object):
     rows = []
     six_id = 1
     cmd = """find %s -name 'fort.3.gz'"""%(workdir)
-    print cmd
     a = os.popen(cmd).read().split('\n')[:-1]
+    print 'fort.3 files =',len(a)
     for dirName in a:
       files = dirName.split('/')[-1]
       dirName = dirName.replace('/'+files,'')
@@ -506,8 +560,8 @@ class SixDB(object):
     cols = SQLTable.cols_from_fields(testtables.Six_Res.fields)
     tab = SQLTable(conn,'six_results',cols,testtables.Six_Res.key)
     cmd = "find %s -name 'fort.10.gz'"%(workdir)
-    print cmd
     a = os.popen(cmd).read().split('\n')[:-1]
+    print 'fort.10 files(including joined fort.10) =',len(a)
     for dirName in a:
       files = dirName.split('/')[-1]
       dirName = dirName.replace('/fort.10.gz','')
@@ -779,7 +833,7 @@ class SixDB(object):
 
 if __name__ == '__main__':
   a = SixDB('/home/monis/Desktop/GSOC/files/w7/sixjobs/')
-  a.st_control()
+  # a.st_control()
   # a.st_mask()
   a.st_mad6t_run()
   a.st_mad6t_run2()
