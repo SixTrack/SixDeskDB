@@ -61,7 +61,7 @@ class SQLTable(object):
     data = [('abc', 'testing')]
     cur.executemany(sql_cmd, data)
     db.commit()
-  def insertl(self,data,replace=True):
+  def insertl(self,data,replace=True,rowc=False):
     db=self.db;table=self.name
     if replace:
       sql="REPLACE INTO %s VALUES (%s)"
@@ -79,8 +79,11 @@ class SQLTable(object):
       vals=','.join(('?',)*len(data[0]))
       sql_cmd=sql%(table,vals)
       cur.executemany(sql_cmd, data)
+      count = cur.rowcount
     # print sql_cmd
     db.commit()
+    if rowc:
+      return count
   def delete(self,where):
     db=self.db;table=self.name
     sql="DELETE FROM %s WHERE %s"

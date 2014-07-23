@@ -134,11 +134,14 @@ class SixDB(object):
     env_var['env_timestamp']=str(time.time())
     env_var = [[i,env_var[i]] for i in env_var.keys()]
     tab.insertl(env_var)
+    env_var = self.env_var
     path = os.path.join(self.studyDir, 'sixdeskenv')
     content = sqlite3.Binary(compressBuf(path))
+    path = path.replace(env_var['basedir']+'/','')
     extra_files.append([path, content])
     path = os.path.join(self.studyDir, 'sysenv')
     content = sqlite3.Binary(compressBuf(path))
+    path = path.replace(env_var['basedir']+'/','')
     extra_files.append([path, content])
     tab1.insertl(extra_files)
 
@@ -277,7 +280,7 @@ class SixDB(object):
             path = os.path.join(dirName, files)
             content = sqlite3.Binary(compressBuf(path))
             path = path.replace(
-              env_var['basedir'],'')
+              env_var['basedir']+'/','')
             extra_files.append([path, content])
       if rows:
         lst = dict_to_list(rows)
@@ -301,7 +304,7 @@ class SixDB(object):
           path = os.path.join(dirName, files)
           content = sqlite3.Binary(compressBuf(path))
           path = path.replace(
-            env_var['basedir'],'')
+            env_var['basedir']+'/','')
           extra_files.append([path, content])
     if extra_files:
       tab1.insertl(extra_files)
@@ -472,7 +475,7 @@ class SixDB(object):
           path = os.path.join(dirName, files)
           content = sqlite3.Binary(compressBuf(path))
           path = path.replace(
-            env_var['basedir'],'')
+            env_var['basedir']+'/','')
           extra_files.append([path, content])
         if 'betavalues' in files or 'sixdesktunes' in files:
           dirn = dirName.replace(workdir + '/', '')
@@ -550,6 +553,7 @@ class SixDB(object):
     cur = conn.cursor()
     env_var = self.env_var
     cols = SQLTable.cols_from_fields(testtables.Six_In.fields)
+    aff_count = 0
     tab = SQLTable(conn,'six_input',cols,testtables.Six_In.key)
     workdir = os.path.join(env_var['sixdesktrack'],env_var['LHCDescrip'])
     rows = []
@@ -560,7 +564,7 @@ class SixDB(object):
     cols = SQLTable.cols_from_fields(testtables.Six_Res.fields)
     tab = SQLTable(conn,'six_results',cols,testtables.Six_Res.key)
     cmd = "find %s -name 'fort.10.gz'"%(workdir)
-    a = os.popen(cmd).read().split('\n')[:-1]
+    a = [i for i in os.popen(cmd).read().split('\n')[:-1] if not '-' in i]
     print 'fort.10 files(including joined fort.10) =',len(a)
     for dirName in a:
       files = dirName.split('/')[-1]
@@ -587,10 +591,16 @@ class SixDB(object):
             rows.append([six_id,count]+lines.split())
             count += 1
         if len(rows) > 180000:
-          tab.insertl(rows)
+          temp = tab.insertl(rows,True,True)
+          if temp > 0:
+            aff_count += temp
           rows = []
     if rows:
-      tab.insertl(rows)
+      temp = tab.insertl(rows,True,True)
+      if temp > 0:
+        aff_count += temp
+    print "no of fort.10 updated =",aff_count/30
+
 
   def get_missing_fort10(self):
     conn = self.conn

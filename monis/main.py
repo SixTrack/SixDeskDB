@@ -19,7 +19,7 @@ if __name__ == "__main__":
   #   print "for help use help"
   #   sys.exit(2)
   if args:
-    try:
+    # try:
       if args[0] in ("h", "help"):
           print "use: main <option>" 
           print """loaddir <optional: studydir> LOAD A COMPLETE OR UPDATED STUDY 
@@ -67,7 +67,6 @@ if __name__ == "__main__":
         if a:
           a.load_extra()
           print a.basedir
-          # exit(0)
           a.load_mad6t_run()
           # a.load_mad6t_run2()
           a.load_mad6t_results()
@@ -105,9 +104,10 @@ if __name__ == "__main__":
           sys.exit(0)
       else:
         print 'invalid for help use help or h'
-    except Exception, e:
-      print e.__doc__
-      print e.message
+    # except Exception, e:
+    #   print e
+    #   print e.__doc__
+    #   print e.message
   else:
       print "too few options: please see help with h or help"
       sys.exit()

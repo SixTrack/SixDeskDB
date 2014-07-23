@@ -99,7 +99,7 @@ class SixDir(object):
     files = cur.fetchall()
     #print len(files)
     for file in files:
-      path = os.path.join(basedir,str(file[0])[1:])
+      path = os.path.join(basedir,str(file[0]))
       path1 = path.replace(path.split('/')[-1],"")
       if not os.path.exists(path1):
         if not dryrun:
@@ -145,9 +145,9 @@ class SixDir(object):
           path+'/mad6t_'+str(file[1])+'.lsf','w')
         f.write(decompressBuf(mad_lsf))
         f = open(
-          path+'/'+env_var['LHCDescrip']+'_mad_'+str(file[1]+'.log'),'w')
+          path+'/'+env_var['LHCDescrip']+'_mad_'+str(str(file[1])+'.log'),'w')
         f.write(decompressBuf(mad_in))
-        f = open(path+'/'+env_var)
+        # f = open(path+'/'+env_var)
         f.close()
 
   # def load_mad6t_run2(self):
@@ -215,7 +215,7 @@ class SixDir(object):
     conn = self.conn
     cur = conn.cursor()
     env_var = self.env_var
-    path = env_var['sixdesktrack']
+    path = os.path.join(env_var['sixdesktrack'],env_var['LHCDescrip'])
     cur.execute("begin IMMEDIATE transaction")
     sql = """SELECT * from six_beta"""
     cur.execute(sql)
@@ -260,7 +260,7 @@ class SixDir(object):
     conn = self.conn
     cur = conn.cursor()
     env_var = self.env_var
-    path = env_var['sixdesktrack']
+    path = os.path.join(env_var['sixdesktrack'],env_var['LHCDescrip'])
     cur.execute("begin IMMEDIATE transaction")
     sql = """SELECT * from six_input"""
     cur.execute(sql)
@@ -280,7 +280,7 @@ class SixDir(object):
         print 'creating fort.3.gz at %s'%(path1)
       if not dryrun:
         f = open(path1+'/fort.3.gz','w')
-        f.write(str(row[10]))
+        f.write(str(row[9]))
       sql = """SELECT * from six_results where six_input_id=?"""
       cur.execute(sql,[row[0]])
       fort = cur.fetchall()
@@ -355,7 +355,7 @@ class SixDir(object):
     val = cur.fetchall()
     for seed in range(ista,iend+1):
       workdir = os.path.join(
-        env_var['sixdesktrack'],str(seed),'simul',tune
+        env_var['sixdesktrack'],env_var['LHCDescrip'],str(seed),'simul',tune
         )
       join = os.path.join(workdir,str(amp1)+'-'+str(amp2))
       #print join
@@ -395,6 +395,7 @@ if __name__ == '__main__':
   a = SixDir(
     'jobslhc31b_inj55_itv19','/home/monis/Desktop/GSOC/files',True,True)
   a.load_extra()
+  exit(0)
   a.load_mad6t_run()
   # a.load_mad6t_run2()
   a.load_mad6t_results()
