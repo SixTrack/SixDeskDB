@@ -5,8 +5,6 @@ import re
 import gzip
 import cStringIO
 import StringIO
-from sys import platform as _platform
-import sys
 import sixdeskdir
 import lsfqueue
 import numpy as np
@@ -93,7 +91,7 @@ class SixDB(object):
     if not (os.path.exists(studyDir+'/sixdeskenv') and \
       os.path.exists(studyDir+'/sysenv')):
       print "sixdeskenv and sysenv should both be present"
-      sys.exit(0)
+      exit(0)
     self.env_var = sixdeskdir.parse_env(studyDir)
     for key in self.env_var.keys():
       if key not in testtables.acc_var:
@@ -466,35 +464,72 @@ class SixDB(object):
     extra_files = []
     col = col_count(cur, 'six_beta')
     beta = six = gen = []
-    for dirName, subdirList, fileList in os.walk(workdir):
-      for files in fileList:
-        if 'general_input' in files:
-          with open(os.path.join(dirName, files), 'r') as FileObj:
-            for lines in FileObj:
-              gen = lines.split()
-          path = os.path.join(dirName, files)
-          content = sqlite3.Binary(compressBuf(path))
-          path = path.replace(
-            env_var['basedir']+'/','')
-          extra_files.append([path, content])
-        if 'betavalues' in files or 'sixdesktunes' in files:
-          dirn = dirName.replace(workdir + '/', '')
-          dirn = dirn.split('/')
-          seed = int(dirn[0])
-          tunex, tuney = [i for i in dirn[2].split('_')]
-          if not (seed in rows.keys()):
-            rows[seed] = []
-          temp = [seed, tunex, tuney]
-          if 'betavalues' in files:
-            f = open(os.path.join(dirName, files), 'r')
-            beta = [float(i) for i in f.read().split()]
-          if 'sixdesktunes' in files:
-            f = open(os.path.join(dirName, files), 'r')
-            six = [float(i) for i in f.read().split()]
-          f.close()
-        if beta and temp and six:
-          rows[seed].append(temp + beta + gen + six)
-          beta = temp = six = []
+    cmd = "find %s -name 'general_input'"%(workdir)
+    a = os.popen(cmd).read().split('\n')[:-1]
+    if not a:
+      print 'general_input not found please check and run again'
+      exit(0)
+    else:
+      a = a[0]
+      with open(a,'r') as FileObj:
+        for lines in FileObj:
+          gen = lines.split()
+      path = a
+      content = sqlite3.Binary(compressBuf(path))
+      path = path.replace(
+        env_var['basedir']+'/','')
+      extra_files.append([path, content])
+    cmd = "find %s -name 'betavalues' -o -name 'sixdesktunes'"%(workdir)
+    a = os.popen(cmd).read().split('\n')[:-1] 
+    if not a:
+      print 'betavalues and sixdesktunes files missing'
+      exit(0)
+    for dirName in a:
+      files = dirName.split('/')[-1]
+      dirName = dirName.replace('/'+files,'')
+      dirn = dirName.replace(workdir+'/','').split('/')
+      seed = int(dirn[0])
+      tunex, tuney = dirn[2].split('_')
+      if not (seed in rows.keys()):
+        rows[seed] = []
+      temp = [seed, tunex, tuney]
+      if 'betavalues' in files:
+        f = open(os.path.join(dirName, files), 'r')
+        beta = [float(i) for i in f.read().split()]
+      if 'sixdesktunes' in files:
+        f = open(os.path.join(dirName, files), 'r')
+        six = [float(i) for i in f.read().split()]
+      f.close()
+      if beta and temp and six:
+        rows[seed].append(temp + beta + gen + six)
+        beta = temp = six = []
+        # if 'general_input' in files:
+        #   with open(os.path.join(dirName, files), 'r') as FileObj:
+        #     for lines in FileObj:
+        #       gen = lines.split()
+        #   path = os.path.join(dirName, files)
+        #   content = sqlite3.Binary(compressBuf(path))
+        #   path = path.replace(
+        #     env_var['basedir']+'/','')
+        #   extra_files.append([path, content])
+        # if 'betavalues' in files or 'sixdesktunes' in files:
+        #   dirn = dirName.replace(workdir + '/', '')
+        #   dirn = dirn.split('/')
+        #   seed = int(dirn[0])
+        #   tunex, tuney = [i for i in dirn[2].split('_')]
+        #   if not (seed in rows.keys()):
+        #     rows[seed] = []
+        #   temp = [seed, tunex, tuney]
+        #   if 'betavalues' in files:
+        #     f = open(os.path.join(dirName, files), 'r')
+        #     beta = [float(i) for i in f.read().split()]
+        #   if 'sixdesktunes' in files:
+        #     f = open(os.path.join(dirName, files), 'r')
+        #     six = [float(i) for i in f.read().split()]
+        #   f.close()
+        # if beta and temp and six:
+        #   rows[seed].append(temp + beta + gen + six)
+        #   beta = temp = six = []
     if rows:
       lst = dict_to_list(rows)
       tab.insertl(lst)
@@ -565,7 +600,7 @@ class SixDB(object):
     tab = SQLTable(conn,'six_results',cols,testtables.Six_Res.key)
     cmd = "find %s -name 'fort.10.gz'"%(workdir)
     a = [i for i in os.popen(cmd).read().split('\n')[:-1] if not '-' in i]
-    print 'fort.10 files(including joined fort.10) =',len(a)
+    print 'fort.10 files =',len(a)
     for dirName in a:
       files = dirName.split('/')[-1]
       dirName = dirName.replace('/fort.10.gz','')
