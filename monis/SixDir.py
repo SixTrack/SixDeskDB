@@ -5,6 +5,7 @@ import sys
 import sixdeskdir
 import sixdeskdb
 import StringIO
+import re
 
 def load_dict(cur,table):
   sql='SELECT keyname,value from %s'%(table)
@@ -390,6 +391,53 @@ class SixDir(object):
               del data[0]
             f.close()
 
+  def st_boinc(self,conn):
+    env_var = self.env_var
+    study = env_var['LHCDescrip']
+    cols=SQLTable.cols_from_fields(tables.Six_Res.fields)
+    cols = [i.replace("STRING","VARCHAR(128)") for i in cols]
+    cols = ['study VARCHAR(128)'] + cols
+    tab = SQLTable(conn,'six_results',cols)
+    cur = conn.cursor()
+    cur.execute("set global max_allowed_packet=209715200;")
+    cur.execute("set global wait_timeout=120;")
+    cur.execute("set global net_write_timeout=120;")
+    cur.execute("set global net_read_timeout=120;")
+    sql = "insert into six_results values (%s)"
+    sql = sql%(','.join("%s " for _ in xrange(len(cols))))
+    rows = []
+    boincdir = os.path.join(env_var['sixdeskboincdir'],'results')
+    cmd = "find %s -name '*boinc*'"%(boincdir)
+    a = os.popen(cmd).read().split("\n")[:-1]
+    for dirName in a:
+      dirn = dirName.replace(boincdir,'')
+      dirn = dirn.replace(env_var['sixdeskboincdirname']+"__","")
+      inp = re.split('_*',dirn)[:-3]
+      if inp[1] == 's':
+        inp[1] = 'simul'
+      inp[-2] = 'e' + inp[-2]
+      sql = """SELECT id from six_input where seed=? and simul=? and tunex=? 
+            and tuney=? and amp1=? and amp2=? and turns=? and angle=?"""
+      six_id = []
+      cur.execute(sql,inp)
+      six_id = list(cur)
+      if six_id:
+        six_id = six_id[0][0]
+      else:
+        print 'fort.3 missing for','/'.join(inp)
+        exit(0)
+      count = 1
+      FileObj = open(dirName).read().split("\n")[:-1]
+      for lines in FileObj:
+        rows.append([study,six_id,count]+lines.split())
+          count += 1
+      if len(rows) > 150000:
+        cur.executemany(sql,rows)
+        conn.commit()
+        rows = []
+    if rows:
+      cur.executemany(sql,rows)
+      conn.commit()
 
 if __name__ == '__main__':
   a = SixDir(

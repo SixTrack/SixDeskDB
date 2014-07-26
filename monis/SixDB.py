@@ -620,11 +620,12 @@ class SixDB(object):
           if dirn == inp[i][1:]:
             six_id = inp[i][0]
             break
-        with gzip.open(os.path.join(dirName,files),"r") as FileObj:
-          count = 1
-          for lines in FileObj:
-            rows.append([six_id,count]+lines.split())
-            count += 1
+        FileObj = gzip.open(
+          os.path.join(dirName,files),"r").read().split("\n")[:-1]
+        count = 1
+        for lines in FileObj:
+          rows.append([six_id,count]+lines.split())
+          count += 1
         if len(rows) > 180000:
           temp = tab.insertl(rows,True,True)
           if temp > 0:
