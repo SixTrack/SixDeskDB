@@ -430,7 +430,7 @@ class SixDir(object):
       FileObj = open(dirName).read().split("\n")[:-1]
       for lines in FileObj:
         rows.append([study,six_id,count]+lines.split())
-          count += 1
+        count += 1
       if len(rows) > 150000:
         cur.executemany(sql,rows)
         conn.commit()
