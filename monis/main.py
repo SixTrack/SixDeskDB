@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
-from SixDB import *
-from SixDir import *
+from SixdeskDB import *
 from DA_FullStat_v2 import *
 from DA_FullStat_public import *
 from mad6t import *
@@ -34,18 +33,18 @@ if __name__ == "__main__":
           print "info <studyname> GET INFO FOR STUDY PROVIDED"
       if args[0] in ("loaddir","loaddir"):
         if len(args)==1:
-          a = SixDB()
+          SixDeskDB.from_dir()
         if len(args)==2:
-          a = SixDB(args[1])
+          SixDeskDB.from_dir(args[1])
           # a.st_control()
           # a.st_mask()
-          a.st_env()
-          a.st_mad6t_run()
-          a.st_mad6t_run2()
-          a.st_mad6t_results()
-          a.st_six_beta()
-          a.st_six_input()
-          a.st_six_results()
+          # a.st_env()
+          # a.st_mad6t_run()
+          # a.st_mad6t_run2()
+          # a.st_mad6t_results()
+          # a.st_six_beta()
+          # a.st_six_input()
+          # a.st_six_results()
         else:
           print "too many arguments see help with h or help"
           sys.exit(0)
@@ -58,9 +57,9 @@ if __name__ == "__main__":
           dryrun = True
           del args[args.index("-dryrun")]
         if len(args) == 2:
-          a = SixDir(args[1],'.',verbose,dryrun)
+          a = SixDeskDB(args[1],'.',verbose,dryrun)
         elif len(args) == 3:
-          a = SixDir(args[1],args[2],verbose,dryrun)
+          a = SixDeskDB(args[1],args[2],verbose,dryrun)
         else:
           print "invalid see help with h or help"
           sys.exit(0)
@@ -74,7 +73,7 @@ if __name__ == "__main__":
           a.load_six_input_results()
       elif args[0] in ("info"):
         if len(args)==2:
-          a = SixDir(args[1])
+          a = SixDeskDB(args[1])
           a.info()
         else:
           print "invalid see help with h or help"
@@ -88,7 +87,7 @@ if __name__ == "__main__":
           sys.exit(0)
       elif args[0] in ("mad","mad"):
         if len(args)==2:
-          a = SixDir(args[1])
+          a = SixDeskDB(args[1])
           m = Mad6tOut(**a.env_var)
           m.check_all()
         else:
@@ -96,7 +95,7 @@ if __name__ == "__main__":
           sys.exit(0)
       elif args[0] in ("join10","join10"):
         if len(args)==2:
-          a = SixDir(args[1])
+          a = SixDeskDB(args[1])
           if a.get_missing_fort10 == 0 and a.get_incomplete_fort10 == 0:
             a.join10
         else:
