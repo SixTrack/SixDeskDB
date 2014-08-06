@@ -597,13 +597,19 @@ class SixDB(object):
     inp = [[str(i) for i in j] for j in inp]
     cols = SQLTable.cols_from_fields(testtables.Six_Res.fields)
     tab = SQLTable(conn,'six_results',cols,testtables.Six_Res.key)
+    maxtime = tab.select("max(mtime)")[0][0]
+    if not maxtime:
+      maxtime = 0
+    print maxtime
     cmd = "find %s -name 'fort.10.gz'"%(workdir)
     a = [i for i in os.popen(cmd).read().split('\n')[:-1] if not '-' in i]
     print 'fort.10 files =',len(a)
     for dirName in a:
       files = dirName.split('/')[-1]
       dirName = dirName.replace('/fort.10.gz','')
-      if 'fort.10' in files and not '-' in dirName:
+      if 'fort.10' in files and (not '-' in dirName) \
+        and (os.path.getmtime(dirName) > maxtime):
+        mtime = os.path.getmtime(dirName)
         dirn = dirName.replace(workdir+'/','')
         dirn = re.split('/|_',dirn)
         for i in [2,3,4,5,7]:
@@ -623,17 +629,14 @@ class SixDB(object):
           os.path.join(dirName,files),"r").read().split("\n")[:-1]
         count = 1
         for lines in FileObj:
-          rows.append([six_id,count]+lines.split())
+          rows.append([six_id,count]+lines.split()+[mtime])
           count += 1
+          aff_count += 1
         if len(rows) > 180000:
           temp = tab.insertl(rows)
-          if temp > 0:
-            aff_count += temp
           rows = []
     if rows:
       temp = tab.insertl(rows)
-      if temp > 0:
-        aff_count += temp
     print "no of fort.10 updated =",aff_count/30
 
 
@@ -900,8 +903,8 @@ class SixDeskDB(object):
     if '/' in studyName:
       self.studyName = studyName.split('/')[-1]
     self.studyName = self.studyName.replace(".db","")
-    print verbose,dryrun    
-    print db,self.studyName
+    #print verbose,dryrun    
+    #print db,self.studyName
     if not os.path.isfile(db):
       print "file %s does'nt exist "%(db)
       print "see if you have typed the name correctly"
@@ -1265,6 +1268,9 @@ class SixDeskDB(object):
     cols = [i.replace("STRING","VARCHAR(128)") for i in cols]
     cols = ['study VARCHAR(128)'] + cols
     tab = SQLTable(conn,'six_results',cols)
+    maxtime = tab.select("max(mtime)")[0][0]
+    if not maxtime:
+      maxtime = 0
     cur = conn.cursor()
     cur.execute("set global max_allowed_packet=209715200;")
     cur.execute("set global wait_timeout=120;")
@@ -1276,7 +1282,8 @@ class SixDeskDB(object):
     boincdir = os.path.join(env_var['sixdeskboincdir'],'results')
     cmd = "find %s -name '*boinc*'"%(boincdir)
     a = os.popen(cmd).read().split("\n")[:-1]
-    for dirName in a:
+    for dirName in a and (os.path.getmtime(dirName) > maxtime):
+      mtime = os.path.getmtime(dirName)
       dirn = dirName.replace(boincdir,'')
       dirn = dirn.replace(env_var['sixdeskboincdirname']+"__","")
       inp = re.split('_*',dirn)[:-3]
@@ -1296,7 +1303,7 @@ class SixDeskDB(object):
       count = 1
       FileObj = open(dirName).read().split("\n")[:-1]
       for lines in FileObj:
-        rows.append([study,six_id,count]+lines.split())
+        rows.append([study,six_id,count]+lines.split()+[mtime])
         count += 1
       if len(rows) > 150000:
         cur.executemany(sql,rows)
