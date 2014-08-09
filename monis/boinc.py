@@ -1,4 +1,12 @@
-import time
+#!/usr/bin/python
+
+# python daemon for storing boinc fils directly to central Db in background
+# done by Moonis Javed (monis.javed@gmail.com)
+# This stores the boinc files in central DB in background
+# DO NOT USE THIS DIRECTLY
+# 
+# NOTA: please use python version >=2.6 import time
+
 from SixdeskDB import *
 import MySQLdb
 from warnings import filterwarnings

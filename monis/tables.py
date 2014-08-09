@@ -1,13 +1,11 @@
 class Env(object):
   fields=[
-  ('env_id','int','study id'),
   ('keyname','str','key'),
   ('value','str','value')]
-  key=['env_id','keyname']
+  key=['keyname']
 
 class Mad_Run(object):
   fields=[
-  ('env_id','int','study id'),
   ('run_id','str','mad run name'),
   ('seed','int','seed value'),
   ('mad_in','blob','mad_in file'),
@@ -15,30 +13,19 @@ class Mad_Run(object):
   ('mad_lsf','blob','mad_lsf file'),
   ('mad_log','blob','mad_log file'),
   ('mad_out_mtime','double','last modification time')]
-  key=['env_id','run_id','seed']
-
-class Mad_Run2(object):
-  fields=[
-  ('env_id','int','study id'),
-  ('fort3aux','blob','fort3aux file'), 
-  ('fort3mad','blob','fort3mad file'),
-  ('fort3mother1','blob','fort3mother1 file'),
-  ('fort3mother2','blob','fort3mother2 file')]
-  key=['env_id']
+  key=['run_id','seed']
 
 class Mad_Res(object):
   fields=[
-  ('env_id','int','study id'),
   ('seed','int','seed value'),
   ('fort2','blob','fort2 file'),
   ('fort8','blob','fort8 file'),
   ('fort16','blob','fort16 file'),
   ('fort_mtime','double','last modification time')]
-  key=['env_id','seed']
+  key=['seed']
 
 class Six_Be(object):
   fields=[
-  ('env_id', 'int','study id'),
   ('seed', 'int', 'seed value'),
   ('tunex', 'double', 'tunex value'),
   ('tuney' ,'double', 'tuney value'),
@@ -63,12 +50,11 @@ class Six_Be(object):
   ('qy1', 'double', 'qy1 value'), 
   ('qx2', 'double', 'qx2 value'), 
   ('qy2', 'double','qy2 value')]
-  key=['env_id','seed','tunex','tuney']
+  key=['seed','tunex','tuney']
 
 class Six_In(object):
   fields=[
   ('id', 'int', 'unique id'), 
-  ('env_id', 'int','study id'),
   ('seed', 'int', 'seed value'),
   ('simul', 'string', 'simul'), 
   ('tunex', 'double', 'tunex value'),
@@ -78,7 +64,7 @@ class Six_In(object):
   ('turns', 'string', 'turns value'), 
   ('angle', 'double', 'angle value'), 
   ('fort3','blob','fort3 file')]
-  key=['env_id','seed','simul','tunex','tuney','amp1','amp2','turns','angle']
+  key=['seed','simul','tunex','tuney','amp1','amp2','turns','angle']
 
 class Six_Res(object):
   fields=[
@@ -143,16 +129,42 @@ class Six_Res(object):
   ('yp', 'float', 'Dummy6'),
   ('delta', 'float', 'Dummy7'),
   ('dnms', 'float', 'Internal1'),
-  ('trttime', 'float', 'Internal2')]
+  ('trttime', 'float', 'Internal2'),
+  ('mtime','float','modification time')]
   key=['six_input_id','row_num']
 
 class Files(object):
   fields=[
-  ('env_id','int','study id'),
   ('path','str','file path'),
   ('content','blob','file content')]
-  key=['env_id','path']
+  key=['path']
 
-acc_var = ['BNL','COLUMNS','CORR_TEST','G_FILENAME_ENCODING','LHCDesHome','LHCDesName','LHCDescrip','LINES','MADX','MADX_PATH','SIXTRACKBNLEXE','SIXTRACKDAEXE','SIXTRACKEXE','basedir','beam','boincdir','bunch_charge','chrom','chrom_eps','chromx','chromy','cronlogdir','cronlogs','da','dalsfq','deltax','deltay','dimda','dimen','dpini','dpmax','e0','emit','fort_34','gamma','ibtype','idfor','iend','iendmad','iplot','ista','istamad','kendl','kinil','kmaxl','kstep','kvar','level1','level2','level4','long','longlsfq','lsfjobtype','lsfq','madlsfq','ns1l','ns2l','nsincl','platform','pmass','reson','runtype','scratchdir','short','shortlsfq','sixdeskAuthor','sixdeskComments','sixdeskCpuSpeedMin','sixdeskFileName','sixdeskOsMax','sixdeskOsMin','sixdeskPriority','sixdeskProgramDescription','sixdeskProgramName','sixdeskStatus','sixdeskTargetFileName','sixdeskTaskGroupDescription','sixdeskTaskGroupName','sixdeskVersion','sixdeskboincdir','sixdeskboincdirname','sixdeskboinctest','sixdeskcastor','sixdeskclientv','sixdeskcr','sixdeskecho','sixdeskexec','sixdeskforce','sixdeskfpopse','sixdeskhome','sixdeskjobs','sixdeskjobs_logs','sixdesklevel','sixdesklogdir','sixdesklogs','sixdeskpairs','sixdeskparts','sixdeskpath','sixdeskplatform','sixdeskpts','sixdeskstudy','sixdesktrack','sixdeskturns','sixdeskwork','sixtrack_input','sussix','trackdir','tune','tunex','tunex1','tuney','tuney1','turnse','turnsemax','turnsl','turnsle','workspace','writebinl']
+acc_var = ['BNL','COLUMNS','CORR_TEST','G_FILENAME_ENCODING','LHCDesHome',
+    'LHCDesName','LHCDescrip','LINES','MADX','MADX_PATH','SIXTRACKBNLEXE',
+    'SIXTRACKDAEXE','SIXTRACKEXE','basedir','beam','boincdir','bunch_charge',
+    'chrom','chrom_eps','chromx','chromy','cronlogdir','cronlogs','da','dalsfq',
+    'deltax','deltay','dimda','dimen','dpini','dpmax','e0','emit','fort_34',
+    'gamma','ibtype','idfor','iend','iendmad','iplot','ista','istamad','kendl',
+    'kinil','kmaxl','kstep','kvar','level1','level2','level4','long','longlsfq',
+    'lsfjobtype','lsfq','madlsfq','ns1l','ns2l','nsincl','platform','pmass',
+    'reson','runtype','scratchdir','short','shortlsfq','sixdeskAuthor',
+    'sixdeskComments','sixdeskCpuSpeedMin','sixdeskFileName','sixdeskOsMax',
+    'sixdeskOsMin','sixdeskPriority','sixdeskProgramDescription',
+    'sixdeskProgramName','sixdeskStatus','sixdeskTargetFileName',
+    'sixdeskTaskGroupDescription','sixdeskTaskGroupName','sixdeskVersion',
+    'sixdeskboincdir','sixdeskboincdirname','sixdeskboinctest','sixdeskcastor',
+    'sixdeskclientv','sixdeskcr','sixdeskecho','sixdeskexec','sixdeskforce',
+    'sixdeskfpopse','sixdeskhome','sixdeskjobs','sixdeskjobs_logs',
+    'sixdesklevel','sixdesklogdir','sixdesklogs','sixdeskpairs','sixdeskparts',
+    'sixdeskpath','sixdeskplatform','sixdeskpts','sixdeskstudy','sixdesktrack',
+    'sixdeskturns','sixdeskwork','sixtrack_input','sussix','trackdir','tune',
+    'tunex','tunex1','tuney','tuney1','turnse','turnsemax','turnsl','turnsle',
+    'workspace','writebinl']
 
-def_var = ['COMPIZ_BIN_PATH', 'COMPIZ_CONFIG_PROFILE', 'DBUS_SESSION_BUS_ADDRESS', 'DEFAULTS_PATH', 'DESKTOP_SESSION', 'GDMSESSION', 'GNOME_DESKTOP_SESSION_ID', 'GNOME_KEYRING_CONTROL', 'GNOME_KEYRING_PID', 'GPG_AGENT_INFO', 'GTK_MODULES', 'MANDATORY_PATH', 'SESSION_MANAGER', 'SSH_AGENT_PID', 'SSH_AUTH_SOCK', 'UBUNTU_MENUPROXY', 'WINDOWID', 'XDG_CONFIG_DIRS', 'XDG_CURRENT_DESKTOP', 'XDG_DATA_DIRS', 'XDG_RUNTIME_DIR', 'XDG_SEAT_PATH', 'XDG_SESSION_COOKIE', 'XDG_SESSION_PATH']
+def_var = ['COMPIZ_BIN_PATH', 'COMPIZ_CONFIG_PROFILE',
+    'DBUS_SESSION_BUS_ADDRESS', 'DEFAULTS_PATH', 'DESKTOP_SESSION', 
+    'GDMSESSION', 'GNOME_DESKTOP_SESSION_ID', 'GNOME_KEYRING_CONTROL',
+    'GNOME_KEYRING_PID', 'GPG_AGENT_INFO', 'GTK_MODULES', 'MANDATORY_PATH', 
+    'SESSION_MANAGER', 'SSH_AGENT_PID', 'SSH_AUTH_SOCK', 'UBUNTU_MENUPROXY', 
+    'WINDOWID', 'XDG_CONFIG_DIRS', 'XDG_CURRENT_DESKTOP', 'XDG_DATA_DIRS', 
+    'XDG_RUNTIME_DIR', 'XDG_SEAT_PATH', 'XDG_SESSION_COOKIE','XDG_SESSION_PATH']

@@ -1,5 +1,13 @@
 #!/usr/bin/python
 
+# python executable for Sixdesk 
+# done by Moonis Javed (monis.javed@gmail.com)
+# instructions are provided in help and can be seen by
+# python main.py help
+# python main.py h
+# 
+# NOTA: please use python version >=2.6   
+
 from SixdeskDB import *
 from DA_FullStat_v2 import *
 from DA_FullStat_public import *

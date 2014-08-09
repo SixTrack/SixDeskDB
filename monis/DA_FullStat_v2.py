@@ -13,7 +13,7 @@
 
 import sys
 import getopt
-from SixDir import *
+from SixdeskDB import *
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -37,7 +37,7 @@ outtype=[('study','S100'),('seed','int'),('angle','float'),('achaos','float'),('
 def main2(studyName):
     database='%s.db'%(studyName)
     if os.path.isfile(database):
-        sd=SixDir(studyName)
+        sd=SixDeskDB(studyName)
     else:
         print "ERROR: file  %s does not exists!" %(database)
         sys.exit()

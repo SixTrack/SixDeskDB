@@ -11,7 +11,7 @@
 
 import sys
 import getopt
-from SixDir import *
+from SixdeskDB import *
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -32,7 +32,7 @@ names='betx,bety,sigx1,sigy1,emitx,emity,sigxavg,sigyavg,betx2,bety2,distp,dist,
 def main1(studyName):
     database='%s.db'%(studyName)
     if os.path.isfile(database):
-        sd=SixDir(studyName)   
+        sd=SixDeskDB(studyName)   
     else:
         print "ERROR: file  %s does not exists!" %(database)
         return

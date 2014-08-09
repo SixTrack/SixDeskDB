@@ -5,7 +5,6 @@ import scipy.signal
 from sqltable import SQLTable
 import sys
 import getopt
-from SixDir import *
 import math
 import matplotlib.pyplot as plt
 import os
@@ -16,7 +15,7 @@ import cStringIO
 import StringIO
 import sixdeskdir
 import lsfqueue
-import testtables
+import tables
 from sqltable import *  
 import os, gzip, time, sys
 from collections import namedtuple
@@ -38,3 +37,4 @@ from glob import glob
 import sqlite3,time
 import os, re, gzip
 import sixdeskdb
+import copy
