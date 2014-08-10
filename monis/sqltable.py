@@ -1,6 +1,7 @@
 import sqlite3
 import numpy as np
 import sixdeskdir
+from tables import Env
 
 class SQLTable(object):
   @staticmethod
@@ -61,7 +62,7 @@ class SQLTable(object):
     data = [('abc', 'testing')]
     cur.executemany(sql_cmd, data)
     db.commit()
-  def insertl(self,data,replace=True,rowc=False):
+  def insertl(self,data,replace=True):
     db=self.db;table=self.name
     if replace:
       sql="REPLACE INTO %s VALUES (%s)"
@@ -82,8 +83,6 @@ class SQLTable(object):
       count = cur.rowcount
     # print sql_cmd
     db.commit()
-    if rowc:
-      return count
   def delete(self,where):
     db=self.db;table=self.name
     sql="DELETE FROM %s WHERE %s"
@@ -105,18 +104,18 @@ class SQLTable(object):
     types = []
     data=list(cur)
     return data
-    data=[(i) for i in data]
-    if len(data)>0:
-      for i in data[0]:
-        print type(i),i
-        if type(i) == float : types.append('float')
-        elif type(i) == unicode: types.append('str')
-        elif type(i) == int: types.append('int')
-        else: types.append('str')
-      names=[i[0] for i in cur.description]
-      print zip(names,types)
-      data = np.array(data, dtype = zip(names,types))
-      return data
+    # data=[(i) for i in data]
+    # if len(data)>0:
+    #   for i in data[0]:
+    #     print type(i),i
+    #     if type(i) == float : types.append('float')
+    #     elif type(i) == unicode: types.append('str')
+    #     elif type(i) == int: types.append('int')
+    #     else: types.append('str')
+    #   names=[i[0] for i in cur.description]
+    #   print zip(names,types)
+    #   data = np.array(data, dtype = zip(names,types))
+    #   return data
 
 
 if __name__=='__main__':

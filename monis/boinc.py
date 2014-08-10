@@ -7,23 +7,30 @@
 # 
 # NOTA: please use python version >=2.6 import time
 
+<<<<<<< HEAD
+from SixdeskDB import SixDeskDB
+=======
 from SixdeskDB import *
+>>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
 import MySQLdb
 from warnings import filterwarnings
 from config import *
+import sys
+import time
 
-args = sys.argv[:1]
-a = SixDeskDB(argv[0])
-filterwarnings('ignore', category = Warning)
-	# conn = connect(args,user,password)
-	# sql = "create database if not exists %s"
-	# conn.cursor().execute(sql%(a[0]))
-	conn = connect(host,user,password,db)
-	conn1.text_factory=str
-except Error as err:
-	print "error {}".format(err)
-	exit(1)	
-print "Opened database successfully";
-while True:
-	a.st_boinc(conn)
-	time.sleep(600)
+try:
+  args = sys.argv[:1]
+  a = SixDeskDB(argv[0])
+  filterwarnings('ignore', category = Warning)
+    # conn = connect(args,user,password)
+    # sql = "create database if not exists %s"
+    # conn.cursor().execute(sql%(a[0]))
+  conn = MySQLdb.connect(host,user,password,db)
+  # conn.text_factory=str
+  print "Opened database successfully"
+  while True:
+    a.st_boinc(conn)
+    time.sleep(600)
+except MySQLdb.Error as err:
+  print "error {}".format(err)
+  exit(1) 

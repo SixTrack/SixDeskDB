@@ -1,12 +1,13 @@
-import os, gzip, time, sys
+import os, gzip
+# import time, sys
 
-from collections import namedtuple
+# from collections import namedtuple
 
 import numpy as np
-try:
-  import matplotlib.pyplot as pl
-except RuntimeError,msg:
-  pass
+# try:
+#   import matplotlib.pyplot as pl
+# except RuntimeError,msg:
+#   pass
 
 
 def split_fort10fn(fn):

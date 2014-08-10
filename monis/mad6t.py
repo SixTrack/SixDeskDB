@@ -19,6 +19,7 @@ class Mad6tOut(object):
   def __init__(self,**opt):
     self.basedir=opt['sixtrack_input']
     self.LHCDescrip=opt['LHCDescrip']
+    self.workspace=opt['workspace']
     self.ista=int(opt['ista'])
     self.iend=int(opt['iend'])
     print "Mad6tOut basedir: %s"%self.basedir
@@ -91,7 +92,7 @@ class Mad6tOut(object):
         if os.path.getsize(ffn)<10:
           print "Mad6tOut %s too small"
       else:
-          print "Mad6tOut %s does not exists"
+        print "Mad6tOut %s does not exists"
   def check_all(self):
     self.check_out()
     self.check_forts()
