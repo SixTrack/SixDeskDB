@@ -23,11 +23,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 import scipy.signal
 import tables
-<<<<<<< HEAD
 from sqltable import SQLTable
-=======
-from sqltable import *  
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
 import copy
 
 def load_dict(cur,table):
@@ -113,10 +109,6 @@ class SixDeskDB(object):
     tab = SQLTable(conn,'env',cols,tables.Env.key)
     cols=SQLTable.cols_from_fields(tables.Files.fields)
     tab1 = SQLTable(conn,'files',cols,tables.Files.key)
-<<<<<<< HEAD
-=======
-    cur = conn.cursor()
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
     env_var['env_timestamp']=str(time.time())
     env_var1 = [[i,env_var[i]] for i in env_var.keys()]
     tab.insertl(env_var1)
@@ -203,28 +195,20 @@ class SixDeskDB(object):
     self.orig_env_var = copy.copy(env_var)
     if self.basedir == '.':
       self.basedir = os.path.realpath(__file__).replace("SixdeskDB.py","")
-<<<<<<< HEAD
       # print self.basedir
       self.basedir = self.basedir.replace("SixdeskDB.pyc","")
       # print self.basedir
     if not self.basedir.endswith('/'):
       self.basedir += '/'
       # print self.basedir
-=======
-      self.basedir = self.basedir.replace("SixdeskDB.pyc","")
-    if not self.basedir.endswith('/'):
-      self.basedir += '/'
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
     if env_var['basedir'] != self.basedir:
       for i in env_var.keys():
         if env_var['basedir'] in self.env_var[i]:
           self.env_var[i] = self.env_var[i].replace(
             env_var['basedir']+'/',self.basedir)
-<<<<<<< HEAD
           # print self.env_var[i]
     # exit(0)
-=======
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
+
 
   def set_variable(self,lst):
     '''set additional variables besides predefined environment variables
@@ -272,10 +256,6 @@ class SixDeskDB(object):
     ''' store mad run files'''
     conn = self.conn
     env_var = self.orig_env_var
-<<<<<<< HEAD
-=======
-    cur = conn.cursor()
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
     cols = SQLTable.cols_from_fields(tables.Mad_Run.fields)
     tab = SQLTable(conn,'mad6t_run',cols,tables.Mad_Run.key)
     cols = SQLTable.cols_from_fields(tables.Files.fields)
@@ -334,10 +314,6 @@ class SixDeskDB(object):
   def st_mad6t_run2(self,env_var):
     ''' store fort.3 and tmp files'''
     conn = self.conn
-<<<<<<< HEAD
-=======
-    cur = conn.cursor()
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
     env_var = self.orig_env_var
     cols = SQLTable.cols_from_fields(tables.Files.fields)
     tab1 = SQLTable(conn,'files',cols,tables.Files.key)
@@ -357,18 +333,9 @@ class SixDeskDB(object):
   def st_mad6t_results(self,env_var):
     ''' store fort.2, fort.8, fort.16 files'''
     conn = self.conn
-<<<<<<< HEAD
     env_var = self.orig_env_var
     cols = SQLTable.cols_from_fields(tables.Mad_Res.fields)
     tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
-=======
-    cur = conn.cursor()
-    env_var = self.orig_env_var
-    cols = SQLTable.cols_from_fields(tables.Mad_Res.fields)
-    tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
-    workdir = env_var['sixtrack_input']
-    res = []
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
     rows = []
     cmd = "find %s -name 'fort.%s*.gz'"
     rows = []
@@ -430,10 +397,6 @@ class SixDeskDB(object):
   def st_six_beta(self,env_var):
     ''' store general_input, sixdesktunes, betavalues '''
     conn = self.conn
-<<<<<<< HEAD
-=======
-    cur = conn.cursor()
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
     env_var = self.orig_env_var
     cols = SQLTable.cols_from_fields(tables.Six_Be.fields)
     tab = SQLTable(conn,'six_beta',cols,tables.Six_Be.key)
@@ -527,10 +490,6 @@ class SixDeskDB(object):
   def st_six_results(self,env_var):
     '''store fort.10 values'''
     conn = self.conn
-<<<<<<< HEAD
-=======
-    cur = conn.cursor()
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
     env_var = self.orig_env_var
     cols = SQLTable.cols_from_fields(tables.Six_In.fields)
     aff_count = 0
@@ -608,11 +567,7 @@ class SixDeskDB(object):
     dryrun = self.dryrun
     conn = self.conn
     cur = conn.cursor()
-<<<<<<< HEAD
     # env_var = self.env_var
-=======
-    env_var = self.env_var
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
     basedir = self.basedir
     cur.execute("begin IMMEDIATE transaction")
     sql = """SELECT path,content from files"""
@@ -668,11 +623,7 @@ class SixDeskDB(object):
         f.write(decompressBuf(mad_lsf))
         f = open(
           path+'/'+env_var['LHCDescrip']+'_mad_'+str(str(file[1])+'.log'),'w')
-<<<<<<< HEAD
         f.write(decompressBuf(mad_log))
-=======
-        f.write(decompressBuf(mad_in))
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
         # f = open(path+'/'+env_var)
         f.close()
 
@@ -828,13 +779,7 @@ class SixDeskDB(object):
 
   def get_missing_fort10(self):
     '''get input values for which fort.10 is not present '''
-<<<<<<< HEAD
     # conn = self.conn
-=======
-    conn = self.conn
-    cur = conn.cursor()
-    env_var = self.env_var
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
     # newid = self.newid
     sql = """select seed,tunex,tuney,amp1,amp2,turns,angle from six_input
     where not exists(select 1 from six_results where id=six_input_id)"""
@@ -849,15 +794,9 @@ class SixDeskDB(object):
 
   def get_incomplete_fort10(self):
     '''get input values for which fort.10 is incomplete '''
-<<<<<<< HEAD
     # conn = self.conn
     # cur = conn.cursor()
     # env_var = self.env_var
-=======
-    conn = self.conn
-    cur = conn.cursor()
-    env_var = self.env_var
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
     # newid = self.newid
     sql = """select seed,tunex,tuney,amp1,amp2,turns,angle from six_input
     where not exists(select 1 from six_results where id=six_input_id and 
@@ -1061,10 +1000,6 @@ class SixDeskDB(object):
 
   def get_missing_jobs(self):
     '''get missing jobs '''
-<<<<<<< HEAD
-=======
-    cur = self.conn.cursor()
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
     turnsl = '%E'%(float(self.env_var['turnsl']))
     turnsl = 'e'+str(int(turnsl.split('+')[1]))
     a = self.execute("""SELECT seed,tunex,tuney,amp1,amp2,turns,angle from 
@@ -1138,11 +1073,7 @@ class SixDeskDB(object):
     seeds=len(set(data['seed']))
     data=data.reshape(seeds,angles,-1)
     a,s,t=data['angle'],data['amp'],data['surv']
-<<<<<<< HEAD
     a=a.mean(axis=0); s=s.mean(axis=0); t=t.mean(axis=0)
-=======
-    a=a.mean(axis=0); s=s.mean(axis=0); t=t.mean(axis=0);
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
     self._plot_survival_2d(a,s,t,smooth=smooth)
     pl.title('Survived turns')
     

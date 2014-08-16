@@ -8,20 +8,12 @@
 # 
 # NOTA: please use python version >=2.6   
 
-<<<<<<< HEAD
 from SixdeskDB import SixDeskDB
 from DA_FullStat_v2 import main2
 from DA_FullStat_public import main1
 from mad6t import Mad6tOut
 # import os
 import sys
-=======
-from SixdeskDB import *
-from DA_FullStat_v2 import *
-from DA_FullStat_public import *
-from mad6t import *
-import os
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
 
 if __name__ == "__main__":
   args = sys.argv[1:]

@@ -30,11 +30,5 @@ from DA_FullStat_v2 import *
 from DA_FullStat_public import *
 from mad6t import *
 from glob import glob
-<<<<<<< HEAD
 import SixdeskDB
-=======
-import sqlite3,time
-import os, re, gzip
-import sixdeskdb
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
 import copy

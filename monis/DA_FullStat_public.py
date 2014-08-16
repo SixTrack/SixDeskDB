@@ -11,11 +11,7 @@
 
 import sys
 import getopt
-<<<<<<< HEAD
 from SixdeskDB import SixDeskDB
-=======
-from SixdeskDB import *
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
 import numpy as np
 import math
 import os
@@ -33,7 +29,6 @@ rectype=[('betx'    ,'float'),('bety'    ,'float'),('sigx1'   ,'float'),('sigy1'
 names='betx,bety,sigx1,sigy1,emitx,emity,sigxavg,sigyavg,betx2,bety2,distp,dist,sturns1,sturns2,turn_max,amp1,amp2,angle'
 
 def main1(studyName):
-<<<<<<< HEAD
   database='%s.db'%(studyName)
   if os.path.isfile(database):
     sd=SixDeskDB(studyName)   
@@ -48,15 +43,6 @@ def main1(studyName):
   #print tmp.size
   for angle in np.unique(tmp['angle']):   
   # for angle in anglearray:
-=======
-    database='%s.db'%(studyName)
-    if os.path.isfile(database):
-        sd=SixDeskDB(studyName)   
-    else:
-        print "ERROR: file  %s does not exists!" %(database)
-        return
-    f = open('DA_%s.txt'%studyName, 'w')
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
     
     ich1 = 0
     ich2 = 0
