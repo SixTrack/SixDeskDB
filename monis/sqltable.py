@@ -26,25 +26,41 @@ class SQLTable(object):
   @staticmethod
   def query_from_dict(query):
     return ' AND '.join(['%s=%s'%(k,repr(v)) for k,v in query.items()])
-  def __init__(self,db,name,cols,keys=None):
+  def __init__(self,db,name,cols,keys=None,dbtype="sql"):
     self.db=db
     self.name=name
     self.cols=cols
     self.keys=keys
+    self.dbtype = dbtype
     self.create()
   def create(self):
     db=self.db;table=self.name
     cols=self.cols
     keys=self.keys
+    dbtype = self.dbtype 
     sql="CREATE TABLE IF NOT EXISTS %s(%s);"
     sql_cols=','.join(cols)
     sql_cmd=sql%(table,sql_cols)
     cur=db.cursor()
     cur.execute(sql_cmd)
     if keys is not None:
-      sql="CREATE UNIQUE INDEX IF NOT EXISTS keys_%s ON %s(%s)"
-      sql_cmd=sql%('_'.join(keys),table,','.join(keys))
-      cur.execute(sql_cmd)
+      if dbtype == "sql":
+        sql="CREATE UNIQUE INDEX IF NOT EXISTS keys_%s ON %s(%s)"
+        sql_cmd=sql%('_'.join(keys),table,','.join(keys))
+        cur.execute(sql_cmd)
+      if dbtype == "mysql":
+        sql = """SELECT COUNT(1) IndexIsThere FROM INFORMATION_SCHEMA.STATISTICS
+            WHERE table_schema=DATABASE() AND table_name='%s' AND 
+            index_name='keys_%s'"""
+        sql_cmd = sql%(table,'_'.join(keys))
+        # print sql_cmd
+        cur.execute(sql_cmd)
+        flag = cur.fetchone()[0]
+        # print "flag =",flag
+        if flag == 0:
+          sql="CREATE UNIQUE INDEX keys_%s ON %s(%s)"
+          sql_cmd=sql%('_'.join(keys),table,','.join(keys))
+          cur.execute(sql_cmd)
     db.commit()
     self.cols=cols
     self.keys=keys
@@ -62,22 +78,26 @@ class SQLTable(object):
     data = [('abc', 'testing')]
     cur.executemany(sql_cmd, data)
     db.commit()
-  def insertl(self,data,replace=True):
-    db=self.db;table=self.name
+  def insertl(self,data,artype="?",replace=True):
+    db=self.db
+    table=self.name 
+    dbtype = self.dbtype
     if replace:
       sql="REPLACE INTO %s VALUES (%s)"
     else:
       sql="INSERT INTO %s VALUES (%s)"
     cur=db.cursor()
-    cur.execute("begin IMMEDIATE transaction")
+    if dbtype == "sql":
+      cur.execute("begin IMMEDIATE transaction")
     if len(data) == 0:
       return
     if not isinstance(data[0], list):
-      vals=','.join(('?',)*len(data))
+      vals=','.join([artype for _ in xrange(len(data))])
       sql_cmd=sql%(table,vals)
       cur.execute(sql_cmd, data)
     else:
-      vals=','.join(('?',)*len(data[0]))
+      vals=','.join([artype for _ in xrange(len(data[0]))])
+      # print vals
       sql_cmd=sql%(table,vals)
       cur.executemany(sql_cmd, data)
       count = cur.rowcount

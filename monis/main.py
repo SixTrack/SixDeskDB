@@ -12,8 +12,11 @@ from SixdeskDB import SixDeskDB
 from DA_FullStat_v2 import main2
 from DA_FullStat_public import main1
 from mad6t import Mad6tOut
+import config
+from mysql import dbtocentral
 # import os
 import sys
+import os
 
 if __name__ == "__main__":
   args = sys.argv[1:]
@@ -36,6 +39,8 @@ if __name__ == "__main__":
       print "optional switch\nbasedir:\tSpecify dir for study creation\n"
       print "verbose:\tif used prints messages\n"
       print "dryrun:\tif used will not create files or directories"
+      print "dbtocentral <studyname> STORE LOCAL DB DATA ON CENTRALIZED DATABASE" 
+      print "optional switch\nbo:\tif used stores files from BOINC dir to CENTRALIZED DB\n"
       print "DA <studyname> CREATE DARE FILES FOR STUDIES"
       print "mad <studyname> MAD RUN ANALYSIS AND CHECK"
       print "join10 <studyname> PERFORM RUN_JOIN10 FOR STUDY PROVIDED"
@@ -80,6 +85,24 @@ if __name__ == "__main__":
         a.load_mad6t_results()
         a.load_six_beta()
         a.load_six_input_results()
+    elif args[0] in ("dbtocentral"):
+      if len(args) >= 2:
+        host = config.host
+        user = config.user
+        password = config.password
+        db = config.db
+        bo = False
+      elif len(args) == 3:
+        if "bo" in args:
+          bo = True
+          del args[args.index("bo")]
+        else:
+          print "invalid argument"
+          exit(1)
+      else:
+        print 'Invalid number of Arguments'
+        exit(1)
+      dbtocentral(host,user,password,db,args[1],bo)
     elif args[0] in ("info"):
       if len(args)==2:
         a = SixDeskDB(args[1])
