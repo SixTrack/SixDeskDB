@@ -1141,6 +1141,157 @@ class SixDeskDB(object):
     pl.plot(savg,tmax,label='max')
     return table
 
+  def read10b(studyName):
+    database='%s.db'%(studyName)
+    if os.path.isfile(database):
+        sd=SixDeskDB(studyName)
+    else:
+        print "ERROR: file  %s does not exists! You should create first the database." %(database)
+        sys.exit()
+    f2 = open('DA_%s.txt'%studyName, 'w')
+    
+    Elhc= 2.5                    #normalized emittance as in "general input"
+    Einj= 7460.5                 #gamma as in "general input"
+    # DO NOT EDIT BEYOND HERE IF YOU'RE NOT REALLY SURE  =======================================    
+
+    rectype=[('seed','int'),('betx'    ,'float'),('bety'    ,'float'),('sigx1'   ,'float'),('sigy1'   ,'float'),('emitx'   ,'float'),('emity'   ,'float'),
+            ('sigxavgnld' ,'float') ,('sigyavgnld' ,'float'),('betx2'   ,'float'),('bety2'   ,'float'),('distp'   ,'float'),('dist'    ,'float'),
+            ('sturns1' ,'int')   ,('sturns2' ,'int')  ,('turn_max','int')  ,('amp1'    ,'float'),('amp2'    ,'float'),('angle'   ,'float')]
+    names='seed,betx,bety,sigx1,sigy1,emitx,emity,sigxavgnld,sigyavgnld,betx2,bety2,distp,dist,sturns1,sturns2,turn_max,amp1,amp2,angle'
+    outtype=[('study','S100'),('seed','int'),('angle','float'),('achaos','float'),('achaos1','float'),('alost1','float'),('alost2','float'),('Amin','float'),('Amax','float')]
+    LHCDesName=sd.env_var['LHCDesName']
+    turnse=sd.env_var['turnse']
+    sixdesktunes=sd.env_var['tunex']+"_"+sd.env_var['tuney']
+    ns1l=sd.env_var['ns1l']
+    ns2l=sd.env_var['ns2l']
+
+    tmp=np.array(sd.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
+    Elhc,Einj = sd.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
+    anumber=1
+    for angle in np.unique(tmp['angle']):
+        f = open('DAres_%s.%s.%s.%d'%(LHCDesName,sixdesktunes,turnse,anumber), 'w')
+        for seed in np.unique(tmp['seed']):
+            ich1 = 0
+            ich2 = 0
+            ich3 = 0
+            icount = 1.
+            itest = 0
+            iin  = -999
+            iend = -999
+            alost1 = 0.
+            alost2 = 0.
+            achaos = 0
+            achaos1 = 0
+            mask=[(tmp['betx']>0) & (tmp['emitx']>0) & (tmp['bety']>0) & (tmp['emity']>0) & (tmp['angle']==angle) & (tmp['seed']==seed)]
+            inp=tmp[mask]
+            if inp.size<2 : 
+                print 'not enought data for angle = %s' %angle
+                break
+
+            zero = 1e-10
+            for itest in range(0,inp.size):
+                if inp['betx'][itest]>zero and inp['emitx'][itest]>zero : inp['sigx1'][itest] =  np.sqrt(inp['betx'][itest]*inp['emitx'][itest]) 
+                if inp['bety'][itest]>zero and inp['emity'][itest]>zero : inp['sigy1'][itest] =  np.sqrt(inp['bety'][itest]*inp['emity'][itest]) 
+                if inp['betx'][itest]>zero and inp['emitx'][itest]>zero and inp['bety'][itest]>zero and inp['emity'][itest]>zero: itest+=1
+
+            iel=inp.size-1
+            rat=0
+
+            if inp['sigx1'][0]>0:  
+                rat=pow(inp['sigy1'][0],2)*inp['betx'][0]/(pow(inp['sigx1'][0],2)*inp['bety'][0])
+            if pow(inp['sigx1'][0],2)*inp['bety'][0]<pow(inp['sigy1'][0],2)*inp['betx'][0]:
+                rat=2        
+            if inp['emity'][0]>inp['emitx'][0]:
+                rat=0
+                dummy=np.copy(inp['betx'])
+                inp['betx']=inp['bety']
+                inp['bety']=dummy
+                dummy=np.copy(inp['betx2'])
+                inp['betx2']=inp['bety2']
+                inp['bety2']=dummy
+                dummy=np.copy(inp['sigx1'])
+                inp['sigx1']=inp['sigy1']
+                inp['sigy1']=dummy
+                dummy=np.copy(inp['sigxavgnld'])
+                inp['sigxavgnld']=inp['sigyavgnld']
+                inp['sigyavgnld']=dummy
+                dummy=np.copy(inp['emitx']) 
+                inp['emitx']=inp['emity']
+                inp['emity']=dummy
+
+            sigma=np.sqrt(inp['betx'][0]*Elhc/Einj)
+            if abs(inp['emity'][0])>0 and abs(inp['sigx1'][0])>0:
+                if abs(inp['emitx'][0])<zero :
+                    rad=np.sqrt(1+(pow(inp['sigy1'][0],2)*inp['betx'][0])/(pow(inp['sigx1'][0],2)*inp['bety'][0]))/sigma
+                else:
+                    rad=np.sqrt((abs(inp['emitx'][0])+abs(inp['emity'][0]))/abs(inp['emitx'][0]))/sigma
+            else:
+                rad=1
+            if abs(inp['sigxavgnld'][0])>zero and abs(inp['bety'][0])>zero and sigma > 0:
+                if abs(inp['emitx'][0]) < zero :
+                    rad1=np.sqrt(1+(pow(inp['sigyavgnld'][0],2)*inp['betx'][0])/(pow(inp['sigxavgnld'][0],2)*inp['bety'][0]))/sigma
+                else:
+                    rad1=(inp['sigyavgnld'][0]*np.sqrt(inp['betx'][0])-inp['sigxavgnld'][0]*np.sqrt(inp['bety2'][0]))/(inp['sigxavgnld'][0]*np.sqrt(inp['bety'][0])-inp['sigyavgnld'][0]*np.sqrt(inp['betx2'][0]))
+                    rad1=np.sqrt(1+rad1*rad1)/sigma
+            else:
+                rad1 = 1
+            for i in range(0,iel+1):
+                if ich1 == 0 and (inp['distp'][i] > 2. or inp['distp'][i]<=0.5):
+                    ich1 = 1
+                    achaos=rad*inp['sigx1'][i]
+                    iin=i
+                if ich3 == 0 and inp['dist'][i] > 1e-2 :
+                    ich3=1
+                    iend=i
+                    achaos1=rad*inp['sigx1'][i]
+                if ich2 == 0 and  (inp['sturns1'][i]<inp['turn_max'][i] or inp['sturns2'][i]<inp['turn_max'][i]):
+                    ich2 = 1
+                    alost2 = rad*inp['sigx1'][i]
+            icount=1.
+            if iin != -999 and iend == -999 : iend=iel  
+            if iin != -999 and iend > iin :    
+                for i in range(iin,iend+1) :
+                    if(abs(rad*inp['sigx1'][i])>zero):
+                        alost1 += rad1 * inp['sigxavgnld'][i]/rad/inp['sigx1'][i]
+                    if(i!=iend):
+                        icount+=1.
+                alost1 = alost1/icount
+                if alost1 >= 1.1 or alost1 <= 0.9:  alost1= -1. * alost1
+            else:
+                alost1 = 1.0
+    
+            alost1=alost1*alost2
+            name2 = "DAres."+studyName+"."+sixdesktunes+"."+turnse
+            name1= '%s%ss%s%s-%s%s.%d'%(LHCDesName,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
+            if(seed<10):
+                name1+=" "
+            if(anumber<10):
+                name1+=" "
+            f.write(' %s         %6f    %6f    %6f    %6f    %6f   %6f\n'%( name1,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
+            f2.write('%s %s %s %s %s %s %s %s %s \n'%( name2, seed,angle,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
+        anumber+=1
+        f.close()
+    f2.close()
+    
+    f = open('DA_%s.txt'%studyName, 'r')
+    final=np.genfromtxt(f,dtype=outtype)
+    f.close()
+
+    f1 = open('DA_%s_summary.txt'%studyName, 'w')
+    i=0
+    for angle in np.unique(final['angle']):
+        i+=1
+        study=final['study'][0]
+        mini = np.min(np.abs(final['alost1'][(final['angle']==angle)]))
+        mean = np.mean(np.abs(final['alost1'][(final['angle']==angle)&(final['alost1']!=0)]))
+        maxi = np.max(np.abs(final['alost1'][(final['angle']==angle)]))
+        nega = len(final['alost1'][(final['angle']==angle)&(final['alost1']<0)])
+        Amin = np.min(final['Amin'][final['angle']==angle])
+        Amax = np.max(final['Amax'][final['angle']==angle])
+        print study, angle, mini , mean, maxi,nega ,  Amin, Amax
+        f1.write('%s %d %.2f %.2f %.2f %.0f %.2f %.2f\n'%(name2, i, mini , mean, maxi,nega ,  Amin, Amax))
+
+    f1.close()
 
 if __name__ == '__main__':
   SixDeskDB.from_dir('/home/monis/Desktop/GSOC/files/w7/sixjobs/')
