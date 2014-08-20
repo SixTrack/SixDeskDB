@@ -1150,7 +1150,7 @@ class SixDeskDB(object):
             ('sturns1' ,'int')   ,('sturns2' ,'int')  ,('turn_max','int')  ,('amp1'    ,'float'),('amp2'    ,'float'),('angle'   ,'float')]
     names='seed,betx,bety,sigx1,sigy1,emitx,emity,sigxavgnld,sigyavgnld,betx2,bety2,distp,dist,sturns1,sturns2,turn_max,amp1,amp2,angle'
     outtype=[('study','S100'),('seed','int'),('angle','float'),('achaos','float'),('achaos1','float'),('alost1','float'),('alost2','float'),('Amin','float'),('Amax','float')]
-    
+
     LHCDesName=self.env_var['LHCDesName']
     turnse=self.env_var['turnse']
     sixdesktunes=self.env_var['tunex']+"_"+self.env_var['tuney']
@@ -1269,7 +1269,7 @@ class SixDeskDB(object):
     final=np.genfromtxt(f,dtype=outtype)
     f.close()
 
-    f1 = open('DA_%s_summary.txt'%self.studyName, 'w')
+    f1 = open('DAres_%s.%s.%s.plot'%(LHCDesName,sixdesktunes,turnse), 'w')
     i=0
     for angle in np.unique(final['angle']):
         i+=1
