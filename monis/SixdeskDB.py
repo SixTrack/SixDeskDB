@@ -1141,32 +1141,24 @@ class SixDeskDB(object):
     pl.plot(savg,tmax,label='max')
     return table
 
-  def read10b(studyName):
-    database='%s.db'%(studyName)
-    if os.path.isfile(database):
-        sd=SixDeskDB(studyName)
-    else:
-        print "ERROR: file  %s does not exists! You should create first the database." %(database)
-        sys.exit()
-    f2 = open('DA_%s.txt'%studyName, 'w')
-    
-    Elhc= 2.5                    #normalized emittance as in "general input"
-    Einj= 7460.5                 #gamma as in "general input"
-    # DO NOT EDIT BEYOND HERE IF YOU'RE NOT REALLY SURE  =======================================    
+  def read10b(self):
+    database= '%s.db'%(self.studyName)
+    f2 = open('DA_%s.txt'%self.studyName, 'w')   
 
     rectype=[('seed','int'),('betx'    ,'float'),('bety'    ,'float'),('sigx1'   ,'float'),('sigy1'   ,'float'),('emitx'   ,'float'),('emity'   ,'float'),
             ('sigxavgnld' ,'float') ,('sigyavgnld' ,'float'),('betx2'   ,'float'),('bety2'   ,'float'),('distp'   ,'float'),('dist'    ,'float'),
             ('sturns1' ,'int')   ,('sturns2' ,'int')  ,('turn_max','int')  ,('amp1'    ,'float'),('amp2'    ,'float'),('angle'   ,'float')]
     names='seed,betx,bety,sigx1,sigy1,emitx,emity,sigxavgnld,sigyavgnld,betx2,bety2,distp,dist,sturns1,sturns2,turn_max,amp1,amp2,angle'
     outtype=[('study','S100'),('seed','int'),('angle','float'),('achaos','float'),('achaos1','float'),('alost1','float'),('alost2','float'),('Amin','float'),('Amax','float')]
-    LHCDesName=sd.env_var['LHCDesName']
-    turnse=sd.env_var['turnse']
-    sixdesktunes=sd.env_var['tunex']+"_"+sd.env_var['tuney']
-    ns1l=sd.env_var['ns1l']
-    ns2l=sd.env_var['ns2l']
+    
+    LHCDesName=self.env_var['LHCDesName']
+    turnse=self.env_var['turnse']
+    sixdesktunes=self.env_var['tunex']+"_"+self.env_var['tuney']
+    ns1l=self.env_var['ns1l']
+    ns2l=self.env_var['ns2l']
 
-    tmp=np.array(sd.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
-    Elhc,Einj = sd.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
+    tmp=np.array(self.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
+    Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     anumber=1
     for angle in np.unique(tmp['angle']):
         f = open('DAres_%s.%s.%s.%d'%(LHCDesName,sixdesktunes,turnse,anumber), 'w')
@@ -1261,7 +1253,7 @@ class SixDeskDB(object):
                 alost1 = 1.0
     
             alost1=alost1*alost2
-            name2 = "DAres."+studyName+"."+sixdesktunes+"."+turnse
+            name2 = "DAres."+self.studyName+"."+sixdesktunes+"."+turnse
             name1= '%s%ss%s%s-%s%s.%d'%(LHCDesName,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
             if(seed<10):
                 name1+=" "
@@ -1273,11 +1265,11 @@ class SixDeskDB(object):
         f.close()
     f2.close()
     
-    f = open('DA_%s.txt'%studyName, 'r')
+    f = open('DA_%s.txt'%self.studyName, 'r')
     final=np.genfromtxt(f,dtype=outtype)
     f.close()
 
-    f1 = open('DA_%s_summary.txt'%studyName, 'w')
+    f1 = open('DA_%s_summary.txt'%self.studyName, 'w')
     i=0
     for angle in np.unique(final['angle']):
         i+=1
