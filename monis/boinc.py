@@ -7,11 +7,7 @@
 # 
 # NOTA: please use python version >=2.6 import time
 
-<<<<<<< HEAD
 from SixdeskDB import SixDeskDB
-=======
-from SixdeskDB import *
->>>>>>> 35ae74d6ec7f2e965c0319c59e750499eec189aa
 import MySQLdb
 from warnings import filterwarnings
 from config import *
