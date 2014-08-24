@@ -23,7 +23,6 @@ import os
 
 def dbtocentral(host,user,password,db,localdb,bo=False):
   try:
-  
     filterwarnings('ignore', category = Warning)
     # conn = connect(args,user,password)
     # sql = "create database if not exists %s"

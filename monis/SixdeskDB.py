@@ -110,15 +110,18 @@ class SixDeskDB(object):
     cols=SQLTable.cols_from_fields(tables.Files.fields)
     tab1 = SQLTable(conn,'files',cols,tables.Files.key)
     env_var['env_timestamp']=str(time.time())
-    env_var1 = [[i,env_var[i]] for i in env_var.keys()]
+    mtime = os.path.getmtime(studyDir+"/sixdeskenv")
+    env_var1 = [[i,env_var[i],mtime] for i in env_var.keys()]
     tab.insertl(env_var1)
     path = os.path.join(studyDir, 'sixdeskenv')
     content = sqlite3.Binary(compressBuf(path))
-    path = path.replace(env_var['basedir']+'/','')
+    path = 'sixdeskenv'
+    #path = path.replace(env_var['basedir']+'/','')
     extra_files.append([path, content])
     path = os.path.join(studyDir, 'sysenv')
     content = sqlite3.Binary(compressBuf(path))
-    path = path.replace(env_var['basedir']+'/','')
+    path = 'sysenv'
+    #path = path.replace(env_var['basedir']+'/','')
     extra_files.append([path, content])
     tab1.insertl(extra_files) 
 
@@ -152,7 +155,8 @@ class SixDeskDB(object):
       print "study found updating..."
       lst = tab.select("keyname,value")
       cls = SixDeskDB(env_var['LHCDescrip'],basedir,verbose,dryrun)
-      cls.set_variable(lst)  
+      mtime = os.path.getmtime(studyDir+"/sixdeskenv")
+      cls.set_variable(lst,mtime)  
     else:
       print "study not found inserting..."
     SixDeskDB.st_env(conn,env_var,studyDir)
@@ -197,7 +201,7 @@ class SixDeskDB(object):
       self.basedir = os.path.realpath(__file__).replace("SixdeskDB.py","")
       # print self.basedir
       self.basedir = self.basedir.replace("SixdeskDB.pyc","")
-      # print self.basedir
+      print 'basedir =',self.basedir
     if not self.basedir.endswith('/'):
       self.basedir += '/'
       # print self.basedir
@@ -206,11 +210,10 @@ class SixDeskDB(object):
         if env_var['basedir'] in self.env_var[i]:
           self.env_var[i] = self.env_var[i].replace(
             env_var['basedir']+'/',self.basedir)
-          # print self.env_var[i]
-    # exit(0)
+          #print self.env_var[i]
 
 
-  def set_variable(self,lst):
+  def set_variable(self,lst,mtime):
     '''set additional variables besides predefined environment variables
         in sixdeskenv and sysenv'''
     conn = self.conn
@@ -239,7 +242,7 @@ class SixDeskDB(object):
         upflag = 0
     if flag == 1:
       env_var['env_timestamp']=str(time.time())
-    env_var = [[i,env_var[i]] for i in env_var.keys()]
+    env_var = [[i,env_var[i],mtime] for i in env_var.keys()]
     tab.insertl(env_var)
 
   def info(self): 
@@ -302,7 +305,7 @@ class SixDeskDB(object):
             path = os.path.join(dirName, files)
             content = sqlite3.Binary(compressBuf(path))
             path = path.replace(
-              env_var['basedir']+'/','')
+              env_var['scratchdir']+'/','')
             extra_files.append([path, content])
       if rows:
         lst = dict_to_list(rows)
@@ -325,7 +328,7 @@ class SixDeskDB(object):
           path = os.path.join(dirName, files)
           content = sqlite3.Binary(compressBuf(path))
           path = path.replace(
-            env_var['basedir']+'/','')
+            env_var['scratchdir']+'/','')
           extra_files.append([path, content])
     if extra_files:
       tab1.insertl(extra_files)
@@ -336,6 +339,9 @@ class SixDeskDB(object):
     env_var = self.orig_env_var
     cols = SQLTable.cols_from_fields(tables.Mad_Res.fields)
     tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
+    maxtime = tab.select("max(fort_mtime)")[0][0]
+    if not maxtime:
+      maxtime = 0
     rows = []
     cmd = "find %s -name 'fort.%s*.gz'"
     rows = []
@@ -345,54 +351,67 @@ class SixDeskDB(object):
     print 'fort.2 files =',len(a)
     print 'fort.8 files =',len(b)
     print 'fort.16 files =',len(c)
+    up_a = up_b = up_c = 0
     for i in a:
-      seed = i.split('/')[-1].split('_')[1].replace(".gz","")
-      row = [seed,sqlite3.Binary(open(i, 'r').read())]
-      f8 = i.replace("fort.2","fort.8")
-      mtime = os.path.getmtime(i)
-      if f8 in b:
-        row.extend([sqlite3.Binary(open(f8, 'r').read())])
-        del b[b.index(f8)]
-      else:
-        row.extend([""])
-        print 'missing file',f8,'inserting null instead'
-      f16 = i.replace("fort.2","fort.16")
-      if f16 in c:
-        row.extend([sqlite3.Binary(open(f16, 'r').read())])
-        del c[c.index(f16)]
-      else:
-        row.extend([""])
-        print 'missing file',f16,'inserting null instead'
-      row.extend([mtime])
-      rows.append(row)
+      if os.path.getmtime(i) > maxtime:
+        seed = i.split('/')[-1].split('_')[1].replace(".gz","")
+        row = [seed,sqlite3.Binary(open(i, 'r').read())]
+        f8 = i.replace("fort.2","fort.8")
+        mtime = os.path.getmtime(i)
+        if f8 in b:
+          row.extend([sqlite3.Binary(open(f8, 'r').read())])
+          del b[b.index(f8)]
+          up_b += 1
+        else:
+          row.extend([""])
+          print 'missing file',f8,'inserting null instead'
+        f16 = i.replace("fort.2","fort.16")
+        if f16 in c:
+          row.extend([sqlite3.Binary(open(f16, 'r').read())])
+          del c[c.index(f16)]
+          up_c += 1
+        else:
+          row.extend([""])
+          print 'missing file',f16,'inserting null instead'
+        row.extend([mtime])
+        rows.append(row)
+        up_a += 1
     for i in b:
-      seed = i.split('/')[-1].split('_')[1].replace(".gz","")
-      print 'missing file',
-      print '%s inserting null instead'%(i.replace('fort.8','fort.2'))
-      row = [seed,"",sqlite3.Binary(open(i, 'r').read())]
-      mtime = os.path.getmtime(i)
-      f16 = i.replace('fort.8','fort.16')
-      if f16 in c:
-        row.extend([sqlite3.Binary(open(f16, 'r').read())])
-        del c[c.index(f16)]
-      else:
-        row.extend([""])
-        print 'missing file',f16,'inserting null instead'
-      row.extend([mtime])
-      rows.append(row)
+      if os.path.getmtime(i) > maxtime:
+        seed = i.split('/')[-1].split('_')[1].replace(".gz","")
+        print 'missing file',
+        print '%s inserting null instead'%(i.replace('fort.8','fort.2'))
+        row = [seed,"",sqlite3.Binary(open(i, 'r').read())]
+        mtime = os.path.getmtime(i)
+        f16 = i.replace('fort.8','fort.16')
+        if f16 in c:
+          row.extend([sqlite3.Binary(open(f16, 'r').read())])
+          del c[c.index(f16)]
+          up_c += 1
+        else:
+          row.extend([""])
+          print 'missing file',f16,'inserting null instead'
+        row.extend([mtime])
+        rows.append(row)
+        up_b += 1
     for i in c:
-      seed = i.split('/')[-1].split('_')[1].replace(".gz","")
-      print 'missing file',
-      print '%s inserting null instead'%(i.replace('fort.16','fort.2'))
-      print 'missing file',
-      print '%s inserting null instead'%(i.replace('fort.16','fort.8'))
-      row = [seed,"","",sqlite3.Binary(open(i, 'r').read())]
-      mtime = os.path.getmtime(i)
-      row.extend([mtime])
-      rows.append(row)
+      if os.path.getmtime(i) > maxtime:
+        seed = i.split('/')[-1].split('_')[1].replace(".gz","")
+        print 'missing file',
+        print '%s inserting null instead'%(i.replace('fort.16','fort.2'))
+        print 'missing file',
+        print '%s inserting null instead'%(i.replace('fort.16','fort.8'))
+        row = [seed,"","",sqlite3.Binary(open(i, 'r').read())]
+        mtime = os.path.getmtime(i)
+        row.extend([mtime])
+        rows.append(row)
+        up_c += 1
     if rows:
       tab.insertl(rows)
       rows = {}
+    print 'no of fort.2 updated =',up_a
+    print 'no of fort.8 updated =',up_b
+    print 'no of fort.16 updated =',up_c
 
   def st_six_beta(self,env_var):
     ''' store general_input, sixdesktunes, betavalues '''
@@ -420,7 +439,7 @@ class SixDeskDB(object):
       content = sqlite3.Binary(compressBuf(path))
       path = path.replace(
         env_var['basedir']+'/','')
-      extra_files.append([path, content])
+      #extra_files.append([path, content])
     cmd = "find %s -name 'betavalues' -o -name 'sixdesktunes'"%(workdir)
     a = os.popen(cmd).read().split('\n')[:-1] 
     if not a:
@@ -458,6 +477,11 @@ class SixDeskDB(object):
     env_var = self.orig_env_var
     cols = SQLTable.cols_from_fields(tables.Six_In.fields)
     tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
+    #tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
+    maxtime = tab.select("max(mtime)")[0][0]
+    count = 0
+    if not maxtime:
+      maxtime = 0
     cols = SQLTable.cols_from_fields(tables.Files.fields)
     tab1 = SQLTable(conn,'files',cols,tables.Files.key)
     workdir = os.path.join(env_var['sixdesktrack'],env_var['LHCDescrip'])
@@ -470,22 +494,24 @@ class SixDeskDB(object):
     for dirName in a:
       files = dirName.split('/')[-1]
       dirName = dirName.replace('/'+files,'')
-      if not ('-' in dirName):
+      if not ('-' in dirName) \
+        and (os.path.getmtime(dirName)>maxtime):
+        mtime = os.path.getmtime(dirName)
         dirn = dirName.replace(workdir + '/', '')
         dirn = re.split('/|_', dirn)
         dirn = [six_id] + dirn
         dirn.extend([sqlite3.Binary(open(
           os.path.join(dirName, files), 'r'
         ).read()
-        )])
+        ),mtime])
         rows.append(dirn)
         dirn = []
         six_id += 1
+        count += 1
     if rows:
       tab.insertl(rows)
       rows = []
-    if rows:
-      tab.insertl(rows)
+    print 'no of fort.3 updated =',count
 
   def st_six_results(self,env_var):
     '''store fort.10 values'''
@@ -565,6 +591,7 @@ class SixDeskDB(object):
     ''' load extra files from DB '''
     verbose = self.verbose
     dryrun = self.dryrun
+    env_var = self.env_var
     conn = self.conn
     cur = conn.cursor()
     # env_var = self.env_var
@@ -575,7 +602,12 @@ class SixDeskDB(object):
     files = cur.fetchall()
     #print len(files)
     for file in files:
-      path = os.path.join(basedir,str(file[0]))
+      if 'sixdeskenv' or 'sysenv' in str(file[0]):
+        path = os.path.join(env_var['scratchdir'],str(file[0]))
+      elif 'mad.dorun' or 'fort.3' in str(file[0]):
+        path = os.path.join(env_var['scratchdir'],str(file[0]))
+      else:
+        path = os.path.join(basedir,str(file[0]))
       path1 = path.replace(path.split('/')[-1],"")
       if not os.path.exists(path1):
         if not dryrun:
@@ -585,6 +617,9 @@ class SixDeskDB(object):
       if verbose:
         print 'creating file',path.split('/')[-1]
       if not dryrun:
+        if os.path.exists(path):
+          print 'file already exists please remove it and try again'
+          exit(0)
         f = open(path,'w')
         if '.gz' in path:
           f.write(str(file[1]))
@@ -612,17 +647,29 @@ class SixDeskDB(object):
           print 'creating mad_in, mad_out, lsf and log files'
       mad_in,mad_out,mad_lsf,mad_log = [str(file[i]) for i in range(2,6)]
       if not dryrun:
-        f = open(
-          path+'/'+env_var['LHCDescrip']+'.'+str(file[1]),'w')
+        temp = path+'/'+env_var['LHCDescrip']+'.'+str(file[1])
+        if os.path.exists(temp):
+          print 'file already exists please remove it and try again'
+          exit(0)
+        f = open(temp,'w')
         f.write(decompressBuf(mad_in))
-        f = open(
-          path+'/'+env_var['LHCDescrip']+'.out.'+str(file[1]),'w')
+        temp = path+'/'+env_var['LHCDescrip']+'.out.'+str(file[1])
+        if os.path.exists(temp):
+          print 'file already exists please remove it and try again'
+          exit(0)
+        f = open(temp,'w')
         f.write(decompressBuf(mad_out))
-        f = open(
-          path+'/mad6t_'+str(file[1])+'.lsf','w')
+        temp = path+'/mad6t_'+str(file[1])+'.lsf'
+        if os.path.exists(temp):
+          print 'file already exists please remove it and try again'
+          exit(0)
+        f = open(temp,'w')
         f.write(decompressBuf(mad_lsf))
-        f = open(
-          path+'/'+env_var['LHCDescrip']+'_mad_'+str(str(file[1])+'.log'),'w')
+        temp = path+'/'+env_var['LHCDescrip']+'_mad_'+str(str(file[1])+'.log')
+        if os.path.exists(temp):
+          print 'file already exists please remove it and try again'
+          exit(0)
+        f = open(temp,'w')
         f.write(decompressBuf(mad_log))
         # f = open(path+'/'+env_var)
         f.close()
@@ -664,24 +711,36 @@ class SixDeskDB(object):
       if verbose:
         print 'creating fort.2_%s.gz at %s'%(seed,path)
       if not dryrun:
+        temp = path+'/fort.2_'+seed+'.gz'
+        if os.path.exists(temp):
+          print 'file already exists please remove it and try again'
+          exit(0)
         if f2:
-          f = open(path+'/fort.2_'+seed+'.gz','w')
+          f = open(temp,'w')
           f.write(f2)
         else:
           print 'fort.2_%s.gz was not created at %s',(seed,path)
       if verbose:
         print 'creating fort.8_%s.gz at %s'%(seed,path)
       if not dryrun:
+        temp = path+'/fort.8_'+seed+'.gz'
+        if os.path.exists(temp):
+          print 'file already exists please remove it and try again'
+          exit(0)
         if f8:
-          f = open(path+'/fort.8_'+seed+'.gz','w')
+          f = open(temp,'w')
           f.write(f8)
         else:
           print 'fort.8_%s.gz was not created at %s',(seed,path)
       if verbose:
         print 'creating fort.16_%s.gz at %s'%(seed,path)
       if not dryrun:
+        temp = path+'/fort.16_'+seed+'.gz'
+        if os.path.exists(temp):
+          print 'file already exists please remove it and try again'
+          exit(0)
         if f16:
-          f = open(path+'/fort.16_'+seed+'.gz','w')
+          f = open(temp,'w')
           f.write(f16)
           f.close()
         else:
@@ -716,20 +775,32 @@ class SixDeskDB(object):
       if verbose:
         print 'creating betavalues at %s'%(path1)
       if not dryrun:
-        f = open(path1+'/betavalues','w')
+        temp = path1+'/betavalues'
+        if os.path.exists(temp):
+          print 'file already exists please remove it and try again'
+          exit(0)
+        f = open(temp,'w')
         f.write(stri)
       stri = str(row[9])+' '+str(row[10])
       if verbose:
         print 'creating mychrom at %s'%(path1)
       if not dryrun:
-        f = open(path1+'/mychrom','w')
+        temp = path1+'/mychrom'
+        if os.path.exists(temp):
+          print 'file already exists please remove it and try again'
+          exit(0)
+        f = open(temp,'w')
         f.write(stri)
       stri = str(row[19])+'\n'+str(row[20])+' '+str(row[21])+'\n'
       stri += str(row[22])+' '+str(row[23])
       if verbose:
         print 'creating sixdesktunes at %s'%(path1)
       if not dryrun:
-        f = open(path1+'/sixdesktunes','w')
+        temp = path1+'/sixdesktunes'
+        if os.path.exists(temp):
+          print 'file already exists please remove it and try again'
+          exit(0)
+        f = open(temp,'w')
         f.write(stri)
         f.close()
 
@@ -758,8 +829,12 @@ class SixDeskDB(object):
           print 'creating directory',path1
       if verbose:
         print 'creating fort.3.gz at %s'%(path1)
+      temp = path1+'/fort.3.gz'
+      if os.path.exists(temp):
+        print 'file already exists please remove it and try again'
+        exit(0)
       if not dryrun:
-        f = open(path1+'/fort.3.gz','w')
+        f = open(temp,'w')
         f.write(str(row[9]))
       sql = """SELECT * from six_results where six_input_id=?"""
       cur.execute(sql,[row[0]])
@@ -772,8 +847,12 @@ class SixDeskDB(object):
         stri += str1 + '\n'
       if verbose:
         print 'creating fort.10.gz at %s'%(path1)
+      temp = path1+'/fort.10.gz'
+      if os.path.exists(temp):
+        print 'file already exists please remove it and try again'
+        exit(0)
       if not dryrun:
-        f = gzip.open(path1+'/fort.10.gz','w')
+        f = gzip.open(temp,'w')
         f.write(stri)
         f.close()
 

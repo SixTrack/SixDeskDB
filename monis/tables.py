@@ -1,7 +1,8 @@
 class Env(object):
   fields=[
   ('keyname','str','key'),
-  ('value','str','value')]
+  ('value','str','value'),
+  ('mtime','double','last modification time')]
   key=['keyname']
 
 class Mad_Run(object):
@@ -63,7 +64,8 @@ class Six_In(object):
   ('amp2', 'double', 'amp2 value'), 
   ('turns', 'string', 'turns value'), 
   ('angle', 'double', 'angle value'), 
-  ('fort3','blob','fort3 file')]
+  ('fort3','blob','fort3 file'),
+  ('mtime','double','last modification time')]
   key=['seed','simul','tunex','tuney','amp1','amp2','turns','angle']
 
 class Six_Res(object):
@@ -130,7 +132,7 @@ class Six_Res(object):
   ('delta', 'float', 'Dummy7'),
   ('dnms', 'float', 'Internal1'),
   ('trttime', 'float', 'Internal2'),
-  ('mtime','float','modification time')]
+  ('mtime','float','last modification time')]
   key=['six_input_id','row_num']
 
 class Files(object):
