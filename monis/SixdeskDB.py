@@ -172,7 +172,7 @@ class SixDeskDB(object):
 
   def __init__(self,studyName,basedir='.',verbose=False,dryrun=False):
     '''initialise variables and location for study creation 
-        or databse creation, usage listed in main.py'''
+        or database creation, usage listed in main.py'''
     self.verbose = verbose
     self.dryrun = dryrun
     self.studyName = studyName
@@ -184,7 +184,7 @@ class SixDeskDB(object):
       self.studyName = studyName.split('/')[-1]
     self.studyName = self.studyName.replace(".db","")
     if not os.path.isfile(db):
-      print "file %s does'nt exist "%(db)
+      print "file %s doesn't exist "%(db)
       print "see if you have typed the name correctly"
       exit(0)
     try:
