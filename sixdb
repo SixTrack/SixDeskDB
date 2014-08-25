@@ -1,0 +1,134 @@
+#!/usr/bin/python
+
+# python executable for Sixdesk
+# Moonis Javed (monis.javed@gmail.com),
+# Riccardo De Maria (riccardo.de.maria@cern.ch)
+# Xavier Valls Pla  (xavier.valls.pla@cern.ch)
+#
+# Needs Python version >=2.6
+
+import sys,os
+
+
+from sixdeskdb import SixDeskDB,Mad6tOut,dbtocentral,config
+
+if __name__ == "__main__":
+  args = sys.argv[1:]
+  # try:
+  #   opts, args = getopt.getopt(sys.argv[1:], "h", ["help","loaddir","loaddb",/
+  #   "DA","mad","join10"])
+  #   # print 'opts',opts
+  #   # print 'args',args
+  # except getopt.error, msg:
+  #   print msg
+  #   print "for help use help"
+  #   sys.exit(2)
+  if args:
+  # try:
+    if args[0] in ("h", "help"):
+      msg="""\
+Usage: sixdb <command> <arguments>
+
+Commands:
+    loaddir <studydir>: load data from from a directory tree into the
+           database. The directory is read from sixdeskenv and sysenv found in
+           studydir (default '.')
+
+    restoredir <database>: restore the directory using data from the database.            Options:
+            -basedir: specify a new root for saving data
+            -verbose: printout the filename name created
+            -dryrun : will not create files and directory
+
+    run_da <database>: compute DAres files from database
+
+    mad <database>: analyse the output of mad6t (HL-LHC specific)
+
+    info <database>: printout information from DataBase.
+    """
+      print msg
+    elif args[0] in ("loaddir","loaddir"):
+      if len(args)==1:
+        SixDeskDB.from_dir()
+      if len(args)==2:
+        SixDeskDB.from_dir(args[1])
+      else:
+        print "too many arguments see help with h or help"
+        exit(0)
+    elif args[0] in ("restoredir","restoredir"):
+      dryrun = verbose = False
+      if "-verbose" in args:
+        verbose = True
+        del args[args.index("-verbose")]
+      if "-dryrun" in args:
+        dryrun = True
+        del args[args.index("-dryrun")]
+      if len(args) == 2:
+        a = SixDeskDB(args[1],'.',verbose,dryrun)
+      elif len(args) == 3:
+        a = SixDeskDB(args[1],args[2],verbose,dryrun)
+      else:
+        print "invalid see help with h or help"
+        exit(0)
+      if a:
+        a.load_extra()
+        a.load_mad6t_run()
+        a.load_mad6t_results()
+        a.load_six_beta()
+        a.load_six_input_results()
+    elif args[0] in ("dbtocentral"):
+      if len(args) >= 2:
+        host = config.host
+        user = config.user
+        password = config.password
+        db = config.db
+        bo = False
+      elif len(args) == 3:
+        if "bo" in args:
+          bo = True
+          del args[args.index("bo")]
+        else:
+          print "invalid argument"
+          exit(1)
+      else:
+        print 'Invalid number of Arguments'
+        exit(1)
+      dbtocentral(host,user,password,db,args[1],bo)
+    elif args[0] in ("info"):
+      if len(args)==2:
+        a = SixDeskDB(args[1])
+        a.info()
+      else:
+        print "invalid see help with h or help"
+        exit(0)
+    elif args[0] in ("DA","DA"):
+      if len(args)==2:
+        a = SixDeskDB(args[1])
+        a.read10b()
+      else:
+        print "invalid see help with h or help"
+        exit(0)
+    elif args[0] in ("mad","mad"):
+      if len(args)==2:
+        a = SixDeskDB(args[1])
+        m = Mad6tOut(**a.env_var)
+        m.check_all()
+      else:
+        print "invalid see help with h or help"
+        exit(0)
+    elif args[0] in ("join10","join10"):
+      if len(args)==2:
+        a = SixDeskDB(args[1])
+        if a.get_missing_fort10 == 0 and a.get_incomplete_fort10 == 0:
+          a.join10()
+      else:
+        print "invalid see help with h or help"
+        exit(0)
+    else:
+      print 'invalid for help use help or h'
+  # except Exception, e:
+  #   print e
+  #   print e.__doc__
+  #   print e.message
+  else:
+    print "too few options: please see help with h or help"
+    exit(0)

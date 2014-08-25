@@ -1,0 +1,29 @@
+digraph G{
+  graph [fontsize=10 fontname="Verdana"];
+  subgraph parameters {
+    node [shape=diamond fontsize=10 fontname="Verdana"];
+    seeds tunes "amplitudes turns angle";
+  }
+  subgraph files {
+    node [shape=record fontsize=10 fontname="Verdana"];
+    sixdeskenv sysenv
+    mask fort3mother1 fort3mother2 fc3aux;
+    fort2 fort8 fort16;
+    fort3 fort10 fort3_opt;
+  }
+  subgraph cluster_1{
+    run_six1 run_six2;
+  }
+  {sixdeskenv} ->
+  {seeds tunes "amplitudes turns angle"
+   mask };
+  {mask; seeds;} -> mad6t -> {fort2; fort8; fort16; fc3aux;};
+  {fort3mother1; fort3mother2; tunes; } -> run_six1 -> {fort3_opt};
+  {fort2; fort8; fort16; fort3_opt} -> sixtrack_local ->{betavalues};
+  {betavalues; fort3mother1; fort3mother2; fc3aux;
+    tunes "amplitudes turns angle";} -> run_six2 -> fort3;
+  {fort2 fort8 fort16 fort3;} -> sixtrack_cluster -> fort10;
+}
+// p -> expand -> {x}
+// x -> map -> (x,v)
+// {(x,v)} -> reduce -> y

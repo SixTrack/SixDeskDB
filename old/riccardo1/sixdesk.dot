@@ -1,0 +1,54 @@
+digraph G{
+  graph [fontsize=10 fontname="Verdana" compound=true];
+  node [shape=record fontsize=10 fontname="Verdana"];
+  { node [shape=diamond fontsize=10 fontname="Verdana"];
+    seed; beta; f10param;}
+  subgraph operations{
+    node [shape=ellipse fontsize=10 fontname="Verdana"];
+    mad6t;
+    run_six;
+    worker [label="LSF or BOINC"];
+  }
+  subgraph cluster0 {
+    sixdeskenv;
+    mask;
+    sysenv;
+    fort3mother;
+    label="sixjobs";
+  }
+  subgraph cluster1 {
+    fc2;
+    fc16;
+    fc8;
+    fc3aux;
+    seed;
+    beta;
+    label="sixtrack_input";
+  }
+  subgraph cluster2 {
+    fort3;
+    fort2;
+    fort16;
+    fort8;
+    fort10;
+    f10param [label="Qx_Qy, a1_a2, angle"];
+    label="track";
+  }
+  sixdeskenv->mad6t;
+  sysenv->mad6t;
+  mask->mad6t [label="seed"];
+  mad6t->{fc2;fc8;fc16;fc3aux;}
+  {sixdeskenv;sysenv} ->run_six;
+  fc3aux->run_six;
+  fort3mother->run_six;
+  f10param->run_six;
+  run_six->fort3;
+  fc2->fort2;
+  fc8->fort8;
+  fc16->fort16;
+  {fort3;fort8;fort2;fort16}->worker;
+  worker->fort10;
+  run_six-> beta -> run_six;
+  run_six-> worker;
+  seed->mad6t;
+}
