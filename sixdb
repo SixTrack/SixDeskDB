@@ -16,7 +16,7 @@ from sixdeskdb import SixDeskDB,Mad6tOut
 if __name__ == "__main__":
   args = sys.argv[1:]
   # try:
-  #   opts, args = getopt.getopt(sys.argv[1:], "h", ["help","loaddir","loaddb",/
+  #   opts, args = getopt.getopt(sys.argv[1:], "h", ["help","load_dir","loaddb",/
   #   "DA","mad","join10"])
   #   # print 'opts',opts
   #   # print 'args',args
@@ -28,11 +28,11 @@ if __name__ == "__main__":
 Usage: sixdb <command> <arguments>
 
 Commands:
-    loaddir <studydir>: load data from from a directory tree into the
+    load_dir <studydir>: load data from from a directory tree into the
            database. The directory is read from sixdeskenv and sysenv found in
            studydir (default '.')
 
-    restoredir <database>: restore the directory using data from the database.            Options:
+    restore_dir <database>: restore the directory using data from the database.            Options:
             -basedir: specify a new root for saving data
             -verbose: printout the filename name created
             -dryrun : will not create files and directory
@@ -47,7 +47,7 @@ Commands:
   # try:
     if args[0] in ("h", "help"):
       print helpmsg
-    elif args[0] in ("loaddir","loaddir"):
+    elif args[0] in ("load_dir","load_dir"):
       if len(args)==1:
         SixDeskDB.from_dir()
       if len(args)==2:
@@ -56,7 +56,7 @@ Commands:
         print "Invocation error: too many arguments see help with h or help"
         print helpmsg
         exit(0)
-    elif args[0] in ("restoredir","restoredir"):
+    elif args[0] in ("restore_dir","restore_dir"):
       dryrun = verbose = False
       if "-verbose" in args:
         verbose = True
