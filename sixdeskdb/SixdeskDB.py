@@ -106,6 +106,21 @@ def guess_range(l):
   stop=l[-1]
   return start,stop,step
 
+def split_fort10fn(fn):
+  ll=fn.split('/')
+  data=ll[-8:-1]
+  study,seed,simul,tunes,rng,turns,angle=data
+  if '-' in rng:
+    join='-'
+  else:
+    join='_'
+  seed=int(seed)
+  tunex,tuney=map(float,tunes.split('_'))
+  amp1,amp2=map(float,rng.split(join))
+  angle=float(angle)
+  turns=10**int(turns[1])
+  return study,seed,tunex,tuney,amp1,amp2,join,turns,angle
+
 class SixDeskDB(object):
   @staticmethod
   def st_env(conn,env_var,studyDir):
@@ -491,14 +506,14 @@ class SixDeskDB(object):
     extra_files = []
     rows = []
     six_id = 1
-    cmd = """find %s -name 'fort.3.gz'"""%(workdir)
-    a = os.popen(cmd).read().split('\n')[:-1]
-    print 'fort.3 files =',len(a)
-    for dirName in a:
-      files = dirName.split('/')[-1]
-      dirName = dirName.replace('/'+files,'')
-      if not ('-' in dirName) \
-        and (os.path.getmtime(dirName)>maxtime):
+    print "Looking for fort.3.gz files in %s"%workdir
+    cmd = """find %s -type f -name 'fort.3.gz'"""%(workdir)
+    #a = os.popen(cmd).read().split('\n')[:-1]
+    #print 'fort.3 files =',len(a)
+    for dirName in os.popen(cmd):
+      dirName,files=os.path.split(dirName.strip())
+      ranges= dirName.split('/')[-3]
+      if '_' in ranges and os.path.getmtime(dirName)>maxtime:
         mtime = os.path.getmtime(dirName)
         dirn = dirName.replace(workdir + '/', '')
         dirn = re.split('/|_', dirn)
@@ -524,7 +539,6 @@ class SixDeskDB(object):
     aff_count = 0
     tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
     workdir = os.path.join(env_var['sixdesktrack'],env_var['LHCDescrip'])
-    print "Looking for fort.10 files in %s"%workdir
     rows = []
     inp = tab.select("""distinct id,seed,simul,tunex,tuney,amp1,amp2,turns,
         angle""")
@@ -534,19 +548,20 @@ class SixDeskDB(object):
     maxtime = tab.select("max(mtime)")[0][0]
     if not maxtime:
       maxtime = 0
-    cmd = "find %s -name 'fort.10.gz'"%(workdir)
-    a = [i for i in os.popen(cmd).read().split('\n')[:-1] if not '-' in i]
-    print 'fort.10 files =',len(a)
-    for dirName in a:
-      files = dirName.split('/')[-1]
-      dirName = dirName.replace('/fort.10.gz','')
-      if 'fort.10' in files and (not '-' in dirName) \
-        and (os.path.getmtime(dirName) > maxtime):
+    print "Looking for fort.10.gz files in %s"%workdir
+    cmd = "find %s -type f -name 'fort.10.gz'"%(workdir)
+    #a = [i for i in os.popen(cmd).read().split('\n')[:-1] if not '-' in i]
+    fort10=[i for i in os.popen(cmd)]
+    print 'fort.10 files =',len(fort10)
+    for dirName in os.popen(cmd):
+      dirName,files=os.path.split(dirName.strip())
+      ranges=dirName.split('/')[-3]
+      if '_' in ranges and os.path.getmtime(dirName) > maxtime:
         mtime = os.path.getmtime(dirName)
         dirn = dirName.replace(workdir+'/','')
         dirn = re.split('/|_',dirn)
         for i in [2,3,4,5,7]:
-          if not ('.' in str(dirn[i])): 
+          if not ('.' in str(dirn[i])):
             dirn[i] += '.0'
         for i in xrange(len(inp)+1):
           if i == len(inp):
@@ -1373,22 +1388,36 @@ class SixDeskDB(object):
     fhtxt.close()
 
     fnplot='DAres.%s.%s.%s.plot'%(LHCDesName,sixdesktunes,turnse)
-    print fnplot
     fhplot = open(fnplot, 'w')
-    i=0
+    fn=0
     for angle in np.unique(final['angle']):
-        i+=1
-        study=final['study'][0]
-        mini = np.min(np.abs(final['alost1'][(final['angle']==angle)]))
-        mean = np.mean(np.abs(final['alost1'][(final['angle']==angle)&(final['alost1']!=0)]))
-        maxi = np.max(np.abs(final['alost1'][(final['angle']==angle)]))
-        nega = len(final['alost1'][(final['angle']==angle)&(final['alost1']<0)])
-        Amin = np.min(final['Amin'][final['angle']==angle])
-        Amax = np.max(final['Amax'][final['angle']==angle])
-        #print study, angle, mini , mean, maxi,nega ,  Amin, Amax
-        fhplot.write('%s %d %.2f %.2f %.2f %.0f %.2f %.2f\n'%(name2, i, mini , mean, maxi,nega ,  Amin, Amax))
+        fn+=1
+        study= final['study'][0]
+        idxangle=final['angle']==angle
+        idx     =idxangle&(final['alost1']!=0)
+        idxneg  =idxangle&(final['alost1']<0)
+        mini =  np.min(np.abs(final['alost1'][idx]))
+        toAvg = np.abs(final['alost1'][idx])
+        i = len(toAvg)
+        mean = np.mean(toAvg)
+        maxi = np.max(np.abs(final['alost1'][idx]))
+        idxneg=(final['angle']==angle)&(final['alost1']<0)
+        nega = len(final['alost1'][idxneg])
+        Amin = np.min(final['Amin'][idxangle])
+        Amax = np.max(final['Amax'][idxangle])
+
+        if(i==0):
+          mini  = -Amax
+          maxi  = -Amax
+          mean  = -Amax
+        elif(i< int(self.env_var['iend'])):
+          maxi = -Amax
+
+        #print study, angle, mini , mean, maxi, nega, Amin, Amax
+        fhplot.write('%s %d %.2f %.2f %.2f %.0f %.2f %.2f\n'%(name2, fn, mini , mean, maxi, nega, Amin, Amax))
 
     fhplot.close()
+    print fnplot
 
 if __name__ == '__main__':
   SixDeskDB.from_dir('/home/monis/Desktop/GSOC/files/w7/sixjobs/')
