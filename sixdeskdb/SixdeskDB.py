@@ -1359,32 +1359,36 @@ class SixDeskDB(object):
     fhtxt.close()
 
     fnplot='DAres.%s.%s.%s.plot'%(LHCDesName,sixdesktunes,turnse)
-    print fnplot
     fhplot = open(fnplot, 'w')
-        fn=0
+    fn=0
     for angle in np.unique(final['angle']):
         fn+=1
         study= final['study'][0]
-        mini = np.min(np.abs(final['alost1'][(final['angle']==angle)]))
-        toAvg = np.abs(final['alost1'][(final['angle']==angle)&(final['alost1']!=0)])
+        idxangle=final['angle']==angle
+        idx     =idxangle&(final['alost1']!=0)
+        idxneg  =idxangle&(final['alost1']<0)
+        mini =  np.min(np.abs(final['alost1'][idx]))
+        toAvg = np.abs(final['alost1'][idx])
         i = len(toAvg)
         mean = np.mean(toAvg)
-        maxi = np.max(np.abs(final['alost1'][(final['angle']==angle)]))
-        nega = len(final['alost1'][(final['angle']==angle)&(final['alost1']<0)])
-        Amin = np.min(final['Amin'][final['angle']==angle])
-        Amax = np.max(final['Amax'][final['angle']==angle])
+        maxi = np.max(np.abs(final['alost1'][idx]))
+        idxneg=(final['angle']==angle)&(final['alost1']<0)
+        nega = len(final['alost1'][idxneg])
+        Amin = np.min(final['Amin'][idxangle])
+        Amax = np.max(final['Amax'][idxangle])
 
-        if(i<0):
+        if(i==0):
           mini  = -Amax
           maxi  = -Amax
-          mean  = -Amax 
+          mean  = -Amax
         elif(i< int(self.env_var['iend'])):
           maxi = -Amax
-        
-        print study, angle, mini , mean, maxi, nega, Amin, Amax
-        f1.write('%s %d %.2f %.2f %.2f %.0f %.2f %.2f\n'%(name2, fn, mini , mean, maxi, nega, Amin, Amax))
+
+        #print study, angle, mini , mean, maxi, nega, Amin, Amax
+        fhplot.write('%s %d %.2f %.2f %.2f %.0f %.2f %.2f\n'%(name2, fn, mini , mean, maxi, nega, Amin, Amax))
 
     fhplot.close()
+    print fnplot
 
 if __name__ == '__main__':
   SixDeskDB.from_dir('/home/monis/Desktop/GSOC/files/w7/sixjobs/')
