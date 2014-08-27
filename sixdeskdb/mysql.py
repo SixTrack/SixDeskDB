@@ -22,7 +22,7 @@ from sqltable import SQLTable
 try:
   from MySQLdb import connect, Error
 except ImportError:
-    print "Waring no MySQLdb found, please install to connect MySql database"
+    print "Warning no MySQLdb found, please install to connect MySql database"
     raise ImportError
 
 import tables
