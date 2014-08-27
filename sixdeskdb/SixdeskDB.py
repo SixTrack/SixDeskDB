@@ -25,7 +25,7 @@ try:
   import matplotlib.pyplot as pl
   import scipy.signal
 except ImportError:
-  print "No module found: numpy matplotlib and scipy modules should be present"
+  print "No module found: numpy matplotlib and scipy modules should be present to run sixdb"
   raise ImportError
 
 import tables
