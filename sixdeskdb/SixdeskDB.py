@@ -106,6 +106,21 @@ def guess_range(l):
   stop=l[-1]
   return start,stop,step
 
+def split_fort10fn(fn):
+  ll=fn.split('/')
+  data=ll[-8:-1]
+  study,seed,simul,tunes,rng,turns,angle=data
+  if '-' in rng:
+    join='-'
+  else:
+    join='_'
+  seed=int(seed)
+  tunex,tuney=map(float,tunes.split('_'))
+  amp1,amp2=map(float,rng.split(join))
+  angle=float(angle)
+  turns=10**int(turns[1])
+  return study,seed,tunex,tuney,amp1,amp2,join,turns,angle
+
 class SixDeskDB(object):
   @staticmethod
   def st_env(conn,env_var,studyDir):
@@ -493,13 +508,12 @@ class SixDeskDB(object):
     six_id = 1
     print "Looking for fort.3.gz files in %s"%workdir
     cmd = """find %s -type f -name 'fort.3.gz'"""%(workdir)
-    a = os.popen(cmd).read().split('\n')[:-1]
-    print 'fort.3 files =',len(a)
-    for dirName in a:
-      files = dirName.split('/')[-1]
-      dirName = dirName.replace('/'+files,'')
-      if not ('-' in dirName) \
-        and (os.path.getmtime(dirName)>maxtime):
+    #a = os.popen(cmd).read().split('\n')[:-1]
+    #print 'fort.3 files =',len(a)
+    for dirName in os.popen(cmd):
+      dirName,files=os.path.split(dirName.strip())
+      ranges= dirName.split('/')[-3]
+      if '_' in ranges and os.path.getmtime(dirName)>maxtime:
         mtime = os.path.getmtime(dirName)
         dirn = dirName.replace(workdir + '/', '')
         dirn = re.split('/|_', dirn)
@@ -536,13 +550,13 @@ class SixDeskDB(object):
       maxtime = 0
     print "Looking for fort.10.gz files in %s"%workdir
     cmd = "find %s -type f -name 'fort.10.gz'"%(workdir)
-    a = [i for i in os.popen(cmd).read().split('\n')[:-1] if not '-' in i]
-    print 'fort.10 files =',len(a)
-    for dirName in a:
-      files = dirName.split('/')[-1]
-      dirName = dirName.replace('/fort.10.gz','')
-      if 'fort.10' in files and (not '-' in dirName) \
-        and (os.path.getmtime(dirName) > maxtime):
+    #a = [i for i in os.popen(cmd).read().split('\n')[:-1] if not '-' in i]
+    fort10=[i for i in os.popen(cmd)]
+    print 'fort.10 files =',len(fort10)
+    for dirName in os.popen(cmd):
+      dirName,files=os.path.split(dirName.strip())
+      ranges=dirName.split('/')[-3]
+      if '_' in ranges and os.path.getmtime(dirName) > maxtime:
         mtime = os.path.getmtime(dirName)
         dirn = dirName.replace(workdir+'/','')
         dirn = re.split('/|_',dirn)
