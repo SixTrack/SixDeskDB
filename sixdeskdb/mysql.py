@@ -12,14 +12,20 @@
 # 
 # NOTA: please use python version >=2.6 
 
-from sqltable import SQLTable
-from MySQLdb import connect, Error
-import sqlite3
-import tables
-from warnings import filterwarnings
 import sys
 import os
-# from contextlib import closing
+import sqlite3
+from warnings import filterwarnings
+
+from sqltable import SQLTable
+
+try:
+  from MySQLdb import connect, Error
+except ImportError:
+    print "Waring no MySQLdb found, please install to connect MySql database"
+    raise ImportError
+
+import tables
 
 def dbtocentral(host,user,password,db,localdb,bo=False):
   try:

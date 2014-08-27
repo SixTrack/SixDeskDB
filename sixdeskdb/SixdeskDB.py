@@ -3,13 +3,13 @@
 # python implementation of Sixdesk storage using local database and creation of
 # study using database
 # done by Moonis Javed (monis.javed@gmail.com)
-# This stores the study to a local database 
-# Below are indicated thing that need to be edited by hand. 
+# This stores the study to a local database
+# Below are indicated thing that need to be edited by hand.
 # You have to use it from main like
-# python main.py loaddir <study location> 
+# python main.py loaddir <study location>
 # python main.py loaddb <studyDB> <new location of study>
 # 
-# NOTA: please use python version >=2.6   
+# NOTA: please use python version >=2.6
 
 import sqlite3
 import time
@@ -38,8 +38,8 @@ def load_dict(cur,table):
   a = cur.fetchall()
   dict = {}
   for row in a:
-    dict[str(row[0])] = str(row[1]) 
-  return dict 
+    dict[str(row[0])] = str(row[1])
+  return dict
 
 def compressBuf(file):
   '''file compression for storing in DB'''
