@@ -204,14 +204,10 @@ class SixDeskDB(object):
     self.load_env_var()
     env_var = self.env_var
     self.orig_env_var = copy.copy(env_var)
-    if self.basedir == '.':
-      self.basedir = os.path.realpath(__file__).replace("SixdeskDB.py","")
-      # print self.basedir
-      self.basedir = self.basedir.replace("SixdeskDB.pyc","")
-      print 'basedir =',self.basedir
     if not self.basedir.endswith('/'):
       self.basedir += '/'
       # print self.basedir
+    print self.basedir
     if env_var['basedir'] != self.basedir:
       for i in env_var.keys():
         if env_var['basedir'] in self.env_var[i]:
@@ -1178,7 +1174,7 @@ class SixDeskDB(object):
     pl.xlabel(r'$\sigma_x$')
     pl.ylabel(r'$\sigma_y$')
     pl.colorbar()
-    
+
   def plot_survival_avg(self,seed):
     data=self.get_survival_turns(seed)
     a,s,t=data['angle'],data['amp'],data['surv']
@@ -1194,7 +1190,7 @@ class SixDeskDB(object):
     pl.ylabel(r'survived turns')
     pl.legend(loc='lower left')
     return data
-    
+
   def plot_survival_avg2(self,seed):
     def mk_tuple(a,s,t,nlim):
       region=[]
@@ -1229,7 +1225,9 @@ class SixDeskDB(object):
 
   def read10b(self):
     database= '%s.db'%(self.studyName)
-    f2 = open('DA_%s.txt'%self.studyName, 'w')   
+    fntxt='DA_%s.txt'%self.studyName
+    print fntxt
+    fhtxt = open(fntxt, 'w')
 
     rectype=[('seed','int'),('betx'    ,'float'),('bety'    ,'float'),('sigx1'   ,'float'),('sigy1'   ,'float'),('emitx'   ,'float'),('emity'   ,'float'),
             ('sigxavgnld' ,'float') ,('sigyavgnld' ,'float'),('betx2'   ,'float'),('bety2'   ,'float'),('distp'   ,'float'),('dist'    ,'float'),
@@ -1247,7 +1245,9 @@ class SixDeskDB(object):
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     anumber=1
     for angle in np.unique(tmp['angle']):
-        f = open('DAres_%s.%s.%s.%d'%(LHCDesName,sixdesktunes,turnse,anumber), 'w')
+        fndot='DAres.%s.%s.%s.%d'%(LHCDesName,sixdesktunes,turnse,anumber)
+        print fndot
+        fhdot = open(fndot, 'w')
         for seed in np.unique(tmp['seed']):
             ich1 = 0
             ich2 = 0
@@ -1275,10 +1275,10 @@ class SixDeskDB(object):
             iel=inp.size-1
             rat=0
 
-            if inp['sigx1'][0]>0:  
+            if inp['sigx1'][0]>0:
                 rat=pow(inp['sigy1'][0],2)*inp['betx'][0]/(pow(inp['sigx1'][0],2)*inp['bety'][0])
             if pow(inp['sigx1'][0],2)*inp['bety'][0]<pow(inp['sigy1'][0],2)*inp['betx'][0]:
-                rat=2        
+                rat=2
             if inp['emity'][0]>inp['emitx'][0]:
                 rat=0
                 dummy=np.copy(inp['betx'])
@@ -1293,7 +1293,7 @@ class SixDeskDB(object):
                 dummy=np.copy(inp['sigxavgnld'])
                 inp['sigxavgnld']=inp['sigyavgnld']
                 inp['sigyavgnld']=dummy
-                dummy=np.copy(inp['emitx']) 
+                dummy=np.copy(inp['emitx'])
                 inp['emitx']=inp['emity']
                 inp['emity']=dummy
 
@@ -1326,8 +1326,8 @@ class SixDeskDB(object):
                     ich2 = 1
                     alost2 = rad*inp['sigx1'][i]
             icount=1.
-            if iin != -999 and iend == -999 : iend=iel  
-            if iin != -999 and iend > iin :    
+            if iin != -999 and iend == -999 : iend=iel
+            if iin != -999 and iend > iin :
                 for i in range(iin,iend+1) :
                     if(abs(rad*inp['sigx1'][i])>zero):
                         alost1 += rad1 * inp['sigxavgnld'][i]/rad/inp['sigx1'][i]
@@ -1337,7 +1337,7 @@ class SixDeskDB(object):
                 if alost1 >= 1.1 or alost1 <= 0.9:  alost1= -1. * alost1
             else:
                 alost1 = 1.0
-    
+
             alost1=alost1*alost2
             name2 = "DAres."+self.studyName+"."+sixdesktunes+"."+turnse
             name1= '%s%ss%s%s-%s%s.%d'%(LHCDesName,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
@@ -1345,17 +1345,20 @@ class SixDeskDB(object):
                 name1+=" "
             if(anumber<10):
                 name1+=" "
-            f.write(' %s         %6f    %6f    %6f    %6f    %6f   %6f\n'%( name1,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
-            f2.write('%s %s %s %s %s %s %s %s %s \n'%( name2, seed,angle,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
+            fmt=' %s %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
+            fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
+            fhtxt.write('%s %s %s %s %s %s %s %s %s \n'%( name2, seed,angle,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
         anumber+=1
-        f.close()
-    f2.close()
-    
-    f = open('DA_%s.txt'%self.studyName, 'r')
-    final=np.genfromtxt(f,dtype=outtype)
-    f.close()
+        fhdot.close()
+    fhtxt.close()
 
-    f1 = open('DAres_%s.%s.%s.plot'%(LHCDesName,sixdesktunes,turnse), 'w')
+    fhtxt = open(fntxt, 'r')
+    final=np.genfromtxt(fhtxt,dtype=outtype)
+    fhtxt.close()
+
+    fnplot='DAres.%s.%s.%s.plot'%(LHCDesName,sixdesktunes,turnse)
+    print fnplot
+    fhplot = open(fnplot, 'w')
     i=0
     for angle in np.unique(final['angle']):
         i+=1
@@ -1366,10 +1369,10 @@ class SixDeskDB(object):
         nega = len(final['alost1'][(final['angle']==angle)&(final['alost1']<0)])
         Amin = np.min(final['Amin'][final['angle']==angle])
         Amax = np.max(final['Amax'][final['angle']==angle])
-        print study, angle, mini , mean, maxi,nega ,  Amin, Amax
-        f1.write('%s %d %.2f %.2f %.2f %.0f %.2f %.2f\n'%(name2, i, mini , mean, maxi,nega ,  Amin, Amax))
+        #print study, angle, mini , mean, maxi,nega ,  Amin, Amax
+        fhplot.write('%s %d %.2f %.2f %.2f %.0f %.2f %.2f\n'%(name2, i, mini , mean, maxi,nega ,  Amin, Amax))
 
-    f1.close()
+    fhplot.close()
 
 if __name__ == '__main__':
   SixDeskDB.from_dir('/home/monis/Desktop/GSOC/files/w7/sixjobs/')
