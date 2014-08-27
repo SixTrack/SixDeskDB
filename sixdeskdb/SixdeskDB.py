@@ -18,13 +18,19 @@ import re
 import gzip
 import cStringIO
 import StringIO
-import sixdeskdir
-import numpy as np
-import matplotlib.pyplot as pl
-import scipy.signal
-import tables
-from sqltable import SQLTable
 import copy
+
+try:
+  import numpy as np
+  import matplotlib.pyplot as pl
+  import scipy.signal
+except ImportError:
+  print "No module found: numpy matplotlib and scipy modules should be present"
+  raise ImportError
+
+import tables
+import sixdeskdir
+from sqltable import SQLTable
 
 def load_dict(cur,table):
   sql='SELECT keyname,value from %s'%(table)
@@ -131,7 +137,8 @@ class SixDeskDB(object):
     cls = None
     if not (os.path.exists(studyDir+'/sixdeskenv') and \
       os.path.exists(studyDir+'/sysenv')):
-      print "sixdeskenv and sysenv should both be present"
+      print "Error in loaddir from %s:"%studyDir,
+      print "`sixdeskenv` and `sysenv` files should both be present"
       exit(0)
     env_var = sixdeskdir.parse_env(studyDir)
     for key in env_var.keys():
