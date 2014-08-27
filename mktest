@@ -1,4 +1,5 @@
 rm job_hllhc10_test8.db
+rm DA*job_hllhc10_test8*
 
 if [ ! -f test/simple/sixdeskenv ];
 then
@@ -6,3 +7,4 @@ then
 fi
 
 ./sixdb load_dir test/simple
+./sixdb run_da test/simple
