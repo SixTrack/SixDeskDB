@@ -248,8 +248,8 @@ class SixDeskDB(object):
     env_var = [[i,env_var[i],mtime] for i in env_var.keys()]
     tab.insertl(env_var)
 
-  def info(self): 
-    ''' provide info of study'''    
+  def info(self):
+    ''' provide info of study'''
     var = ['LHCDescrip', 'platform', 'madlsfq', 'lsfq', 'runtype', 'e0',
     'gamma', 'beam', 'dpini', 'istamad', 'iendmad', 'ns1l', 'ns2l', 'nsincl', 
     'sixdeskpairs', 'turnsl', 'turnsle', 'writebinl', 'kstep', 'kendl', 'kmaxl',
@@ -524,6 +524,7 @@ class SixDeskDB(object):
     aff_count = 0
     tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
     workdir = os.path.join(env_var['sixdesktrack'],env_var['LHCDescrip'])
+    print "Looking for fort.10 files in %s"%workdir
     rows = []
     inp = tab.select("""distinct id,seed,simul,tunex,tuney,amp1,amp2,turns,
         angle""")
@@ -1022,12 +1023,12 @@ class SixDeskDB(object):
     sql="""SELECT DISTINCT %s FROM six_input as a,env as b,six_results as c
         where a.id=c.six_input_id and b.keyname='LHCDescrip'"""%names
     return self.conn.cursor().execute(sql)
-    
+
   def iter_job_params_comp(self):
     names='seed,tunex,tuney,amp1,amp2,turns,angle'
     sql='SELECT DISTINCT %s FROM six_input'%names
     return self.conn.cursor().execute(sql)
-  
+
   def get_num_results(self):
     ''' get results count from DB '''
     return self.execute('SELECT count(*) from six_results')[0][0]/30
@@ -1117,7 +1118,7 @@ class SixDeskDB(object):
     p['sixdeskpairs']=max(data['row'])+1
     p['LHCDescrip']=str(data['study'][0])
     return p
-    
+
   def get_survival_turns(self,seed):
     '''get survival turns from DB '''
     cmd="""SELECT angle,amp1+(amp2-amp1)*row_num/30,
@@ -1134,14 +1135,14 @@ class SixDeskDB(object):
     data=np.fromiter(cur,dtype=ftype)
     angles=len(set(data['angle']))
     return data.reshape(angles,-1)
-    
+
   def plot_survival_2d(self,seed,smooth=None):
     '''plot survival turns graph '''
     data=self.get_survival_turns(seed)
     a,s,t=data['angle'],data['amp'],data['surv']
     self._plot_survival_2d(a,s,t,smooth=smooth)
     pl.title('Seed %d survived turns'%seed)
-    
+
   def plot_survival_2d_avg(self,smooth=None):
     ''' plot avg survival turns graph '''
     cmd=""" SELECT seed,angle,amp1+(amp2-amp1)*row_num/30,
@@ -1158,7 +1159,7 @@ class SixDeskDB(object):
     a=a.mean(axis=0); s=s.mean(axis=0); t=t.mean(axis=0)
     self._plot_survival_2d(a,s,t,smooth=smooth)
     pl.title('Survived turns')
-    
+
   def _plot_survival_2d(self,a,s,t,smooth=None):
     rad=np.pi*a/180
     x=s*np.cos(rad)
