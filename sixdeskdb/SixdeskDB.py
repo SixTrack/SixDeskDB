@@ -1345,7 +1345,7 @@ class SixDeskDB(object):
                 name1+=" "
             if(anumber<10):
                 name1+=" "
-            fmt=' %s %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
+            fmt=' %s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
             fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
             fhtxt.write('%s %s %s %s %s %s %s %s %s \n'%( name2, seed,angle,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
         anumber+=1
