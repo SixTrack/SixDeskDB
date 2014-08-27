@@ -1121,7 +1121,22 @@ class SixDeskDB(object):
     p['sixdeskpairs']=max(data['row'])+1
     p['LHCDescrip']=str(data['study'][0])
     return p
-    
+
+  def get_surv(self,seed):
+    #change for new db version
+    emit=float(self.env_var['emit'])
+    gamma=float(self.env_var['gamma'])
+    cmd="""SELECT angle,emitx+emity,
+         CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
+         FROM six_results,six_input WHERE seed=%s and id=six_input_id
+         ORDER BY angle,emitx+emity"""
+    cur=self.conn.cursor().execute(cmd%seed)
+    ftype=[('angle',float),('sigma',float),('sturn',float)]
+    data=np.fromiter(cur,dtype=ftype)
+    data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
+    angles=len(set(data['angle']))
+    return data.reshape(angles,-1)
+ 
   def get_survival_turns(self,seed):
     '''get survival turns from DB '''
     cmd="""SELECT angle,amp1+(amp2-amp1)*row_num/30,
