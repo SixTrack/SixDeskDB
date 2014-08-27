@@ -491,7 +491,8 @@ class SixDeskDB(object):
     extra_files = []
     rows = []
     six_id = 1
-    cmd = """find %s -name 'fort.3.gz'"""%(workdir)
+    print "Looking for fort.3.gz files in %s"%workdir
+    cmd = """find %s -type f -name 'fort.3.gz'"""%(workdir)
     a = os.popen(cmd).read().split('\n')[:-1]
     print 'fort.3 files =',len(a)
     for dirName in a:
@@ -524,7 +525,6 @@ class SixDeskDB(object):
     aff_count = 0
     tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
     workdir = os.path.join(env_var['sixdesktrack'],env_var['LHCDescrip'])
-    print "Looking for fort.10 files in %s"%workdir
     rows = []
     inp = tab.select("""distinct id,seed,simul,tunex,tuney,amp1,amp2,turns,
         angle""")
@@ -534,7 +534,8 @@ class SixDeskDB(object):
     maxtime = tab.select("max(mtime)")[0][0]
     if not maxtime:
       maxtime = 0
-    cmd = "find %s -name 'fort.10.gz'"%(workdir)
+    print "Looking for fort.10.gz files in %s"%workdir
+    cmd = "find %s -type f -name 'fort.10.gz'"%(workdir)
     a = [i for i in os.popen(cmd).read().split('\n')[:-1] if not '-' in i]
     print 'fort.10 files =',len(a)
     for dirName in a:
@@ -546,7 +547,7 @@ class SixDeskDB(object):
         dirn = dirName.replace(workdir+'/','')
         dirn = re.split('/|_',dirn)
         for i in [2,3,4,5,7]:
-          if not ('.' in str(dirn[i])): 
+          if not ('.' in str(dirn[i])):
             dirn[i] += '.0'
         for i in xrange(len(inp)+1):
           if i == len(inp):

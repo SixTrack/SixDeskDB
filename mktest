@@ -7,4 +7,5 @@ then
 fi
 
 ./sixdb load_dir test/simple
-./sixdb run_da test/simple
+./sixdb info job_hllhc10_test8.db
+./sixdb run_da job_hllhc10_test8.db
