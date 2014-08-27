@@ -1361,18 +1361,28 @@ class SixDeskDB(object):
     fnplot='DAres.%s.%s.%s.plot'%(LHCDesName,sixdesktunes,turnse)
     print fnplot
     fhplot = open(fnplot, 'w')
-    i=0
+        fn=0
     for angle in np.unique(final['angle']):
-        i+=1
-        study=final['study'][0]
+        fn+=1
+        study= final['study'][0]
         mini = np.min(np.abs(final['alost1'][(final['angle']==angle)]))
-        mean = np.mean(np.abs(final['alost1'][(final['angle']==angle)&(final['alost1']!=0)]))
+        toAvg = np.abs(final['alost1'][(final['angle']==angle)&(final['alost1']!=0)])
+        i = len(toAvg)
+        mean = np.mean(toAvg)
         maxi = np.max(np.abs(final['alost1'][(final['angle']==angle)]))
         nega = len(final['alost1'][(final['angle']==angle)&(final['alost1']<0)])
         Amin = np.min(final['Amin'][final['angle']==angle])
         Amax = np.max(final['Amax'][final['angle']==angle])
-        #print study, angle, mini , mean, maxi,nega ,  Amin, Amax
-        fhplot.write('%s %d %.2f %.2f %.2f %.0f %.2f %.2f\n'%(name2, i, mini , mean, maxi,nega ,  Amin, Amax))
+
+        if(i<0):
+          mini  = -Amax
+          maxi  = -Amax
+          mean  = -Amax 
+        elif(i< int(self.env_var['iend'])):
+          maxi = -Amax
+        
+        print study, angle, mini , mean, maxi, nega, Amin, Amax
+        f1.write('%s %d %.2f %.2f %.2f %.0f %.2f %.2f\n'%(name2, fn, mini , mean, maxi, nega, Amin, Amax))
 
     fhplot.close()
 
