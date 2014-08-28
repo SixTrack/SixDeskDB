@@ -263,7 +263,8 @@ class SixDeskDB(object):
     ''' provide info of study'''
     var = ['LHCDescrip', 'platform', 'madlsfq', 'lsfq', 'runtype', 'e0',
     'gamma', 'beam', 'dpini', 'istamad', 'iendmad', 'ns1l', 'ns2l', 'nsincl', 
-    'sixdeskpairs', 'turnsl', 'turnsle', 'writebinl', 'kstep', 'kendl', 'kmaxl',
+    'sixdeskpairs', 'turnsl', 'turnsle', 'writebinl',
+    'kstep', 'kendl', 'kmaxl',
     'trackdir', 'sixtrack_input']
     env_var = self.orig_env_var
     for keys in var:
@@ -296,7 +297,9 @@ class SixDeskDB(object):
             mad_in = sqlite3.Binary(
               compressBuf(os.path.join(dirName, files))
               )
-            out_file = files.replace('.', '.out.')
+            print files
+            nn = files.split('.')[-1]
+            out_file=files.replace('.%s'%nn,'.out.%s'%nn)
             mad_out = sqlite3.Binary(
               compressBuf(os.path.join(dirName, out_file))
               )
