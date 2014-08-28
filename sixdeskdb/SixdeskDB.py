@@ -12,7 +12,7 @@
 # NOTA: please use python version >=2.6
 
 import sqlite3, time, os, re, gzip, sys, glob
-import cStringIO
+from cStringIO import StringIO
 import copy
 
 try:
@@ -39,7 +39,7 @@ def load_dict(cur,table):
 def compressBuf(file):
   '''file compression for storing in DB'''
   buf = open(file,'r').read()
-  zbuf = cStringIO.StringIO()
+  zbuf = StringIO()
   zfile = gzip.GzipFile(mode = 'wb',  fileobj = zbuf, compresslevel = 9)
   zfile.write(buf)
   zfile.close()
@@ -47,7 +47,7 @@ def compressBuf(file):
 
 def decompressBuf(buf):
   '''file decompression to retrieve from DB'''
-  zbuf = StringIO.StringIO(buf)
+  zbuf = StringIO(buf)
   f = gzip.GzipFile(fileobj=zbuf)
   return f.read()
 
@@ -115,6 +115,57 @@ def split_fort10fn(fn):
   angle=float(angle)
   turns=10**int(turns[1])
   return study,seed,tunex,tuney,amp1,amp2,join,turns,angle
+
+def check_mad_out(fhs):
+  closest2=[]
+  closest1=[]
+  closest0=[]
+  kqs={}
+  kqt={}
+  for fh in fhs:
+    for l in fh:
+      l=l.strip()
+      if l.startswith('closest'):
+        if l.startswith('closest2 =  '):
+          closest2.append(float(l.split('=')[1].split(';')[0]))
+        elif l.startswith('closest1 =  '):
+          closest1.append(float(l.split('=')[1].split(';')[0]))
+        elif l.startswith('closest0 =  '):
+          closest0.append(float(l.split('=')[1].split(';')[0]))
+      elif 'kmqsmax*100' in l:
+        name,val=extract_kmax(l)
+        kqs.setdefault(name,[]).append(val)
+      elif 'kmqtmax*100' in l:
+        name,val=extract_kmax(l)
+        kqt.setdefault(name,[]).append(val)
+  print "Mad6tOut clo0: %s"%minmaxavg(closest0)
+  print "Mad6tOut clo1: %s"%minmaxavg(closest1)
+  print "Mad6tOut clo2: %s"%minmaxavg(closest2)
+  kqsmax=[max(abs(m) for m in l) for l in zip(*kqs.values())]
+  kqtmax=[max(abs(m) for m in l) for l in zip(*kqt.values())]
+  print "Mad6tOut kqt : %s"%minmaxavg(kqtmax)
+  print "Mad6tOut kqs : %s"%minmaxavg(kqsmax)
+
+def extract_kmax(l):
+  name,val=l.split('=')
+  name=name.split('/')[0]
+  val=float(val.split(';')[0])
+  return name,val
+
+def minmaxavg(l,fmt="%13e"):
+  if len(l)>0:
+      l=np.array(l)
+      mi=l.min()
+      ma=l.max()
+      av=l.mean()
+      tmp="min %s avg %s max %s"%(fmt,fmt,fmt)
+      return tmp%(mi,av,ma)
+  else:
+      return "no data to find min and max"
+
+
+
+
 
 class SixDeskDB(object):
   @staticmethod
@@ -203,13 +254,13 @@ class SixDeskDB(object):
     if not os.path.isfile(db):
       print "file %s doesn't exist "%(db)
       print "see if you have typed the name correctly"
-      exit(0)
+      raise IOError
     try:
       conn = sqlite3.connect(db,isolation_level="IMMEDIATE")
     except sqlite3.Error:
       print 'error'
       return
-    print "Opened database successfully"
+    print "Opened %s successfully"%db
     self.conn = conn
     self.load_env_var()
     env_var = self.env_var
@@ -225,6 +276,22 @@ class SixDeskDB(object):
             env_var['basedir']+'/',self.basedir)
           #print self.env_var[i]
 
+  def print_table_info(self):
+      out=self.execute("SELECT name FROM sqlite_master WHERE type='table';")
+      tables=[str(i[0]) for i in out]
+      for tab in tables:
+          rows=self.execute("SELECT count(*) FROM %s"%tab)[0][0]
+          columms=[i[1] for i in self.execute("PRAGMA table_info(%s)"%tab)]
+          print "%s(%d):\n  %s"%(tab,rows,', '.join(columms))
+
+  def mad_out(db):
+      mad_runs=db.execute('SELECT DISTINCT  run_id FROM mad6t_run')
+      for run in mad_runs:
+          print "Checking %s"%run
+          sql="SELECT mad_out FROM mad6t_run WHERE run_id=='%s'"%run
+          bufs=db.execute(sql)
+          bufs=[StringIO(decompressBuf(buf[0])) for buf in bufs]
+          check_mad_out(bufs)
 
   def set_variable(self,lst,mtime):
     '''set additional variables besides predefined environment variables
@@ -434,13 +501,16 @@ class SixDeskDB(object):
     print "Looking for sixdesktunes, betavalues in\n %s"%workdir
     gen_input=os.path.join(workdir,'general_input')
     if not os.path.exists(gen_input):
-        print "Warning: %s not found"%gen_input
+      print "Warning: %s not found"%gen_input
+      gen=[0,0]
     else:
       content = sqlite3.Binary(compressBuf(gen_input))
+      gen=[float(i) for i in open(gen_input).read().split()]
       extra_files.append(['general_input', content])
-    a=glob.glob('%s/*/simul/*/betavalues')
-    a+=glob.glob('%s/*/simul/*/sixdesktunes')
-    a+=glob.glob('%s/*/simul/*/mychrom')
+    a=glob.glob('%s/*/simul/*/betavalues'%workdir)
+    a+=glob.glob('%s/*/simul/*/sixdesktunes'%workdir)
+    a+=glob.glob('%s/*/simul/*/mychrom'%workdir)
+    print "no of files found: %d"%len(a)
     if not a:
       print 'Warning betavalues and sixdesktunes files missing'
     for dirName in a:
@@ -458,7 +528,7 @@ class SixDeskDB(object):
       if 'sixdesktunes' in files:
         f = open(os.path.join(dirName, files), 'r')
         six = [float(i) for i in f.read().split()]
-      if '/mychrom' in files:
+      if 'mychrom' in files:
         f = open(os.path.join(dirName, files), 'r')
         chrom = [float(i) for i in f.read().split()]
       f.close()
@@ -553,6 +623,7 @@ class SixDeskDB(object):
             sys.stdout.flush()
         if os.path.getmtime(dirName) > maxtime:
             mtime = os.path.getmtime(dirName)
+            print dirn
             dirn = dirName.replace(workdir+'/','')
             dirn = re.split('/|_',dirn)
             for i in [2,3,4,5,7]:
@@ -1253,7 +1324,6 @@ class SixDeskDB(object):
   def read10b(self):
     database= '%s.db'%(self.studyName)
     fntxt='DA_%s.txt'%self.studyName
-    print fntxt
     fhtxt = open(fntxt, 'w')
 
     rectype=[('seed','int'),('betx'    ,'float'),('bety'    ,'float'),('sigx1'   ,'float'),('sigy1'   ,'float'),('emitx'   ,'float'),('emity'   ,'float'),
@@ -1273,7 +1343,6 @@ class SixDeskDB(object):
     anumber=1
     for angle in np.unique(tmp['angle']):
         fndot='DAres.%s.%s.%s.%d'%(LHCDesName,sixdesktunes,turnse,anumber)
-        print fndot
         fhdot = open(fndot, 'w')
         for seed in np.unique(tmp['seed']):
             ich1 = 0
@@ -1377,7 +1446,9 @@ class SixDeskDB(object):
             fhtxt.write('%s %s %s %s %s %s %s %s %s \n'%( name2, seed,angle,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
         anumber+=1
         fhdot.close()
+        print fndot
     fhtxt.close()
+    print fntxt
 
     fhtxt = open(fntxt, 'r')
     final=np.genfromtxt(fhtxt,dtype=outtype)
@@ -1417,6 +1488,6 @@ class SixDeskDB(object):
 
 if __name__ == '__main__':
   SixDeskDB.from_dir('/home/monis/Desktop/GSOC/files/w7/sixjobs/')
-  
+
 
 
