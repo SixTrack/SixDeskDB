@@ -15,15 +15,6 @@ from sixdeskdb import SixDeskDB,Mad6tOut
 
 if __name__ == "__main__":
   args = sys.argv[1:]
-  # try:
-  #   opts, args = getopt.getopt(sys.argv[1:], "h", ["help","load_dir","loaddb",/
-  #   "DA","mad","join10"])
-  #   # print 'opts',opts
-  #   # print 'args',args
-  # except getopt.error, msg:
-  #   print msg
-  #   print "for help use help"
-  #   sys.exit(2)
   helpmsg="""\
 Usage: sixdb <command> <arguments>
 
@@ -42,6 +33,15 @@ Commands:
     mad <database>: analyse the output of mad6t (HL-LHC specific)
 
     info <database>: printout information from DataBase.
+
+    run_da_vs_turns <database> [options]:
+        Options:
+          -createdaout
+          -turnstep <nn>
+          -ampmaxsurv <nn>
+          -ampmindavst <nn>
+          -comp <compstudy> <studylblname> <compstudylblname>
+          -plotlog
     """
   if args:
   # try:
@@ -126,6 +126,24 @@ Commands:
       else:
         print "invalid see help with h or help"
         exit(0)
+    elif args[0] in ("run_da_vs_turns",):
+        try:
+          dbame=args[1]
+        except IndexError:
+          print "Error in command `run_da_vs_turns`"
+          sys.exit(0)
+        createdaout=True
+        comp=False
+        # defaults
+        try:
+            opti=args.index('-comp')
+            compstudy,studylblname,compstudylblname=args[opti+1,opti+4]
+        except ValueError:
+            print "Error in option -comp"
+            sys.exit(0)
+        #open db
+        #setup opton
+        #call
     else:
       print 'invalid for help use help or h'
   # except Exception, e:
