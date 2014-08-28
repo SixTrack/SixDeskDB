@@ -1341,10 +1341,12 @@ class SixDeskDB(object):
     tmp=np.array(self.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     anumber=1
-    for angle in np.unique(tmp['angle']):
+    angles=np.unique(tmp['angle'])
+    seeds=np.unique(tmp['seed'])
+    for angle in angles:
         fndot='DAres.%s.%s.%s.%d'%(LHCDesName,sixdesktunes,turnse,anumber)
         fhdot = open(fndot, 'w')
-        for seed in np.unique(tmp['seed']):
+        for seed in seeds:
             ich1 = 0
             ich2 = 0
             ich3 = 0
@@ -1358,7 +1360,7 @@ class SixDeskDB(object):
             achaos1 = 0
             mask=[(tmp['betx']>0) & (tmp['emitx']>0) & (tmp['bety']>0) & (tmp['emity']>0) & (tmp['angle']==angle) & (tmp['seed']==seed)]
             inp=tmp[mask]
-            if inp.size<2 : 
+            if inp.size<2 :
                 print 'not enought data for angle = %s' %angle
                 break
 
@@ -1475,7 +1477,7 @@ class SixDeskDB(object):
         Amax = np.max(final['Amax'][idxangle])
 
         for k in eqaper:
-          print "Seed #:  %d Dynamic Aperture below:  %.2f Sigma\n" %( k, final['Amin'][k])
+          print "Seed #:  %d Dynamic Aperture below:  %.2f Sigma" %( k, final['Amin'][k])
 
         if i == 0:
           mini  = -Amax
@@ -1486,11 +1488,10 @@ class SixDeskDB(object):
             maxi = -Amax
           elif len(eqaper)>0:
             mini = -Amin
-          print "Minimum:  %.2f  Sigma at Seed #: %d\n" %(mini, smini)
-          print "Maximum:  %.2f  Sigma at Seed #: %d\n" %(maxi, smaxi)
-          print "Average: %.2f Sigma\n " %(mean)
-        
-        print "# of (Aav-A0)/A0 >10%%:  %d\n"  %nega        
+          print "Minimum:  %.2f  Sigma at Seed #: %d" %(mini, smini)
+          print "Maximum:  %.2f  Sigma at Seed #: %d" %(maxi, smaxi)
+          print "Average: %.2f Sigma" %(mean)
+        print "# of (Aav-A0)/A0 >10%%:  %d"  %nega
         fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
     fhplot.close()
 
