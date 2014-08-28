@@ -623,7 +623,7 @@ class SixDeskDB(object):
             sys.stdout.flush()
         if os.path.getmtime(dirName) > maxtime:
             mtime = os.path.getmtime(dirName)
-            print dirn
+            # print dirn
             dirn = dirName.replace(workdir+'/','')
             dirn = re.split('/|_',dirn)
             for i in [2,3,4,5,7]:
