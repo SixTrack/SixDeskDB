@@ -11,9 +11,8 @@
 # 
 # NOTA: please use python version >=2.6
 
-import sqlite3, time, os, re, gzip, sys
+import sqlite3, time, os, re, gzip, sys, glob
 import cStringIO
-import StringIO
 import copy
 
 try:
@@ -292,34 +291,25 @@ class SixDeskDB(object):
         for files in fileList:
           if not (files.endswith('.mask') or 'out' in files
               or files.endswith('log') or files.endswith('lsf')):
-            seed = files.split('.')[-1]
+            fnroot,seed=os.path.splitext(files)
+            seed=int(seed[1:])
             run_id = dirName.split('/')[-1]
             mad_in = sqlite3.Binary(
               compressBuf(os.path.join(dirName, files))
               )
-            print files
-            nn = files.split('.')[-1]
-            out_file=files.replace('.%s'%nn,'.out.%s'%nn)
-            mad_out = sqlite3.Binary(
-              compressBuf(os.path.join(dirName, out_file))
-              )
-            lsf_file = 'mad6t_' + seed + '.lsf'
-            mad_lsf = sqlite3.Binary(
-              compressBuf(os.path.join(dirName, lsf_file))
-              )
-            log_file = files.replace('.','_mad6t_')+'.log'
-            mad_log = sqlite3.Binary(
-              compressBuf(os.path.join(dirName, log_file))
-              )
-            time = os.path.getmtime(
-              os.path.join(dirName, log_file)
-              )
+            out_file=os.path.join(dirName,fnroot+'.out.%d'%seed)
+            log_file=os.path.join(dirName,fnroot+'_mad6t_%d.log'%seed)
+            lsf_file=os.path.join(dirName,'mad6t_%d.lsf'%seed)
+            mad_out = sqlite3.Binary(compressBuf(out_file))
+            mad_lsf = sqlite3.Binary(compressBuf(lsf_file))
+            mad_log = sqlite3.Binary(compressBuf(log_file))
+            time = os.path.getmtime( log_file)
             rows[seed] = []
             rows[seed].append(
               [run_id, seed, mad_in, mad_out, mad_lsf, 
               mad_log, time]
               )
-          if files.endswith('.mask'):  
+          if files.endswith('.mask'):
             path = os.path.join(dirName, files)
             content = sqlite3.Binary(compressBuf(path))
             path = path.replace(
@@ -366,6 +356,7 @@ class SixDeskDB(object):
     a = os.popen(cmd%(env_var['sixtrack_input'],'2')).read().split('\n')[:-1]
     b = os.popen(cmd%(env_var['sixtrack_input'],'8')).read().split('\n')[:-1]
     c = os.popen(cmd%(env_var['sixtrack_input'],'16')).read().split('\n')[:-1]
+    f_a=len(a);f_b=len(b);f_c=len(c);
     up_a = up_b = up_c = 0
     for i in a:
       if os.path.getmtime(i) > maxtime:
@@ -424,12 +415,12 @@ class SixDeskDB(object):
     if rows:
       tab.insertl(rows)
       rows = {}
-    print 'no of fort.2 updated/found: %d/%d'%(up_a,len(a))
-    print 'no of fort.8 updated/found: %d/%d'%(up_b,len(b))
-    print 'no of fort.16 updated/found: %d/%d'%(up_c,len(c))
+    print 'no of fort.2 updated/found: %d/%d'%(up_a,f_a)
+    print 'no of fort.8 updated/found: %d/%d'%(up_b,f_b)
+    print 'no of fort.16 updated/found: %d/%d'%(up_c,f_c)
 
   def st_six_beta(self,env_var):
-    ''' store general_input, sixdesktunes, betavalues '''
+    ''' store sixdesktunes, betavalues '''
     conn = self.conn
     env_var = self.orig_env_var
     cols = SQLTable.cols_from_fields(tables.Six_Be.fields)
@@ -440,26 +431,18 @@ class SixDeskDB(object):
     rows = {}
     extra_files = []
     beta = six = gen = []
-    cmd = "find %s -name 'general_input'"%(workdir)
-    a = os.popen(cmd).read().split('\n')[:-1]
-    if not a:
-      print 'general_input not found please check and run again'
-      exit(0)
+    print "Looking for sixdesktunes, betavalues in\n %s"%workdir
+    gen_input=os.path.join(workdir,'general_input')
+    if not os.path.exists(gen_input):
+        print "Warning: %s not found"%gen_input
     else:
-      a = a[0]
-      with open(a,'r') as FileObj:
-        for lines in FileObj:
-          gen = lines.split()
-      path = a
-      content = sqlite3.Binary(compressBuf(path))
-      path = path.replace(
-        env_var['basedir']+'/','')
-      #extra_files.append([path, content])
-    cmd = "find %s -name 'betavalues' -o -name 'sixdesktunes'"%(workdir)
-    a = os.popen(cmd).read().split('\n')[:-1] 
+      content = sqlite3.Binary(compressBuf(gen_input))
+      extra_files.append(['general_input', content])
+    a=glob.glob('%s/*/simul/*/betavalues')
+    a+=glob.glob('%s/*/simul/*/sixdesktunes')
+    a+=glob.glob('%s/*/simul/*/mychrom')
     if not a:
-      print 'betavalues and sixdesktunes files missing'
-      exit(0)
+      print 'Warning betavalues and sixdesktunes files missing'
     for dirName in a:
       files = dirName.split('/')[-1]
       dirName = dirName.replace('/'+files,'')
@@ -475,6 +458,9 @@ class SixDeskDB(object):
       if 'sixdesktunes' in files:
         f = open(os.path.join(dirName, files), 'r')
         six = [float(i) for i in f.read().split()]
+      if '/mychrom' in files:
+        f = open(os.path.join(dirName, files), 'r')
+        chrom = [float(i) for i in f.read().split()]
       f.close()
       if beta and temp and six:
         rows[seed].append(temp + beta + gen + six)
@@ -1142,6 +1128,22 @@ class SixDeskDB(object):
     p['sixdeskpairs']=max(data['row'])+1
     p['LHCDescrip']=str(data['study'][0])
     return p
+
+  def get_surv(self,seed):
+    #change for new db version
+    emit=float(self.env_var['emit'])
+    gamma=float(self.env_var['gamma'])
+    cmd="""SELECT angle,emitx+emity,
+         CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
+         FROM six_results,six_input WHERE seed=%s and id=six_input_id
+         ORDER BY angle,emitx+emity"""
+    cur=self.conn.cursor().execute(cmd%seed)
+    ftype=[('angle',float),('sigma',float),('sturn',float)]
+    data=np.fromiter(cur,dtype=ftype)
+    data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
+    angles=len(set(data['angle']))
+    return data.reshape(angles,-1)
+
 
   def get_survival_turns(self,seed):
     '''get survival turns from DB '''
