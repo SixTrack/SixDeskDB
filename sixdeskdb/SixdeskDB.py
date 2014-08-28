@@ -1463,28 +1463,36 @@ class SixDeskDB(object):
         idxangle=final['angle']==angle
         idx     =idxangle&(final['alost1']!=0)
         idxneg  =idxangle&(final['alost1']<0)
-        mini =  np.min(np.abs(final['alost1'][idx]))
+        mini, smini = np.min(np.abs(final['alost1'][idx])), np.argmin(np.abs(final['alost1'][idx]))
+        maxi, smaxi = np.max(np.abs(final['alost1'][idx])), np.argmax(np.abs(final['alost1'][idx]))
         toAvg = np.abs(final['alost1'][idx])
         i = len(toAvg)
         mean = np.mean(toAvg)
-        maxi = np.max(np.abs(final['alost1'][idx]))
-        idxneg=(final['angle']==angle)&(final['alost1']<0)
+        idxneg = (final['angle']==angle)&(final['alost1']<0)
+        eqaper = np.where(final['alost2'] == final['Amin'])[0]
         nega = len(final['alost1'][idxneg])
         Amin = np.min(final['Amin'][idxangle])
         Amax = np.max(final['Amax'][idxangle])
 
-        if(i==0):
+        for k in eqaper:
+          print "Seed #:  %d Dynamic Aperture below:  %.2f Sigma\n" %( k, final['Amin'][k])
+
+        if i == 0:
           mini  = -Amax
           maxi  = -Amax
           mean  = -Amax
-        elif(i< int(self.env_var['iend'])):
-          maxi = -Amax
-
-        #print study, angle, mini , mean, maxi, nega, Amin, Amax
-        fhplot.write('%s %d %.2f %.2f %.2f %.0f %.2f %.2f\n'%(name2, fn, mini , mean, maxi, nega, Amin, Amax))
-
+        else:
+          if i < int(self.env_var['iend']):
+            maxi = -Amax
+          elif len(eqaper)>0:
+            mini = -Amin
+          print "Minimum:  %.2f  Sigma at Seed #: %d\n" %(mini, smini)
+          print "Maximum:  %.2f  Sigma at Seed #: %d\n" %(maxi, smaxi)
+          print "Average: %.2f Sigma\n " %(mean)
+        
+        print "# of (Aav-A0)/A0 >10%%:  %d\n"  %nega        
+        fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
     fhplot.close()
-    print fnplot
 
 if __name__ == '__main__':
   SixDeskDB.from_dir('/home/monis/Desktop/GSOC/files/w7/sixjobs/')
