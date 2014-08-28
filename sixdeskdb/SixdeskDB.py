@@ -1366,8 +1366,8 @@ class SixDeskDB(object):
 
             zero = 1e-10
             for itest in range(0,inp.size):
-                if inp['betx'][itest]>zero and inp['emitx'][itest]>zero : inp['sigx1'][itest] =  np.sqrt(inp['betx'][itest]*inp['emitx'][itest]) 
-                if inp['bety'][itest]>zero and inp['emity'][itest]>zero : inp['sigy1'][itest] =  np.sqrt(inp['bety'][itest]*inp['emity'][itest]) 
+                if inp['betx'][itest]>zero and inp['emitx'][itest]>zero : inp['sigx1'][itest] =  np.sqrt(inp['betx'][itest]*inp['emitx'][itest])
+                if inp['bety'][itest]>zero and inp['emity'][itest]>zero : inp['sigy1'][itest] =  np.sqrt(inp['bety'][itest]*inp['emity'][itest])
                 if inp['betx'][itest]>zero and inp['emitx'][itest]>zero and inp['bety'][itest]>zero and inp['emity'][itest]>zero: itest+=1
 
             iel=inp.size-1

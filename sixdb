@@ -133,12 +133,14 @@ Commands:
         except IndexError:
           print "Error in command `da_vs_turns`"
           sys.exit(0)
+        # defaults
         createdaout=True
         comp=False
-        # defaults
+        # parse arguments
         try:
             opti=args.index('-comp')
             compstudy,studylblname,compstudylblname=args[opti+1,opti+4]
+            comp=True
         except ValueError:
             print "Error in option -comp"
             sys.exit(0)
