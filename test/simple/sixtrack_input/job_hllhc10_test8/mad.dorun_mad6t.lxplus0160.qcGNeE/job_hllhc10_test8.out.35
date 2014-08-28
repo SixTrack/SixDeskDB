@@ -1,0 +1,5609 @@
+
+  +++++++++++++++++++++++++++++++++++++++++++
+  +    MAD-X 5.02.00  (64 bit, Linux)       +
+  +           Production Version            +
+  + Code Modification Date: 2014.03.05      +
+  + Execution Time Stamp: 20.03.14 13.55.12 +
+  +++++++++++++++++++++++++++++++++++++++++++
+! S. Fartoukh March 2012
+
+! General Sample job with or w/o beam-beam and with errors in collision for SLHCV3.1b
+
+!
+
+!---|----1----|----2----|----3----|----4----|----5----|----6----|----7----|---8;
+
+Option,  warn,info;
+
+System,"rm -rf temp";
+
+System,"mkdir temp";
+
+System,"ln -fns /afs/cern.ch/eng/lhc/optics/V6.503 db5";
+
+System,"ln -fns /afs/cern.ch/eng/lhc/optics/HLLHCV1.0 slhc";
+
+system,"ln -fns /afs/cern.ch/eng/lhc/optics/errors/0705 wise";
+
+
+
+option,-echo,-info;
+
+hocharge_ir1 =                0.2 ;
+long_ir1_1 =            0.01995 ;
+long_ir1_2 =             0.0525 ;
+hocharge_ir2 =                0.2 ;
+long_ir2_1 =            0.01995 ;
+long_ir2_2 =             0.0525 ;
+hocharge_ir5 =                0.2 ;
+long_ir5_1 =            0.01995 ;
+long_ir5_2 =             0.0525 ;
+hocharge_ir8 =                0.2 ;
+long_ir8_1 =            0.01995 ;
+long_ir8_2 =             0.0525 ;
+beamx =    3.350971593e-10 ;
+beamy =    3.350971593e-10 ;
+sigz =              0.075 ;
+sige =            0.00011 ;
+ho_charge =                  1 ;
+lr_charge =                  1 ;
+b_h_dist =        3.740022896 ;
+enter Twiss module
+  
+iteration:   1 error:   3.120850E-13 deltap:   0.000000E+00
+orbit:  -6.973470E-14 -5.233023E-16  1.954091E-13  2.193421E-15  0.000000E+00  0.000000E+00
+
+++++++ table: summ
+
+            length             orbit5               alfa            gammatr 
+        26658.8832                 -0    0.0003469698108        53.68514808 
+
+                q1                dq1            betxmax              dxmax 
+        62.3099998        0.215282722        20775.73335        12.55010265 
+
+             dxrms             xcomax             xcorms                 q2 
+       2.236414504      0.01644895131     0.001908961259         60.3200002 
+
+               dq2            betymax              dymax              dyrms 
+         3.4111926        20775.73335        6.829973836        1.110100709 
+
+            ycomax             ycorms             deltap            synch_1 
+     0.01642963551     0.001906488446                  0                  0 
+
+           synch_2            synch_3            synch_4            synch_5 
+                 0                  0                  0                  0 
+xnom1 =            0.00075 ;
+xnom2 =              0.002 ;
+xnom5 =    7.914242178e-15 ;
+xnom8 =   -1.567691289e-14 ;
+ynom1 =    4.256198258e-15 ;
+ynom2 =   -9.515283526e-15 ;
+ynom5 =            0.00075 ;
+ynom8 =             -0.002 ;
+pxnom1 =   -5.344999566e-14 ;
+pxnom2 =    2.919258905e-07 ;
+pxnom5 =           0.000295 ;
+pxnom8 =   -0.0003049878693 ;
+pynom1 =           0.000295 ;
+pynom2 =    0.0002399993913 ;
+pynom5 =    8.936995922e-15 ;
+pynom8 =   -1.809736214e-06 ;
+enter Twiss module
+  
+iteration:   1 error:   0.000000E+00 deltap:   0.000000E+00
+orbit:   0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00
+
+++++++ table: summ
+
+            length             orbit5               alfa            gammatr 
+        26658.8832                 -0    0.0003465036193        53.72125037 
+
+                q1                dq1            betxmax              dxmax 
+        62.3099998        2.000000001        20775.73335        2.895558024 
+
+             dxrms             xcomax             xcorms                 q2 
+       1.444738959                  0                  0         60.3200002 
+
+               dq2            betymax              dymax              dyrms 
+                 2        20775.73335                 -0                  0 
+
+            ycomax             ycorms             deltap            synch_1 
+                 0                  0                  0                  0 
+
+           synch_2            synch_3            synch_4            synch_5 
+                 0                  0                  0                  0 
+beta.ip1 =               0.15 ;
+enter Twiss module
+  
+iteration:   1 error:   0.000000E+00 deltap:   0.000000E+00
+orbit:   0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00
+
+++++++ table: summ
+
+            length             orbit5               alfa            gammatr 
+        26658.8832                 -0    0.0003465036193        53.72125037 
+
+                q1                dq1            betxmax              dxmax 
+        62.3099998        2.000000001        20775.73335        2.895558024 
+
+             dxrms             xcomax             xcorms                 q2 
+       1.444738959                  0                  0         60.3200002 
+
+               dq2            betymax              dymax              dyrms 
+                 2        20775.73335                 -0                  0 
+
+            ycomax             ycorms             deltap            synch_1 
+                 0                  0                  0                  0 
+
+           synch_2            synch_3            synch_4            synch_5 
+                 0                  0                  0                  0 
+enter Twiss module
+  
+iteration:   1 error:   0.000000E+00 deltap:   0.000000E+00
+orbit:   0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00
+
+++++++ table: summ
+
+            length             orbit5               alfa            gammatr 
+        26658.8832                 -0    0.0003465036193        53.72125037 
+
+                q1                dq1            betxmax              dxmax 
+        62.3099998        2.000000001        20775.73335        2.895558024 
+
+             dxrms             xcomax             xcorms                 q2 
+       1.444738959                  0                  0         60.3200002 
+
+               dq2            betymax              dymax              dyrms 
+                 2        20775.73335                 -0                  0 
+
+            ycomax             ycorms             deltap            synch_1 
+                 0                  0                  0                  0 
+
+           synch_2            synch_3            synch_4            synch_5 
+                 0                  0                  0                  0 
+Running survey for aligment calculations...
+mbrc_mech_sep =                188 ;
+mbrd_mech_sep =                186 ;
+mbrs_mech_sep =                  6 ;
+mbrb_mech_sep =                226 ;
+stest =         19915.8334 ;
+dx_mbxa.4l1..1 =     0.003859975704 ;
+sx_mbxa.4l1..1 =       -78.32899838 ;
+dx_mbxa.4l1..1 =     0.003859975704 ;
+Assigned alignment errors to 1 elements
+stest =         19917.6174 ;
+dx_mbxa.4l1..2 =     0.001929987977 ;
+sx_mbxa.4l1..2 =       -76.54499942 ;
+dx_mbxa.4l1..2 =     0.001929987977 ;
+Assigned alignment errors to 1 elements
+stest =         19919.4014 ;
+dx_mbxa.4l1..3 =    0.0006433293533 ;
+sx_mbxa.4l1..3 =       -74.76099988 ;
+dx_mbxa.4l1..3 =    0.0006433293533 ;
+Assigned alignment errors to 1 elements
+stest =         19921.1854 ;
+dx_mbxa.4l1..4 =   -4.671218332e-13 ;
+sx_mbxa.4l1..4 =            -72.977 ;
+dx_mbxa.4l1..4 =   -4.671218332e-13 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =         20067.1394 ;
+dx_mbxa.4r1..1 =    4.671218332e-13 ;
+sx_mbxa.4r1..1 =             72.977 ;
+dx_mbxa.4r1..1 =    4.671218332e-13 ;
+Assigned alignment errors to 1 elements
+stest =         20068.9234 ;
+dx_mbxa.4r1..2 =   -0.0006433293533 ;
+sx_mbxa.4r1..2 =        74.76099988 ;
+dx_mbxa.4r1..2 =   -0.0006433293533 ;
+Assigned alignment errors to 1 elements
+stest =         20070.7074 ;
+dx_mbxa.4r1..3 =    -0.001929987977 ;
+sx_mbxa.4r1..3 =        76.54499942 ;
+dx_mbxa.4r1..3 =    -0.001929987977 ;
+Assigned alignment errors to 1 elements
+stest =         20072.4914 ;
+dx_mbxa.4r1..4 =    -0.003859975704 ;
+sx_mbxa.4r1..4 =        78.32899838 ;
+dx_mbxa.4r1..4 =    -0.003859975704 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        6586.239433 ;
+dx_mbxa.4l5..1 =     0.003859975704 ;
+sx_mbxa.4l5..1 =       -78.32899838 ;
+dx_mbxa.4l5..1 =     0.003859975704 ;
+Assigned alignment errors to 1 elements
+stest =        6588.023433 ;
+dx_mbxa.4l5..2 =     0.001929987978 ;
+sx_mbxa.4l5..2 =       -76.54499942 ;
+dx_mbxa.4l5..2 =     0.001929987978 ;
+Assigned alignment errors to 1 elements
+stest =        6589.807433 ;
+dx_mbxa.4l5..3 =    0.0006433293536 ;
+sx_mbxa.4l5..3 =       -74.76099988 ;
+dx_mbxa.4l5..3 =    0.0006433293536 ;
+Assigned alignment errors to 1 elements
+stest =        6591.591433 ;
+dx_mbxa.4l5..4 =   -2.151224912e-13 ;
+sx_mbxa.4l5..4 =            -72.977 ;
+dx_mbxa.4l5..4 =   -2.151224912e-13 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        6737.545433 ;
+dx_mbxa.4r5..1 =    2.151224912e-13 ;
+sx_mbxa.4r5..1 =             72.977 ;
+dx_mbxa.4r5..1 =    2.151224912e-13 ;
+Assigned alignment errors to 1 elements
+stest =        6739.329433 ;
+dx_mbxa.4r5..2 =   -0.0006433293536 ;
+sx_mbxa.4r5..2 =        74.76099988 ;
+dx_mbxa.4r5..2 =   -0.0006433293536 ;
+Assigned alignment errors to 1 elements
+stest =        6741.113433 ;
+dx_mbxa.4r5..3 =    -0.001929987978 ;
+sx_mbxa.4r5..3 =        76.54499942 ;
+dx_mbxa.4r5..3 =    -0.001929987978 ;
+Assigned alignment errors to 1 elements
+stest =        6742.897433 ;
+dx_mbxa.4r5..4 =    -0.003859975704 ;
+sx_mbxa.4r5..4 =        78.32899838 ;
+dx_mbxa.4r5..4 =    -0.003859975704 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =                  0 ;
+stest =                  0 ;
+stest =                  0 ;
+stest =                  0 ;
+stest =         19847.2624 ;
+dx_mbrd.4l1.b1..1 =      0.09699990117 ;
+sx_mbrd.4l1.b1..1 =       -146.8999329 ;
+dx_mbrd.4l1.b1..1 =     0.003999901175 ;
+Assigned alignment errors to 1 elements
+stest =        19849.92907 ;
+dx_mbrd.4l1.b1..2 =      0.09603827284 ;
+sx_mbrd.4l1.b1..2 =       -144.2332664 ;
+dx_mbrd.4l1.b1..2 =     0.003038272844 ;
+Assigned alignment errors to 1 elements
+stest =        19852.59573 ;
+dx_mbrd.4l1.b1..3 =      0.09411501631 ;
+sx_mbrd.4l1.b1..3 =       -141.5666005 ;
+dx_mbrd.4l1.b1..3 =     0.001115016306 ;
+Assigned alignment errors to 1 elements
+stest =         19855.2624 ;
+dx_mbrd.4l1.b1..4 =      0.09123013181 ;
+sx_mbrd.4l1.b1..4 =       -138.8999354 ;
+dx_mbrd.4l1.b1..4 =    -0.001769868189 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =         20133.0624 ;
+dx_mbrd.4r1.b1..1 =     -0.09123013181 ;
+sx_mbrd.4r1.b1..1 =        138.8999354 ;
+dx_mbrd.4r1.b1..1 =     0.001769868189 ;
+Assigned alignment errors to 1 elements
+stest =        20135.72907 ;
+dx_mbrd.4r1.b1..2 =     -0.09411501631 ;
+sx_mbrd.4r1.b1..2 =        141.5666005 ;
+dx_mbrd.4r1.b1..2 =    -0.001115016306 ;
+Assigned alignment errors to 1 elements
+stest =        20138.39573 ;
+dx_mbrd.4r1.b1..3 =     -0.09603827284 ;
+sx_mbrd.4r1.b1..3 =        144.2332664 ;
+dx_mbrd.4r1.b1..3 =    -0.003038272844 ;
+Assigned alignment errors to 1 elements
+stest =         20141.0624 ;
+dx_mbrd.4r1.b1..4 =     -0.09699990117 ;
+sx_mbrd.4r1.b1..4 =        146.8999329 ;
+dx_mbrd.4r1.b1..4 =    -0.003999901175 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        6517.668433 ;
+dx_mbrd.4l5.b1..1 =      0.09699990118 ;
+sx_mbrd.4l5.b1..1 =       -146.8999329 ;
+dx_mbrd.4l5.b1..1 =     0.003999901175 ;
+Assigned alignment errors to 1 elements
+stest =        6520.335099 ;
+dx_mbrd.4l5.b1..2 =      0.09603827284 ;
+sx_mbrd.4l5.b1..2 =       -144.2332664 ;
+dx_mbrd.4l5.b1..2 =     0.003038272844 ;
+Assigned alignment errors to 1 elements
+stest =        6523.001766 ;
+dx_mbrd.4l5.b1..3 =      0.09411501631 ;
+sx_mbrd.4l5.b1..3 =       -141.5666005 ;
+dx_mbrd.4l5.b1..3 =     0.001115016307 ;
+Assigned alignment errors to 1 elements
+stest =        6525.668433 ;
+dx_mbrd.4l5.b1..4 =      0.09123013181 ;
+sx_mbrd.4l5.b1..4 =       -138.8999354 ;
+dx_mbrd.4l5.b1..4 =    -0.001769868188 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        6803.468433 ;
+dx_mbrd.4r5.b1..1 =     -0.09123013181 ;
+sx_mbrd.4r5.b1..1 =        138.8999354 ;
+dx_mbrd.4r5.b1..1 =     0.001769868188 ;
+Assigned alignment errors to 1 elements
+stest =        6806.135099 ;
+dx_mbrd.4r5.b1..2 =     -0.09411501631 ;
+sx_mbrd.4r5.b1..2 =        141.5666005 ;
+dx_mbrd.4r5.b1..2 =    -0.001115016307 ;
+Assigned alignment errors to 1 elements
+stest =        6808.801766 ;
+dx_mbrd.4r5.b1..3 =     -0.09603827284 ;
+sx_mbrd.4r5.b1..3 =        144.2332664 ;
+dx_mbrd.4r5.b1..3 =    -0.003038272844 ;
+Assigned alignment errors to 1 elements
+stest =        6811.468433 ;
+dx_mbrd.4r5.b1..4 =     -0.09699990118 ;
+sx_mbrd.4r5.b1..4 =        146.8999329 ;
+dx_mbrd.4r5.b1..4 =    -0.003999901175 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        23259.71098 ;
+dx_mbx.4l2..1 =    -0.005792869251 ;
+sx_mbx.4l2..1 =       -66.88799741 ;
+dx_mbx.4l2..1 =    -0.005792869251 ;
+Assigned alignment errors to 1 elements
+stest =        23262.23098 ;
+dx_mbx.4l2..2 =    -0.002896434839 ;
+sx_mbx.4l2..2 =       -64.36799908 ;
+dx_mbx.4l2..2 =    -0.002896434839 ;
+Assigned alignment errors to 1 elements
+stest =        23264.75098 ;
+dx_mbx.4l2..3 =    -0.000965478328 ;
+sx_mbx.4l2..3 =       -61.84799982 ;
+dx_mbx.4l2..3 =    -0.000965478328 ;
+Assigned alignment errors to 1 elements
+stest =        23267.27098 ;
+dx_mbx.4l2..4 =   -1.669775429e-12 ;
+sx_mbx.4l2..4 =            -59.328 ;
+dx_mbx.4l2..4 =   -1.669775429e-12 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        23385.92698 ;
+dx_mbx.4r2..1 =     1.98951966e-12 ;
+sx_mbx.4r2..1 =             59.328 ;
+dx_mbx.4r2..1 =     1.98951966e-12 ;
+Assigned alignment errors to 1 elements
+stest =        23388.44698 ;
+dx_mbx.4r2..2 =    0.0009654783283 ;
+sx_mbx.4r2..2 =        61.84799982 ;
+dx_mbx.4r2..2 =    0.0009654783283 ;
+Assigned alignment errors to 1 elements
+stest =        23390.96698 ;
+dx_mbx.4r2..3 =     0.002896434839 ;
+sx_mbx.4r2..3 =        64.36799908 ;
+dx_mbx.4r2..3 =     0.002896434839 ;
+Assigned alignment errors to 1 elements
+stest =        23393.48698 ;
+dx_mbx.4r2..4 =     0.005792869251 ;
+sx_mbx.4r2..4 =        66.88799741 ;
+dx_mbx.4r2..4 =     0.005792869251 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        16583.77018 ;
+dx_mbx.4l8..1 =     -0.00579286925 ;
+sx_mbx.4l8..1 =       -66.88799741 ;
+dx_mbx.4l8..1 =     -0.00579286925 ;
+Assigned alignment errors to 1 elements
+stest =        16586.29018 ;
+dx_mbx.4l8..2 =    -0.002896434838 ;
+sx_mbx.4l8..2 =       -64.36799908 ;
+dx_mbx.4l8..2 =    -0.002896434838 ;
+Assigned alignment errors to 1 elements
+stest =        16588.81018 ;
+dx_mbx.4l8..3 =   -0.0009654783268 ;
+sx_mbx.4l8..3 =       -61.84799981 ;
+dx_mbx.4l8..3 =   -0.0009654783268 ;
+Assigned alignment errors to 1 elements
+stest =        16591.33018 ;
+dx_mbx.4l8..4 =   -6.252776075e-13 ;
+sx_mbx.4l8..4 =            -59.328 ;
+dx_mbx.4l8..4 =   -6.252776075e-13 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        16709.98618 ;
+dx_mbx.4r8..1 =    1.911359959e-12 ;
+sx_mbx.4r8..1 =             59.328 ;
+dx_mbx.4r8..1 =    1.911359959e-12 ;
+Assigned alignment errors to 1 elements
+stest =        16712.50618 ;
+dx_mbx.4r8..2 =    0.0009654783281 ;
+sx_mbx.4r8..2 =        61.84799982 ;
+dx_mbx.4r8..2 =    0.0009654783281 ;
+Assigned alignment errors to 1 elements
+stest =        16715.02618 ;
+dx_mbx.4r8..3 =     0.002896434839 ;
+sx_mbx.4r8..3 =        64.36799908 ;
+dx_mbx.4r8..3 =     0.002896434839 ;
+Assigned alignment errors to 1 elements
+stest =        16717.54618 ;
+dx_mbx.4r8..4 =     0.005792869251 ;
+sx_mbx.4r8..4 =        66.88799741 ;
+dx_mbx.4r8..4 =     0.005792869251 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        23196.41598 ;
+dx_mbrc.4l2.b1..1 =     -0.09699988893 ;
+sx_mbrc.4l2.b1..1 =       -130.1829294 ;
+dx_mbrc.4l2.b1..1 =     -0.00299988893 ;
+Assigned alignment errors to 1 elements
+stest =        23198.93598 ;
+dx_mbrc.4l2.b1..2 =      -0.0960344106 ;
+sx_mbrc.4l2.b1..2 =       -127.6629296 ;
+dx_mbrc.4l2.b1..2 =    -0.002034410604 ;
+Assigned alignment errors to 1 elements
+stest =        23201.45598 ;
+dx_mbrc.4l2.b1..3 =     -0.09410345409 ;
+sx_mbrc.4l2.b1..3 =       -125.1429303 ;
+dx_mbrc.4l2.b1..3 =   -0.0001034540932 ;
+Assigned alignment errors to 1 elements
+stest =        23203.97598 ;
+dx_mbrc.4l2.b1..4 =     -0.09120701968 ;
+sx_mbrc.4l2.b1..4 =        -122.622932 ;
+dx_mbrc.4l2.b1..4 =     0.002792980319 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        23449.22198 ;
+dx_mbrc.4r2.b1..1 =      0.09120701968 ;
+sx_mbrc.4r2.b1..1 =         122.622932 ;
+dx_mbrc.4r2.b1..1 =    -0.002792980318 ;
+Assigned alignment errors to 1 elements
+stest =        23451.74198 ;
+dx_mbrc.4r2.b1..2 =      0.09410345409 ;
+sx_mbrc.4r2.b1..2 =        125.1429303 ;
+dx_mbrc.4r2.b1..2 =    0.0001034540941 ;
+Assigned alignment errors to 1 elements
+stest =        23454.26198 ;
+dx_mbrc.4r2.b1..3 =      0.09603441061 ;
+sx_mbrc.4r2.b1..3 =        127.6629296 ;
+dx_mbrc.4r2.b1..3 =     0.002034410605 ;
+Assigned alignment errors to 1 elements
+stest =        23456.78198 ;
+dx_mbrc.4r2.b1..4 =      0.09699988893 ;
+sx_mbrc.4r2.b1..4 =        130.1829294 ;
+dx_mbrc.4r2.b1..4 =     0.002999888931 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        16520.47518 ;
+dx_mbrc.4l8.b1..1 =     -0.09699988893 ;
+sx_mbrc.4l8.b1..1 =       -130.1829294 ;
+dx_mbrc.4l8.b1..1 =    -0.002999888928 ;
+Assigned alignment errors to 1 elements
+stest =        16522.99518 ;
+dx_mbrc.4l8.b1..2 =      -0.0960344106 ;
+sx_mbrc.4l8.b1..2 =       -127.6629296 ;
+dx_mbrc.4l8.b1..2 =    -0.002034410602 ;
+Assigned alignment errors to 1 elements
+stest =        16525.51518 ;
+dx_mbrc.4l8.b1..3 =     -0.09410345409 ;
+sx_mbrc.4l8.b1..3 =       -125.1429303 ;
+dx_mbrc.4l8.b1..3 =   -0.0001034540911 ;
+Assigned alignment errors to 1 elements
+stest =        16528.03518 ;
+dx_mbrc.4l8.b1..4 =     -0.09120701968 ;
+sx_mbrc.4l8.b1..4 =        -122.622932 ;
+dx_mbrc.4l8.b1..4 =     0.002792980321 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        16773.28118 ;
+dx_mbrc.4r8.b1..1 =      0.09120701968 ;
+sx_mbrc.4r8.b1..1 =         122.622932 ;
+dx_mbrc.4r8.b1..1 =     -0.00279298032 ;
+Assigned alignment errors to 1 elements
+stest =        16775.80118 ;
+dx_mbrc.4r8.b1..2 =      0.09410345409 ;
+sx_mbrc.4r8.b1..2 =        125.1429303 ;
+dx_mbrc.4r8.b1..2 =     0.000103454092 ;
+Assigned alignment errors to 1 elements
+stest =        16778.32118 ;
+dx_mbrc.4r8.b1..3 =       0.0960344106 ;
+sx_mbrc.4r8.b1..3 =        127.6629296 ;
+dx_mbrc.4r8.b1..3 =     0.002034410603 ;
+Assigned alignment errors to 1 elements
+stest =        16780.84118 ;
+dx_mbrc.4r8.b1..4 =      0.09699988893 ;
+sx_mbrc.4r8.b1..4 =        130.1829294 ;
+dx_mbrc.4r8.b1..4 =     0.002999888929 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        3276.721216 ;
+dx_mbrs.5l4.b1..1 =     -0.00594066261 ;
+sx_mbrs.5l4.b1..1 =       -55.56299728 ;
+dx_mbrs.5l4.b1..1 =     -0.00294066261 ;
+Assigned alignment errors to 1 elements
+stest =        3279.241216 ;
+dx_mbrs.5l4.b1..2 =    -0.002970331534 ;
+sx_mbrs.5l4.b1..2 =       -53.04299903 ;
+dx_mbrs.5l4.b1..2 =    2.966846572e-05 ;
+Assigned alignment errors to 1 elements
+stest =        3281.761216 ;
+dx_mbrs.5l4.b1..3 =   -0.0009901105621 ;
+sx_mbrs.5l4.b1..3 =       -50.52299981 ;
+dx_mbrs.5l4.b1..3 =     0.002009889438 ;
+Assigned alignment errors to 1 elements
+stest =        3284.281216 ;
+dx_mbrs.5l4.b1..4 =    4.192202141e-13 ;
+sx_mbrs.5l4.b1..4 =            -48.003 ;
+dx_mbrs.5l4.b1..4 =             -0.003 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        3380.287216 ;
+dx_mbrs.5r4.b1..1 =    8.668621376e-13 ;
+sx_mbrs.5r4.b1..1 =             48.003 ;
+dx_mbrs.5r4.b1..1 =    -0.002999999999 ;
+Assigned alignment errors to 1 elements
+stest =        3382.807216 ;
+dx_mbrs.5r4.b1..2 =   -0.0009901105617 ;
+sx_mbrs.5r4.b1..2 =        50.52299981 ;
+dx_mbrs.5r4.b1..2 =     0.002009889438 ;
+Assigned alignment errors to 1 elements
+stest =        3385.327216 ;
+dx_mbrs.5r4.b1..3 =    -0.002970331534 ;
+sx_mbrs.5r4.b1..3 =        53.04299903 ;
+dx_mbrs.5r4.b1..3 =    2.966846634e-05 ;
+Assigned alignment errors to 1 elements
+stest =        3387.847216 ;
+dx_mbrs.5r4.b1..4 =     -0.00594066261 ;
+sx_mbrs.5r4.b1..4 =        55.56299728 ;
+dx_mbrs.5r4.b1..4 =     -0.00294066261 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        3204.820216 ;
+dx_mbrb.5l4.b1..1 =      -0.1129998635 ;
+sx_mbrb.5l4.b1..1 =       -127.4639151 ;
+dx_mbrb.5l4.b1..1 =    1.364954732e-07 ;
+Assigned alignment errors to 1 elements
+stest =        3207.340216 ;
+dx_mbrb.5l4.b1..2 =      -0.1120097529 ;
+sx_mbrb.5l4.b1..2 =       -124.9439153 ;
+dx_mbrb.5l4.b1..2 =     0.000990247058 ;
+Assigned alignment errors to 1 elements
+stest =        3209.860216 ;
+dx_mbrb.5l4.b1..3 =       -0.110029532 ;
+sx_mbrb.5l4.b1..3 =       -122.4239161 ;
+dx_mbrb.5l4.b1..3 =      0.00297046803 ;
+Assigned alignment errors to 1 elements
+stest =        3212.380216 ;
+dx_mbrb.5l4.b1..4 =      -0.1070592009 ;
+sx_mbrb.5l4.b1..4 =       -119.9039178 ;
+dx_mbrb.5l4.b1..4 =     0.005940799106 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+stest =        3452.188216 ;
+dx_mbrb.5r4.b1..1 =      -0.1070592009 ;
+sx_mbrb.5r4.b1..1 =        119.9039178 ;
+dx_mbrb.5r4.b1..1 =     0.005940799107 ;
+Assigned alignment errors to 1 elements
+stest =        3454.708216 ;
+dx_mbrb.5r4.b1..2 =       -0.110029532 ;
+sx_mbrb.5r4.b1..2 =        122.4239161 ;
+dx_mbrb.5r4.b1..2 =      0.00297046803 ;
+Assigned alignment errors to 1 elements
+stest =        3457.228216 ;
+dx_mbrb.5r4.b1..3 =      -0.1120097529 ;
+sx_mbrb.5r4.b1..3 =        124.9439153 ;
+dx_mbrb.5r4.b1..3 =    0.0009902470585 ;
+Assigned alignment errors to 1 elements
+stest =        3459.748216 ;
+dx_mbrb.5r4.b1..4 =      -0.1129998635 ;
+sx_mbrb.5r4.b1..4 =        127.4639151 ;
+dx_mbrb.5r4.b1..4 =    1.364959705e-07 ;
+Assigned alignment errors to 1 elements
+stest =                  0 ;
+nip =                  1 ;
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+nip =                  2 ;
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+nip =                  3 ;
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+nip =                  4 ;
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+nip =                  5 ;
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+nip =                  6 ;
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+nip =                  7 ;
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+nip =                  8 ;
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 1 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 16 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 4 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+Assigned field errors to 2 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+single bore magnet
+refradius =               0.05 ;
+Assigned field errors to 16 elements
+ ******Sector******            1
+ 308         MB   slices in sector  1
+  16         MQTF slices in sector  1
+  16         MQTD slices in sector  1
+   4         MQS  slices in sector  1
+ ******Sector******            2
+ 308         MB   slices in sector  2
+  16         MQTF slices in sector  2
+  16         MQTD slices in sector  2
+   4         MQS  slices in sector  2
+ ******Sector******            3
+ 308         MB   slices in sector  3
+  16         MQTF slices in sector  3
+  16         MQTD slices in sector  3
+   4         MQS  slices in sector  3
+ ******Sector******            4
+ 308         MB   slices in sector  4
+  16         MQTF slices in sector  4
+  16         MQTD slices in sector  4
+   4         MQS  slices in sector  4
+ ******Sector******            5
+ 308         MB   slices in sector  5
+  16         MQTF slices in sector  5
+  16         MQTD slices in sector  5
+   4         MQS  slices in sector  5
+ ******Sector******            6
+ 308         MB   slices in sector  6
+  16         MQTF slices in sector  6
+  16         MQTD slices in sector  6
+   4         MQS  slices in sector  6
+ ******Sector******            7
+ 308         MB   slices in sector  7
+  16         MQTF slices in sector  7
+  16         MQTD slices in sector  7
+   4         MQS  slices in sector  7
+ ******Sector******            8
+ 308         MB   slices in sector  8
+  16         MQTF slices in sector  8
+  16         MQTD slices in sector  8
+   4         MQS  slices in sector  8
+ Collision energy
+  -4.2182240773264157E-019
+  -5.2497069191748125E-016
+   1.6051274350468991E-019
+   7.5352050987742558E-017
+ ***************IR1***************
+ 32               slices for Q1.L1
+ 32               slices for Q1.R1
+ 16              slices for Q2a.L1
+ 16              slices for Q2a.R1
+ 16              slices for Q2b.L1
+ 16              slices for Q2b.R1
+ 32               slices for Q3.L1
+ 32               slices for Q3.R1
+  4               slices for D1.L1
+  4               slices for D1.R1
+ ***************IR5***************
+ 32               slices for Q1.L5
+ 32               slices for Q1.R5
+ 16              slices for Q2a.L5
+ 16              slices for Q2a.R5
+ 16              slices for Q2b.L5
+ 16              slices for Q2b.R5
+ 32               slices for Q3.L5
+ 32               slices for Q3.R5
+  4               slices for D1.L5
+  4               slices for D1.R5
+ ***************IR2***************
+ 16               slices for Q1.L2
+ 16               slices for Q1.R2
+ 16              slices for Q2a.L2
+ 16              slices for Q2a.R2
+ 16              slices for Q2b.L2
+ 16              slices for Q2b.R2
+ 16               slices for Q3.L2
+ 16               slices for Q3.R2
+  4               slices for D1.L2
+  4               slices for D1.R2
+ ***************IR8***************
+ 16               slices for Q1.L8
+ 16               slices for Q1.R8
+ 16              slices for Q2a.L8
+ 16              slices for Q2a.R8
+ 16              slices for Q2b.L8
+ 16              slices for Q2b.R8
+ 16               slices for Q3.L8
+ 16               slices for Q3.R8
+  4               slices for D1.L8
+  4               slices for D1.R8
+
+ BEAM DIRECTION           1
+
+ Tot. number of entries in optics0_inser.mad:          764
+ Something possibly wrong in file optics0_inser.mad
+
+ Tot. numb. of entries in tripD1D2.errors:          704
+ Warning some MQX, D1 or D2 errors are not defined
+
+ A2, (1,-1) resonnance driving terms
+ A2_(1,-1)  1   0.0000E+00   0.0000E+00
+ A2_(1,-1)  2   0.0000E+00   0.0000E+00
+ A2_(1,-1)  3  -0.2853E-02  -0.3155E-19
+ A2_(1,-1)  4   0.5155E-02  -0.4375E-18
+ A2_(1,-1)  5   0.0000E+00   0.0000E+00
+ A2_(1,-1)  6   0.0000E+00   0.0000E+00
+ A2_(1,-1)  7  -0.3966E-02   0.3270E-18
+ A2_(1,-1)  8  -0.1928E-01  -0.1230E-17
+
+ A3, (2,1) resonnance driving terms (beam1)
+  A3_(2,1)  1   0.8080E+03  -0.9133E+02
+  A3_(2,1)  3  -0.1292E+01   0.2193E+00
+  A3_(2,1)  5   0.1638E+03  -0.1454E+02
+  A3_(2,1)  7  -0.4330E+00  -0.3489E+00
+ A3, (1,2) resonnance driving terms (beam2)
+  A3_(1,2)  1   0.5362E+03  -0.9492E+02
+  A3_(1,2)  3  -0.2487E+01   0.2880E+00
+  A3_(1,2)  5   0.2399E+03  -0.1633E+02
+  A3_(1,2)  7  -0.7619E+01   0.6597E-01
+ A3, (0,3) resonnance driving terms (beam1)
+  A3_(0,3)  1   0.4915E+03  -0.3045E-13
+  A3_(0,3)  3  -0.4347E+01  -0.3010E-15
+  A3_(0,3)  5   0.3863E+03  -0.2839E-13
+  A3_(0,3)  7  -0.1622E+02  -0.1029E-14
+ A3, (3,0) resonnance driving terms (beam2)
+  A3_(3,0)  1   0.1351E+04  -0.1124E-12
+  A3_(3,0)  3  -0.4137E+00  -0.1663E-15
+  A3_(3,0)  5   0.1369E+03  -0.7886E-14
+  A3_(3,0)  7   0.7506E+01  -0.5382E-15
+
+ A4, (1,3) resonnance driving terms (beam1)
+  A4_(1,3)  1   0.1145E+07  -0.1512E-10
+  A4_(1,3)  3   0.4939E+03  -0.8504E-13
+  A4_(1,3)  5   0.3296E+07  -0.3528E-09
+  A4_(1,3)  7   0.1088E+05  -0.2618E-11
+ A4, (3,1) resonnance driving terms (beam1)
+  A4_(3,1)  1  -0.2477E+07   0.4911E-10
+  A4_(3,1)  3  -0.1373E+04  -0.8987E-13
+  A4_(3,1)  5   0.1521E+05  -0.8799E-10
+  A4_(3,1)  7  -0.3544E+05  -0.3560E-11
+
+ A5, (4,1) resonnance driving terms (beam1)
+  A5_(4,1)  1  -0.5088E+10  -0.7140E+09
+  A5_(4,1)  3  -0.4405E+07  -0.4405E+07
+  A5_(4,1)  5   0.1735E+11   0.2319E+10
+  A5_(4,1)  7   0.5613E+08   0.5613E+08
+ A5, (1,4) resonnance driving terms (beam2)
+  A5_(1,4)  1   0.2713E+11  -0.3738E+10
+  A5_(1,4)  3  -0.9084E+07  -0.9084E+07
+  A5_(1,4)  5   0.3062E+11   0.2400E+10
+  A5_(1,4)  7  -0.1728E+08  -0.1728E+08
+ A5, (2,3) resonnance driving terms (beam1)
+  A5_(2,3)  1   0.1273E+11  -0.3738E+10
+  A5_(2,3)  3  -0.6647E+07  -0.6647E+07
+  A5_(2,3)  5   0.2315E+11   0.3177E+10
+  A5_(2,3)  7   0.8174E+07   0.8174E+07
+ A5, (3,2) resonnance driving terms (beam2)
+  A5_(3,2)  1   0.3145E+10  -0.2333E+10
+  A5_(3,2)  3  -0.5220E+07  -0.5220E+07
+  A5_(3,2)  5   0.1899E+11   0.3133E+10
+  A5_(3,2)  7   0.3143E+08   0.3143E+08
+ A5, (0,5) resonnance driving terms (beam1)
+  A5_(0,5)  1   0.5167E+11   0.4036E-05
+  A5_(0,5)  3  -0.1320E+08  -0.1320E+08
+  A5_(0,5)  5   0.4233E+11  -0.2788E-05
+  A5_(0,5)  7  -0.4998E+08  -0.4998E+08
+ A5, (5,0) resonnance driving terms (beam2)
+  A5_(5,0)  1  -0.1513E+11  -0.3856E-06
+  A5_(5,0)  3  -0.3931E+07  -0.3931E+07
+  A5_(5,0)  5   0.1731E+11  -0.5830E-06
+  A5_(5,0)  7   0.8542E+08   0.8542E+08
+
+ A6, (5,1) resonnance driving terms (beam1)
+  A6_(5,1)  1   0.3436E+15  -0.2255E-01
+  A6_(5,1)  3  -0.3000E+11  -0.3000E+11
+  A6_(5,1)  5   0.2455E+15  -0.9781E-02
+  A6_(5,1)  7   0.1315E+13   0.1315E+13
+ A6, (1,5) resonnance driving terms (beam2)
+  A6_(1,5)  1   0.1848E+15  -0.5600E-02
+  A6_(1,5)  3  -0.1609E+11  -0.1609E+11
+  A6_(1,5)  5  -0.4977E+14   0.5501E-02
+  A6_(1,5)  7   0.6447E+12   0.6447E+12
+ A6, (3,3) resonnance driving terms
+  A6_(3,3)  1   0.1962E+15   0.1236E+14
+  A6_(3,3)  3  -0.1872E+11  -0.1872E+11
+  A6_(3,3)  5   0.6283E+14  -0.5263E+13
+  A6_(3,3)  7   0.8507E+12   0.8507E+12
+
+ B3, (3,0) resonnance driving terms (beam1)
+  B3_(3,0)  1   0.9664E+03   0.4401E+02
+  B3_(3,0)  3  -0.4576E+01   0.1973E+00
+  B3_(3,0)  5  -0.3095E+03  -0.3010E+02
+  B3_(3,0)  7  -0.5617E+02  -0.2246E+00
+ B3, (0,3) resonnance driving terms (beam2)
+  B3_(0,3)  1   0.6252E+03   0.6583E+02
+  B3_(0,3)  3  -0.8341E+01   0.7818E-01
+  B3_(0,3)  5   0.7067E+03   0.7382E+02
+  B3_(0,3)  7  -0.1764E+02  -0.4651E+00
+ B3, (1,2) resonnance driving terms (beam1)
+  B3_(1,2)  1   0.5585E+03  -0.3719E-13
+  B3_(1,2)  3  -0.6519E+01  -0.4402E-15
+  B3_(1,2)  5   0.2891E+03   0.2909E-13
+  B3_(1,2)  7  -0.2633E+02   0.1832E-15
+ B3, (2,1) resonnance driving terms (beam2)
+  B3_(2,1)  1   0.6717E+03  -0.4852E-13
+  B3_(2,1)  3  -0.5348E+01  -0.3524E-15
+  B3_(2,1)  5   0.4396E+01   0.7161E-14
+  B3_(2,1)  7  -0.3875E+02   0.3424E-15
+
+ B4, (4,0) resonnance driving terms (beam1)
+  B4_(4,0)  1   0.4985E-03   0.1624E-19
+  B4_(4,0)  3   0.2609E-05  -0.1160E-21
+  B4_(4,0)  5  -0.3734E-02  -0.1083E-18
+  B4_(4,0)  7   0.7064E-04  -0.5958E-20
+ B4, (0,4) resonnance driving terms (beam1)
+  B4_(0,4)  1   0.1550E-02   0.7341E-19
+  B4_(0,4)  3   0.8847E-06  -0.1442E-22
+  B4_(0,4)  5  -0.1469E-02   0.4431E-19
+  B4_(0,4)  7  -0.1714E-04  -0.1077E-20
+ B4, (2,2) resonnance driving terms (beam1)
+  B4_(2,2)  1   0.1178E-02  -0.2515E-03
+  B4_(2,2)  3   0.2857E-05   0.9563E-08
+  B4_(2,2)  5  -0.3095E-02   0.5348E-03
+  B4_(2,2)  7   0.4399E-04   0.1220E-05
+
+ B5, (5,0) resonnance driving terms (beam1)
+  B5_(5,0)  1  -0.4956E+11  -0.4869E-05
+  B5_(5,0)  3   0.2196E+07   0.2196E+07
+  B5_(5,0)  5   0.3653E+10   0.1790E-06
+  B5_(5,0)  7   0.1352E+09   0.1352E+09
+ B5, (0,5) resonnance driving terms (beam2)
+  B5_(0,5)  1   0.2314E+11  -0.2804E-05
+  B5_(0,5)  3  -0.2635E+07  -0.2635E+07
+  B5_(0,5)  5   0.4776E+10  -0.1825E-06
+  B5_(0,5)  7   0.1538E+09   0.1538E+09
+ B5, (3,2) resonnance driving terms (beam1)
+  B5_(3,2)  1  -0.7992E+10   0.5933E+10
+  B5_(3,2)  3   0.3918E+06   0.3918E+06
+  B5_(3,2)  5  -0.2051E+10  -0.4493E+10
+  B5_(3,2)  7   0.1055E+09   0.1055E+09
+ B5, (2,3) resonnance driving terms (beam2)
+  B5_(2,3)  1   0.2031E+10   0.3991E+10
+  B5_(2,3)  3  -0.6772E+06  -0.6772E+06
+  B5_(2,3)  5  -0.2557E+10  -0.5184E+10
+  B5_(2,3)  7   0.9998E+08   0.9998E+08
+ B5, (1,4) resonnance driving terms (beam1)
+  B5_(1,4)  1   0.1109E+11   0.1494E+10
+  B5_(1,4)  3  -0.1723E+07  -0.1723E+07
+  B5_(1,4)  5  -0.8876E+09  -0.4242E+10
+  B5_(1,4)  7   0.1117E+09   0.1117E+09
+ B5, (4,1) resonnance driving terms (beam2)
+  B5_(4,1)  1  -0.2312E+11   0.5646E+10
+  B5_(4,1)  3   0.1399E+07   0.1399E+07
+  B5_(4,1)  5  -0.3445E+08  -0.2796E+10
+  B5_(4,1)  7   0.1199E+09   0.1199E+09
+
+ B6, (6,0) resonnance driving terms (beam1)
+  B6_(6,0)  1   0.1287E+16   0.9485E-01
+  B6_(6,0)  3   0.4183E+11   0.2159E-05
+  B6_(6,0)  5   0.1229E+16   0.1538E-01
+  B6_(6,0)  7  -0.2194E+12   0.8300E-05
+ B6, (0,6) resonnance driving terms (beam1)
+  B6_(0,6)  1  -0.1466E+16  -0.2180E-01
+  B6_(0,6)  3   0.4848E+11   0.4519E-05
+  B6_(0,6)  5  -0.1767E+16  -0.4997E-02
+  B6_(0,6)  7  -0.1435E+13   0.7951E-04
+ B6, (4,2) resonnance driving terms (beam1)
+  B6_(4,2)  1   0.2598E+15  -0.4729E+14
+  B6_(4,2)  3   0.1923E+11  -0.1075E+11
+  B6_(4,2)  5   0.2013E+15  -0.4181E+14
+  B6_(4,2)  7  -0.1400E+12   0.2350E+12
+ B6, (2,4) resonnance driving terms (beam1)
+  B6_(2,4)  1  -0.3798E+15   0.2256E+14
+  B6_(2,4)  3   0.1882E+11  -0.1308E+11
+  B6_(2,4)  5  -0.4977E+15   0.3159E+14
+  B6_(2,4)  7  -0.4514E+12   0.2699E+12
+ !! MQSX (a2) corrector
+
+ KQSX3.L1 :=  -0.000000E+00 /l.MCQSX3;
+
+ KQSX3.R1 :=  -0.000000E+00 /l.MCQSX3;
+
+ KQSX3.L2 :=   0.177142E-04  /l.MQSX ;
+
+ KQSX3.R2 :=  -0.320038E-04  /l.MQSX ;
+
+ KQSX3.L5 :=  -0.000000E+00 /l.MCQSX3;
+
+ KQSX3.R5 :=  -0.000000E+00 /l.MCQSX3;
+
+ KQSX3.L8 :=   0.763888E-05  /l.MQSX ;
+
+ KQSX3.R8 :=   0.371317E-04  /l.MQSX ;
+
+
+
+ !! MCSSX (a3) corrector
+
+KCSSX3.L1 :=  -0.581061E-04 /l.MCSSX3;
+
+KCSSX3.R1 :=   0.511449E-03 /l.MCSSX3;
+
+KCSSX3.L2 :=  -0.450615E-03 /l.MCSSX ;
+
+KCSSX3.R2 :=  -0.157924E-02 /l.MCSSX ;
+
+KCSSX3.L5 :=  -0.146664E-03 /l.MCSSX3;
+
+KCSSX3.R5 :=   0.150785E-04 /l.MCSSX3;
+
+KCSSX3.L8 :=  -0.810134E-03 /l.MCSSX ;
+
+KCSSX3.R8 :=  -0.115544E-02 /l.MCSSX ;
+
+
+
+ !! MCOSX (a4) corrector
+
+KCOSX3.L1 :=  -0.113875E-01 /l.MCOSX3;
+
+KCOSX3.R1 :=   0.155617E-01 /l.MCOSX3;
+
+KCOSX3.L2 :=   0.689716E-01 /l.MCOSX ;
+
+KCOSX3.R2 :=  -0.509389E-01 /l.MCOSX ;
+
+KCOSX3.L5 :=  -0.173905E-01 /l.MCOSX3;
+
+KCOSX3.R5 :=   0.701423E-02 /l.MCOSX3;
+
+KCOSX3.L8 :=   0.155741E+00 /l.MCOSX ;
+
+KCOSX3.R8 :=  -0.108884E+00 /l.MCOSX ;
+
+
+
+ !! MCDSX (a5) corrector
+
+KCDSX3.L1 :=  -0.108065E+01 /l.MCDSX3;
+
+KCDSX3.R1 :=  -0.416852E+00 /l.MCDSX3;
+
+KCDSX3.L5 :=  -0.822182E+00 /l.MCDSX3;
+
+KCDSX3.R5 :=   0.261489E+00 /l.MCDSX3;
+
+
+
+
+
+ !! MCTSX (a6) corrector
+
+KCTSX3.L1 :=  -0.299880E+02 /l.MCTSX3;
+
+KCTSX3.R1 :=  -0.731157E+02 /l.MCTSX3;
+
+KCTSX3.L5 :=   0.210105E+02 /l.MCTSX3;
+
+KCTSX3.R5 :=  -0.592073E+02 /l.MCTSX3;
+
+
+
+ !! MCSX (b3) corrector
+
+ KCSX3.L1 :=  -0.132893E-03  /l.MCSX3;
+
+ KCSX3.R1 :=   0.323388E-03  /l.MCSX3;
+
+ KCSX3.L2 :=   0.621852E-03  /l.MCSX ;
+
+ KCSX3.R2 :=  -0.247907E-02  /l.MCSX ;
+
+ KCSX3.L5 :=  -0.293815E-03  /l.MCSX3;
+
+ KCSX3.R5 :=  -0.184967E-03  /l.MCSX3;
+
+ KCSX3.L8 :=   0.302135E-02  /l.MCSX ;
+
+ KCSX3.R8 :=   0.147212E-03  /l.MCSX ;
+
+
+
+ !! MCOX (b4) corrector
+
+ KCOX3.L1 :=  -0.843084E-02  /l.MCOX3;
+
+ KCOX3.R1 :=  -0.139233E-02  /l.MCOX3;
+
+ KCOX3.L2 :=  -0.114056E+00  /l.MCOX ;
+
+ KCOX3.R2 :=  -0.915101E-02  /l.MCOX ;
+
+ KCOX3.L5 :=   0.489406E-02  /l.MCOX3;
+
+ KCOX3.R5 :=   0.200587E-01  /l.MCOX3;
+
+ KCOX3.L8 :=  -0.322713E+00  /l.MCOX ;
+
+ KCOX3.R8 :=   0.149700E+00  /l.MCOX ;
+
+
+
+ !! MCSX (b5) corrector
+
+ KCDX3.L1 :=  -0.578736E+00  /l.MCDX3;
+
+ KCDX3.R1 :=  -0.106142E+01  /l.MCDX3;
+
+ KCDX3.L5 :=  -0.896804E-01  /l.MCDX3;
+
+ KCDX3.R5 :=   0.643396E-01  /l.MCDX3;
+
+
+
+ !! MCTX (b6) corrector
+
+ KCTX3.L1 :=   0.222240E+03  /l.MCTX3;
+
+ KCTX3.R1 :=  -0.198266E+03  /l.MCTX3;
+
+ KCTX3.L2 :=  -0.371502E+04  /l.MCTX ;
+
+ KCTX3.R2 :=  -0.451207E+04  /l.MCTX ;
+
+ KCTX3.L5 :=   0.264918E+03  /l.MCTX3;
+
+ KCTX3.R5 :=  -0.192918E+03  /l.MCTX3;
+
+ KCTX3.L8 :=   0.123692E+03  /l.MCTX ;
+
+ KCTX3.R8 :=   0.402849E+04  /l.MCTX ;
+
+
+
+ return;
+
+
+
+
+
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+!    correct orbit distortion resulting from other magnets
+
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+if((ON_A1S)^2+(ON_A1r)^2+(ON_B1S)^2+(ON_B1r)^2 >0)
+
+{
+
+ exec, initial_micado(4);
+
+ exec, initial_micado(4);
+
+ exec, initial_micado(4);
+
+ exec, initial_micado(4);
+
+ };
+
+
+
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+!    final orbit correction before applying crossing scheme
+
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+if((ON_A1S)^2+(ON_A1r)^2+(ON_B1S)^2+(ON_B1r)^2 >0)
+
+{ exec, final_micado(0.004); };
+
+
+
+
+
+! end of orbit correction, now switch ON crossing scheme
+
+ on_x1=on0_x1; on_sep1=on0_sep1;
+
+ on_x2=on0_x2; on_sep2=on0_sep2; on_alice=on0_alice;
+
+ on_x5=on0_x5; on_sep5=on0_sep5;
+
+ on_x8=on0_x8; on_sep8=on0_sep8; on_lhcb =on0_lhcb;
+
+ on_disp=on0_disp;
+
+
+
+value,on_x1,on_x2,on_x5,on_x8,on_sep1,on_sep2,on_sep5,on_sep8,on_alice,on_lhcb,on_disp;
+
+on_x1 =                  1 ;
+on_x2 =                  1 ;
+on_x5 =                  1 ;
+on_x8 =                  1 ;
+on_sep1 =                  1 ;
+on_sep2 =                  1 ;
+on_sep5 =                  1 ;
+on_sep8 =                  1 ;
+on_alice =                  1 ;
+on_lhcb =                 -1 ;
+on_disp =                  1 ;
+
+
+! coguess,x=x.ip1,px=px.ip1,y=y.ip1,py=py.ip1;
+
+
+
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+!   Fine tuning of coupling after CO correction and with Xscheme
+
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+call,file="slhc/errors/FineCouplingCorrection.madx";
+
+! Fine tuning of coupling correction
+
+! S.Fartoukh March 2009
+
+! 2011/11/21 From SLHCV3.0 R. De Maria
+
+
+
+if(mylhcbeam==1)
+
+{kqtf=kqtf.b1;kqtf0=kqtf.b1;
+
+ kqtd=kqtd.b1;kqtd0=kqtd.b1;
+
+ kqtf.b1:=kqtf;
+
+ kqtd.b1:=kqtd;};
+
+
+
+if(mylhcbeam > 1)
+
+{kqtf=kqtf.b2;kqtf0=kqtf.b2;
+
+ kqtd=kqtd.b2;kqtd0=kqtd.b2;
+
+ kqtf.b2:=kqtf;
+
+ kqtd.b2:=kqtd;};
+
+ 
+
+
+
+! closest tune
+
+ qmid=(qx0-qx00+qy0-qy00)*0.5;
+
+
+
+ match;
+
+START MATCHING
+
+ global, q1=qx00+qmid,q2=qy00+qmid;
+
+ vary,   name=kqtf, step=1.E-9;
+
+ vary,   name=kqtd, step=1.E-9;
+
+ lmdif,  calls=50, tolerance=1.E-10;
+
+number of variables:    2
+user given constraints: 2
+total constraints:      2
+
+START LMDIF:
+
+Initial Penalty Function =   0.19668258E-02
+
+
+call:       4   Penalty function =   0.10942783E-03
+call:       9   Penalty function =   0.10923818E-03
+call:      12   Penalty function =   0.10913878E-03
+call:      16   Penalty function =   0.10912732E-03
+ ++++++++++ LMDIF ended: converged without success
+call:      25   Penalty function =   0.10912732E-03
+ endmatch;
+
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+Global constraint:         q1           4     6.23150000E+01     6.23157385E+01     5.45353156E-05
+Global constraint:         q2           4     6.03150000E+01     6.03142611E+01     5.45920058E-05
+
+
+Final Penalty Function =   1.09127321e-04
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+kqtf                      2.13245e-05  0.00000e+00 -1.00000e+20  1.00000e+20
+kqtd                      1.43443e-05  0.00000e+00 -1.00000e+20  1.00000e+20
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   1.09127321e-04
+ 
+
+ 
+
+
+
+! Quick minimization based on linear machine
+
+ cmrskew0 = cmrskew;
+
+ cmiskew0 = cmiskew;
+
+ twiss; qx=table(summ,q1); qy=table(summ,q2);
+
+enter Twiss module
+  
+iteration:   1 error:   5.017957E-05 deltap:   0.000000E+00
+orbit:   5.002851E-05 -7.753110E-07  5.795729E-05  8.701295E-07  0.000000E+00  0.000000E+00
+  
+iteration:   2 error:   5.259580E-08 deltap:   0.000000E+00
+orbit:   5.004183E-05 -7.756518E-07  5.797939E-05  8.702942E-07  0.000000E+00  0.000000E+00
+
+++++++ table: summ
+
+            length             orbit5               alfa            gammatr 
+        26658.8832                 -0    0.0003464570874        53.72485784 
+
+                q1                dq1            betxmax              dxmax 
+       62.31573848       -2.751482588        22079.68396        3.045123196 
+
+             dxrms             xcomax             xcorms                 q2 
+        1.47339105      0.01632350155     0.001999336626        60.31426114 
+
+               dq2            betymax              dymax              dyrms 
+      0.6954348118        21378.85654        1.419168101       0.1987065665 
+
+            ycomax             ycorms             deltap            synch_1 
+     0.01643041387      0.00199759189                  0                  0 
+
+           synch_2            synch_3            synch_4            synch_5 
+                 0                  0                  0                  0 
+ cta0     = abs(qx-qy-tsplit);
+
+ closest0 = cta0;
+
+ 
+
+ cmrskew  = cmrskew0+cta0/2.;
+
+ twiss; qx=table(summ,q1); qy=table(summ,q2);
+
+enter Twiss module
+  
+iteration:   1 error:   5.031938E-05 deltap:   0.000000E+00
+orbit:   5.002726E-05 -7.755105E-07  5.792444E-05  8.696587E-07  0.000000E+00  0.000000E+00
+  
+iteration:   2 error:   5.257254E-08 deltap:   0.000000E+00
+orbit:   5.004055E-05 -7.758507E-07  5.794652E-05  8.698233E-07  0.000000E+00  0.000000E+00
+
+++++++ table: summ
+
+            length             orbit5               alfa            gammatr 
+        26658.8832                 -0    0.0003464570737         53.7248589 
+
+                q1                dq1            betxmax              dxmax 
+       62.31573957       -2.750400449        22370.35003        3.045042769 
+
+             dxrms             xcomax             xcorms                 q2 
+       1.473362363        0.016322954     0.001999280435        60.31425889 
+
+               dq2            betymax              dymax              dyrms 
+      0.6967646431        21757.59266        1.418201797       0.1986408124 
+
+            ycomax             ycorms             deltap            synch_1 
+     0.01642992065     0.001997542071                  0                  0 
+
+           synch_2            synch_3            synch_4            synch_5 
+                 0                  0                  0                  0 
+ ctap     = abs(qx-qy-tsplit);
+
+ 
+
+ cmrskew  = cmrskew0-cta0/2.;
+
+ twiss; qx=table(summ,q1); qy=table(summ,q2);
+
+enter Twiss module
+  
+iteration:   1 error:   5.003981E-05 deltap:   0.000000E+00
+orbit:   5.002986E-05 -7.751128E-07  5.799023E-05  8.706021E-07  0.000000E+00  0.000000E+00
+  
+iteration:   2 error:   5.261895E-08 deltap:   0.000000E+00
+orbit:   5.004320E-05 -7.754541E-07  5.801235E-05  8.707670E-07  0.000000E+00  0.000000E+00
+
+++++++ table: summ
+
+            length             orbit5               alfa            gammatr 
+        26658.8832                 -0    0.0003464571011        53.72485678 
+
+                q1                dq1            betxmax              dxmax 
+        62.3159014       -2.753798646        21642.54629        3.045204034 
+
+             dxrms             xcomax             xcorms                 q2 
+       1.473419874      0.01632404933     0.001999392845        60.31409943 
+
+               dq2            betymax              dymax              dyrms 
+      0.6938068575        21145.78773        1.420137552       0.1987731211 
+
+            ycomax             ycorms             deltap            synch_1 
+     0.01643090705     0.001997641704                  0                  0 
+
+           synch_2            synch_3            synch_4            synch_5 
+                 0                  0                  0                  0 
+ ctam     = abs(qx-qy-tsplit);
+
+ 
+
+ cmrskew  = cmrskew0+(ctam^2-ctap^2)/2./cta0;
+
+ twiss; qx=table(summ,q1); qy=table(summ,q2);
+
+enter Twiss module
+  
+iteration:   1 error:   5.024712E-05 deltap:   0.000000E+00
+orbit:   5.002790E-05 -7.754072E-07  5.794140E-05  8.699018E-07  0.000000E+00  0.000000E+00
+  
+iteration:   2 error:   5.258458E-08 deltap:   0.000000E+00
+orbit:   5.004120E-05 -7.757478E-07  5.796349E-05  8.700664E-07  0.000000E+00  0.000000E+00
+
+++++++ table: summ
+
+            length             orbit5               alfa            gammatr 
+        26658.8832                 -0    0.0003464570808        53.72485835 
+
+                q1                dq1            betxmax              dxmax 
+       62.31571597       -2.750786582        22260.78355        3.045084279 
+
+             dxrms             xcomax             xcorms                 q2 
+        1.47337717      0.01632323693     0.001999309469        60.31428308 
+
+               dq2            betymax              dymax              dyrms 
+      0.6961196151        21597.94072        1.418700759       0.1986746921 
+
+            ycomax             ycorms             deltap            synch_1 
+     0.01643017553     0.001997567817                  0                  0 
+
+           synch_2            synch_3            synch_4            synch_5 
+                 0                  0                  0                  0 
+ cta0     = abs(qx-qy-tsplit);
+
+ 
+
+ cmiskew  = cmiskew0+cta0/2.;
+
+ twiss; qx=table(summ,q1); qy=table(summ,q2);
+
+enter Twiss module
+  
+iteration:   1 error:   5.039385E-05 deltap:   0.000000E+00
+orbit:   5.009653E-05 -7.773752E-07  5.794714E-05  8.694527E-07  0.000000E+00  0.000000E+00
+  
+iteration:   2 error:   5.266603E-08 deltap:   0.000000E+00
+orbit:   5.010977E-05 -7.777147E-07  5.796932E-05  8.696182E-07  0.000000E+00  0.000000E+00
+
+++++++ table: summ
+
+            length             orbit5               alfa            gammatr 
+        26658.8832                 -0    0.0003464570713        53.72485909 
+
+                q1                dq1            betxmax              dxmax 
+       62.31533084       -2.753829545        22239.43226        3.044815343 
+
+             dxrms             xcomax             xcorms                 q2 
+         1.4733282       0.0163226537     0.001999251559        60.31465521 
+
+               dq2            betymax              dymax              dyrms 
+      0.6980285314        21586.14809        1.419586144       0.1987263798 
+
+            ycomax             ycorms             deltap            synch_1 
+     0.01642974655     0.001997523414                  0                  0 
+
+           synch_2            synch_3            synch_4            synch_5 
+                 0                  0                  0                  0 
+ ctap     = abs(qx-qy-tsplit);
+
+ 
+
+ cmiskew  = cmiskew0-cta0/2.;
+
+ twiss; qx=table(summ,q1); qy=table(summ,q2);
+
+enter Twiss module
+  
+iteration:   1 error:   5.010003E-05 deltap:   0.000000E+00
+orbit:   4.995913E-05 -7.734345E-07  5.793602E-05  8.703554E-07  0.000000E+00  0.000000E+00
+  
+iteration:   2 error:   5.250246E-08 deltap:   0.000000E+00
+orbit:   4.997251E-05 -7.737760E-07  5.795802E-05  8.705192E-07  0.000000E+00  0.000000E+00
+
+++++++ table: summ
+
+            length             orbit5               alfa            gammatr 
+        26658.8832                 -0    0.0003464570903        53.72485762 
+
+                q1                dq1            betxmax              dxmax 
+        62.3161015       -2.747731188        22272.36469        3.045351251 
+
+             dxrms             xcomax             xcorms                 q2 
+       1.473425835      0.01632382318     0.001999367683        60.31391121 
+
+               dq2            betymax              dymax              dyrms 
+      0.6942353482        21601.38479        1.417822662       0.1986248873 
+
+            ycomax             ycorms             deltap            synch_1 
+     0.01643060975     0.001997612746                  0                  0 
+
+           synch_2            synch_3            synch_4            synch_5 
+                 0                  0                  0                  0 
+ ctam     = abs(qx-qy-tsplit);
+
+ 
+
+ cmiskew  = cmiskew0+(ctam^2-ctap^2)/2./cta0;
+
+ twiss; qx=table(summ,q1); qy=table(summ,q2);
+
+enter Twiss module
+  
+iteration:   1 error:   5.055691E-05 deltap:   0.000000E+00
+orbit:   5.017285E-05 -7.795624E-07  5.795397E-05  8.689575E-07  0.000000E+00  0.000000E+00
+  
+iteration:   2 error:   5.275601E-08 deltap:   0.000000E+00
+orbit:   5.018602E-05 -7.799007E-07  5.797624E-05  8.691240E-07  0.000000E+00  0.000000E+00
+
+++++++ table: summ
+
+            length             orbit5               alfa            gammatr 
+        26658.8832                 -0    0.0003464570606        53.72485992 
+
+                q1                dq1            betxmax              dxmax 
+        62.3150706       -2.758467849        20684.20235        3.044513371 
+
+             dxrms             xcomax             xcorms                 q2 
+       1.473273278      0.01632200741     0.001999187389        60.31490173 
+
+               dq2            betymax              dymax              dyrms 
+      0.6998642088        21197.60275        1.420581284       0.1987861959 
+
+            ycomax             ycorms             deltap            synch_1 
+     0.01642927474     0.001997474557                  0                  0 
+
+           synch_2            synch_3            synch_4            synch_5 
+                 0                  0                  0                  0 
+
+
+ closest1 =abs(qx-qy-tsplit);
+
+
+
+
+
+!Empirical minimisation
+
+ match;
+
+START MATCHING
+
+ global, q1=qx00+qmid, q2=qy00+qmid;
+
+ vary,   name=kqtf, step=1.E-9;
+
+ vary,   name=kqtd, step=1.E-9;
+
+ lmdif,  calls=100,tolerance=1.E-6;
+
+number of variables:    2
+user given constraints: 2
+total constraints:      2
+
+START LMDIF:
+
+Initial Penalty Function =   0.14640392E-05
+
+
+call:       6   Penalty function =   0.14311620E-05
+call:       9   Penalty function =   0.14153877E-05
+call:      13   Penalty function =   0.14135794E-05
+call:      16   Penalty function =   0.14129805E-05
+call:      20   Penalty function =   0.14128011E-05
+call:      24   Penalty function =   0.14127980E-05
+call:      27   Penalty function =   0.14127934E-05
+call:      32   Penalty function =   0.14127931E-05
+ ++++++++++ LMDIF ended: converged: info =            1
+call:      35   Penalty function =   0.14127931E-05
+ endmatch;
+
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+Global constraint:         q1           4     6.23150000E+01     6.23149159E+01     7.06493810E-07
+Global constraint:         q2           4     6.03150000E+01     6.03150840E+01     7.06299259E-07
+
+
+Final Penalty Function =   1.41279307e-06
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+kqtf                      2.13952e-05  2.13245e-05 -1.00000e+20  1.00000e+20
+kqtd                      1.41790e-05  1.43443e-05 -1.00000e+20  1.00000e+20
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   1.41279307e-06
+
+
+ match;
+
+START MATCHING
+
+ global, q1=qx00+qmid, q2=qy00+qmid;
+
+ vary,   name=cmrskew, step=1.E-9;
+
+ vary,   name=cmiskew, step=1.E-9;
+
+ lmdif,  calls=150, tolerance=2.E-6;
+
+number of variables:    2
+user given constraints: 2
+total constraints:      2
+
+START LMDIF:
+
+Initial Penalty Function =   0.14127931E-05
+
+
+ ++++++++++ LMDIF ended: converged successfully
+call:       1   Penalty function =   0.14127931E-05
+ endmatch;
+
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+Global constraint:         q1           4     6.23150000E+01     6.23149159E+01     7.06493810E-07
+Global constraint:         q2           4     6.03150000E+01     6.03150840E+01     7.06299259E-07
+
+
+Final Penalty Function =   1.41279307e-06
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+cmrskew                   3.56950e-04  3.56950e-04 -1.00000e+20  1.00000e+20
+cmiskew                   1.51473e-03  1.51473e-03 -1.00000e+20  1.00000e+20
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   1.41279307e-06
+
+
+ match;
+
+START MATCHING
+
+ global, q1=qx00+qmid, q2=qy00+qmid;
+
+ vary,   name=kqtf, step=1.E-9;
+
+ vary,   name=kqtd, step=1.E-9;
+
+ lmdif,  calls=100, tolerance=1.E-7;
+
+number of variables:    2
+user given constraints: 2
+total constraints:      2
+
+START LMDIF:
+
+Initial Penalty Function =   0.14127931E-05
+
+
+call:      12   Penalty function =   0.14127931E-05
+ ++++++++++ LMDIF ended: converged: info =            1
+call:      12   Penalty function =   0.14127931E-05
+ endmatch;
+
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+Global constraint:         q1           4     6.23150000E+01     6.23149159E+01     7.06493154E-07
+Global constraint:         q2           4     6.03150000E+01     6.03150840E+01     7.06299908E-07
+
+
+Final Penalty Function =   1.41279306e-06
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+kqtf                      2.13952e-05  2.13952e-05 -1.00000e+20  1.00000e+20
+kqtd                      1.41790e-05  1.41790e-05 -1.00000e+20  1.00000e+20
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   1.41279306e-06
+
+
+ match;
+
+START MATCHING
+
+ global, q1=qx00+qmid, q2=qy00+qmid;
+
+ vary,   name=cmrskew, step=1.E-9;
+
+ vary,   name=cmiskew, step=1.E-9;
+
+ lmdif,  calls=150, tolerance=2.E-7;
+
+number of variables:    2
+user given constraints: 2
+total constraints:      2
+
+START LMDIF:
+
+Initial Penalty Function =   0.14127931E-05
+
+
+call:       7   Penalty function =   0.14122267E-05
+call:      10   Penalty function =   0.14098792E-05
+call:      13   Penalty function =   0.14059646E-05
+call:      16   Penalty function =   0.13990101E-05
+call:      19   Penalty function =   0.13852629E-05
+call:      22   Penalty function =   0.13624189E-05
+call:      26   Penalty function =   0.13440607E-05
+call:      29   Penalty function =   0.13249151E-05
+call:      32   Penalty function =   0.13061115E-05
+call:      35   Penalty function =   0.12874357E-05
+call:      38   Penalty function =   0.12691020E-05
+call:      41   Penalty function =   0.12509701E-05
+call:      44   Penalty function =   0.12331628E-05
+call:      47   Penalty function =   0.12155534E-05
+call:      50   Penalty function =   0.11982376E-05
+call:      53   Penalty function =   0.11811314E-05
+call:      56   Penalty function =   0.11643384E-05
+call:      59   Penalty function =   0.11476643E-05
+call:      62   Penalty function =   0.11310220E-05
+call:      65   Penalty function =   0.11145541E-05
+call:      68   Penalty function =   0.10982984E-05
+call:      71   Penalty function =   0.10819950E-05
+call:      74   Penalty function =   0.10660130E-05
+call:      77   Penalty function =   0.10498820E-05
+call:      80   Penalty function =   0.10340552E-05
+call:      83   Penalty function =   0.10184029E-05
+call:      86   Penalty function =   0.10026377E-05
+call:      89   Penalty function =   0.98705454E-06
+call:      92   Penalty function =   0.97178124E-06
+call:      95   Penalty function =   0.95643822E-06
+call:      98   Penalty function =   0.94137778E-06
+call:     101   Penalty function =   0.92637817E-06
+call:     104   Penalty function =   0.91157470E-06
+call:     107   Penalty function =   0.89680407E-06
+call:     110   Penalty function =   0.88231469E-06
+call:     113   Penalty function =   0.86755959E-06
+call:     116   Penalty function =   0.85309740E-06
+call:     119   Penalty function =   0.83881863E-06
+call:     122   Penalty function =   0.82477966E-06
+call:     125   Penalty function =   0.81065478E-06
+call:     128   Penalty function =   0.79681586E-06
+call:     131   Penalty function =   0.78304148E-06
+call:     134   Penalty function =   0.76945344E-06
+call:     137   Penalty function =   0.75592848E-06
+call:     140   Penalty function =   0.74260148E-06
+call:     143   Penalty function =   0.72924231E-06
+call:     146   Penalty function =   0.71617834E-06
+call:     149   Penalty function =   0.70301479E-06
+call:     152   Penalty function =   0.69014379E-06
+ ++++++++++ LMDIF ended: call limit
+call:     152   Penalty function =   0.69014379E-06
+ endmatch;
+
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+Global constraint:         q1           4     6.23150000E+01     6.23149417E+01     3.40329082E-07
+Global constraint:         q2           4     6.03150000E+01     6.03150591E+01     3.49814712E-07
+
+
+Final Penalty Function =   6.90143794e-07
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+cmrskew                   3.46453e-04  3.56950e-04 -1.00000e+20  1.00000e+20
+cmiskew                   1.46659e-03  1.51473e-03 -1.00000e+20  1.00000e+20
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   6.90143794e-07
+
+
+ match;
+
+START MATCHING
+
+ global, q1=qx00+qmid, q2=qy00+qmid;
+
+ vary,   name=kqtf, step=1.E-9;
+
+ vary,   name=kqtd, step=1.E-9;
+
+ lmdif,  calls=100, tolerance=1.E-7;
+
+number of variables:    2
+user given constraints: 2
+total constraints:      2
+
+START LMDIF:
+
+Initial Penalty Function =   0.69014379E-06
+
+
+call:       8   Penalty function =   0.69010936E-06
+call:      12   Penalty function =   0.69010281E-06
+call:      15   Penalty function =   0.69009773E-06
+call:      19   Penalty function =   0.69009618E-06
+ ++++++++++ LMDIF ended: converged: info =            1
+call:      25   Penalty function =   0.69009618E-06
+ endmatch;
+
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+Global constraint:         q1           4     6.23150000E+01     6.23149413E+01     3.45001866E-07
+Global constraint:         q2           4     6.03150000E+01     6.03150587E+01     3.45094318E-07
+
+
+Final Penalty Function =   6.90096184e-07
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+kqtf                      2.13933e-05  2.13952e-05 -1.00000e+20  1.00000e+20
+kqtd                      1.41840e-05  1.41790e-05 -1.00000e+20  1.00000e+20
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   6.90096184e-07
+
+
+ twiss;  qx=table(summ,q1); qy=table(summ,q2);
+
+enter Twiss module
+  
+iteration:   1 error:   5.054677E-05 deltap:   0.000000E+00
+orbit:   5.016800E-05 -7.794233E-07  5.795262E-05  8.689676E-07  0.000000E+00  0.000000E+00
+  
+iteration:   2 error:   5.275098E-08 deltap:   0.000000E+00
+orbit:   5.018117E-05 -7.797616E-07  5.797488E-05  8.691341E-07  0.000000E+00  0.000000E+00
+
+++++++ table: summ
+
+            length             orbit5               alfa            gammatr 
+        26658.8832                 -0    0.0003464570095        53.72486388 
+
+                q1                dq1            betxmax              dxmax 
+       62.31494126       -2.757081905        22285.95903        3.044531863 
+
+             dxrms             xcomax             xcorms                 q2 
+       1.473276326      0.01632204906      0.00199919149        60.31505874 
+
+               dq2            betymax              dymax              dyrms 
+      0.6999861446        21649.75136        1.420474216       0.1987775581 
+
+            ycomax             ycorms             deltap            synch_1 
+     0.01642930126     0.001997477401                  0                  0 
+
+           synch_2            synch_3            synch_4            synch_5 
+                 0                  0                  0                  0 
+ closest2=abs(qx-qy-tsplit);
+
+ value, closest0, closest1, closest2, cmrskew, cmiskew;
+
+closest0 =     0.001477344334 ;
+closest1 =     0.000168863883 ;
+closest2 =    0.0001174815884 ;
+cmrskew =    0.0003464532482 ;
+cmiskew =     0.001466593107 ;
+ 
+
+ if(mylhcbeam==1)
+
+{kqtf.b1=kqtf0;
+
+ kqtd.b1=kqtd0;};
+
+
+
+ if(mylhcbeam > 1)
+
+{kqtf.b2=kqtf0;
+
+ kqtd.b2=kqtd0;};
+
+
+
+return;
+
+
+
+
+
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+!                 matching of orbit, tune and chromaticity
+
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+if(ON_COLLISION==0) {ON_BB_CHARGE:=1;};    ! W/o head-on Q and Q' are matched with bb
+
+
+
+!Rematch the Xscheme towards specified separation and Xange in IP1/2/5/8
+
+call,file="slhc/toolkit/rematchCOIP.madx";
+
+!S. Fartoukh Novembre 2009
+
+!Rematch the orbit at all IP after the error abd bb implementation
+
+!S. Fartoukh March 2012
+
+! Use acbh5.l8b1 for IR8 H crossing
+
+! Add a SIMPLEX matching command to ease the rematching
+
+
+
+limitMCBY   :=  96.3 *1.e-6*1;  ! Existing MCBY in IR2/8
+
+limitMCBYY  :=  96.3 *1.e-6*1;  ! 2.25Tm for MCBYY (2.5T *0.9 m) @4.5K in IR1/5
+
+
+
+limitMCBC :=  89.87*1.e-6*1;
+
+limitMCBW :=  80.14*1.e-6*1;
+
+
+
+if(mylhcbeam==1)
+
+{
+
+
+
+!!IR1
+
+match,sequence=lhcb1,range=e.ds.l1.b1/s.ds.r1.b1,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb1,range=IP1,x=xnom1,y=ynom1,px=pxnom1,py=pynom1;
+
+constraint,sequence=lhcb1,range=s.ds.r1.b1,x=0.,y=0.,px=0.,py=0.;
+
+
+
+vary, name=ACBCH6.L1B1,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBCV5.L1B1,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBCH5.R1B1,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBCV6.R1B1,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBYHS4.L1B1, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+vary, name=ACBYHS4.R1B1, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+vary, name=ACBYVS4.L1B1, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+vary, name=ACBYVS4.R1B1, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 100, tolerance=1.E-30;
+
+Endmatch;
+
+
+
+!!IR2
+
+match,sequence=lhcb1,range=e.ds.l2.b1/s.ds.r2.b1,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb1,range=IP2,x=xnom2,y=ynom2,px=pxnom2,py=pynom2;
+
+constraint,sequence=lhcb1,range=s.ds.r2.b1,x=0.,y=0.,px=0.,py=0.;
+
+
+
+vary,   name=acbyhs5.l2b1, step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbchs5.r2b1, step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary,   name=acbyvs5.l2b1, step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbcvs5.r2b1, step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary,   name=acbyhs4.l2b1, step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbyhs4.r2b1, step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbyvs4.l2b1, step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbyvs4.r2b1, step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 100, tolerance=1.E-30;
+
+Endmatch;
+
+
+
+!!IR5
+
+match,sequence=lhcb1,range=e.ds.l5.b1/s.ds.r5.b1,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb1,range=IP5,x=xnom5,y=ynom5,px=pxnom5,py=pynom5;
+
+constraint,sequence=lhcb1,range=s.ds.r5.b1,x=0.,y=0.,px=0.,py=0.;
+
+
+
+vary, name=ACBCH6.L5B1,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBCV5.L5B1,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBCH5.R5B1,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBCV6.R5B1,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBYHS4.L5B1, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+vary, name=ACBYHS4.R5B1, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+vary, name=ACBYVS4.L5B1, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+vary, name=ACBYVS4.R5B1, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 100, tolerance=1.E-30;
+
+Endmatch;
+
+
+
+!!IR8
+
+match,sequence=lhcb1,range=e.ds.l8.b1/s.ds.r8.b1,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb1,range=IP8,x=xnom8,y=ynom8,px=pxnom8,py=pynom8;
+
+constraint,sequence=lhcb1,range=s.ds.r8.b1,x=0.,y=0.,px=0.,py=0.;
+
+
+
+!vary,   name=acbchs5.l8b1, step = 0.00001,lower=-limitMCBC,upper=limitMCBC;  ! temporarily unavailable
+
+!vary,   name=acbwh5.l8b1,   step = 0.00001,lower=-limitMCBW,upper=limitMCBW; ! temporary   replacement
+
+vary,   name=acbch5.l8b1, step = 0.00001,lower=-limitMCBC,upper=limitMCBC; 
+
+vary,   name=acbyhs4.l8b1,  step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbyhs4.r8b1,  step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbyhs5.r8b1,  step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbcvs5.l8b1,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary,   name=acbyvs4.l8b1,  step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbyvs4.r8b1,  step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbyvs5.r8b1,  step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 100, tolerance=1.E-30;
+
+Endmatch;
+
+
+
+};
+
+START MATCHING
+
+number of sequences: 1
+sequence name: lhcb1
+entry name: betx
+number of entries: 1
+entry value: 100.000000
+entry name: bety
+number of entries: 1
+entry value: 100.000000
+entry name: x
+number of entries: 1
+entry value: 0.000000
+entry name: px
+number of entries: 1
+entry value: 0.000000
+entry name: y
+number of entries: 1
+entry value: 0.000000
+entry name: py
+number of entries: 1
+entry value: 0.000000
+number of variables:    8
+user given constraints: 4
+total constraints:      8
+
+START SIMPLEX:
+
+call:      81   Penalty function =   0.22834683E-12
+call:      83   Penalty function =   0.22378138E-12
+call:      86   Penalty function =   0.15483736E-12
+call:     101   Penalty function =   0.13825585E-12
+ call limit
+call:     102   Penalty function =   0.13825585E-12
+number of variables:    8
+user given constraints: 4
+total constraints:      8
+
+START LMDIF:
+
+Initial Penalty Function =   0.13825585E-12
+
+
+call:      10   Penalty function =   0.53494339E-13
+call:      19   Penalty function =   0.21020203E-13
+call:      28   Penalty function =   0.47726960E-15
+call:      37   Penalty function =   0.35519373E-28
+call:      46   Penalty function =   0.27807854E-31
+ ++++++++++ LMDIF ended: converged successfully
+call:      46   Penalty function =   0.27807854E-31
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+ip1:1                      x            4     7.50000000E-04     7.50000000E-04     5.75992232E-37
+ip1:1                      px           4    -5.34499957E-14    -5.34499575E-14     1.45286625E-37
+ip1:1                      y            4     4.25619826E-15     4.26329978E-15     5.04316464E-35
+ip1:1                      py           4     2.95000000E-04     2.95000000E-04     1.17549435E-36
+s.ds.r1.b1:1               x            4     0.00000000E+00    -3.10196153E-18     9.62216535E-36
+s.ds.r1.b1:1               px           4     0.00000000E+00     1.84761937E-19     3.41369734E-36
+s.ds.r1.b1:1               y            4     0.00000000E+00     1.50734917E-16     2.27210152E-32
+s.ds.r1.b1:1               py           4     0.00000000E+00     7.08623624E-18     5.02147441E-33
+
+
+Final Penalty Function =   2.78078539e-32
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+acbch6.l1b1               3.71459e-09  0.00000e+00 -8.98700e-05  8.98700e-05
+acbcv5.l1b1               1.09456e-08  0.00000e+00 -8.98700e-05  8.98700e-05
+acbch5.r1b1              -4.66551e-09  0.00000e+00 -8.98700e-05  8.98700e-05
+acbcv6.r1b1               2.33757e-08  0.00000e+00 -8.98700e-05  8.98700e-05
+acbyhs4.l1b1             -2.08908e-09  0.00000e+00 -9.63000e-05  9.63000e-05
+acbyhs4.r1b1              7.07676e-10  0.00000e+00 -9.63000e-05  9.63000e-05
+acbyvs4.l1b1             -2.04581e-08  0.00000e+00 -9.63000e-05  9.63000e-05
+acbyvs4.r1b1             -2.64987e-08  0.00000e+00 -9.63000e-05  9.63000e-05
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   2.78078539e-32
+START MATCHING
+
+number of sequences: 1
+sequence name: lhcb1
+entry name: betx
+number of entries: 1
+entry value: 100.000000
+entry name: bety
+number of entries: 1
+entry value: 100.000000
+entry name: x
+number of entries: 1
+entry value: 0.000000
+entry name: px
+number of entries: 1
+entry value: 0.000000
+entry name: y
+number of entries: 1
+entry value: 0.000000
+entry name: py
+number of entries: 1
+entry value: 0.000000
+number of variables:    8
+user given constraints: 4
+total constraints:      8
+
+START SIMPLEX:
+
+call:      65   Penalty function =   0.21934761E-10
+call:      77   Penalty function =   0.17744901E-10
+call:      79   Penalty function =   0.11113995E-10
+call:      93   Penalty function =   0.92032790E-11
+call:     100   Penalty function =   0.87585571E-11
+call:     102   Penalty function =   0.74460397E-11
+ call limit
+call:     103   Penalty function =   0.65979384E-11
+number of variables:    8
+user given constraints: 4
+total constraints:      8
+
+START LMDIF:
+
+Initial Penalty Function =   0.65979384E-11
+
+
+call:      10   Penalty function =   0.38878593E-23
+call:      19   Penalty function =   0.16956989E-32
+ ++++++++++ LMDIF ended: converged successfully
+call:      19   Penalty function =   0.16956989E-32
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+ip2:1                      x            4     2.00000000E-03     2.00000000E-03     1.69271187E-36
+ip2:1                      px           4     2.91925890E-07     2.91925890E-07     3.51557759E-39
+ip2:1                      y            4    -9.51528353E-15    -9.52471609E-15     8.89731674E-35
+ip2:1                      py           4     2.39999391E-04     2.39999391E-04     7.34683969E-38
+s.ds.r2.b1:1               x            4     0.00000000E+00     1.67013740E-18     2.78935894E-36
+s.ds.r2.b1:1               px           4     0.00000000E+00    -2.92606736E-20     8.56187021E-38
+s.ds.r2.b1:1               y            4     0.00000000E+00     3.85742320E-17     1.48797137E-33
+s.ds.r2.b1:1               py           4     0.00000000E+00    -1.06822153E-18     1.14109723E-34
+
+
+Final Penalty Function =   1.69569894e-33
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+acbyhs5.l2b1             -5.79587e-06 -5.84365e-06 -9.63000e-05  9.63000e-05
+acbchs5.r2b1              4.64860e-05  4.67876e-05 -8.98700e-05  8.98700e-05
+acbyvs5.l2b1             -3.30184e-05 -3.31717e-05 -9.63000e-05  9.63000e-05
+acbcvs5.r2b1              4.88510e-05  4.88766e-05 -8.98700e-05  8.98700e-05
+acbyhs4.l2b1              2.67960e-05  2.69170e-05 -9.63000e-05  9.63000e-05
+acbyhs4.r2b1             -1.10025e-05 -1.11776e-05 -9.63000e-05  9.63000e-05
+acbyvs4.l2b1             -3.51617e-05 -3.50328e-05 -9.63000e-05  9.63000e-05
+acbyvs4.r2b1             -7.06130e-06 -7.10737e-06 -9.63000e-05  9.63000e-05
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   1.69569894e-33
+START MATCHING
+
+number of sequences: 1
+sequence name: lhcb1
+entry name: betx
+number of entries: 1
+entry value: 100.000000
+entry name: bety
+number of entries: 1
+entry value: 100.000000
+entry name: x
+number of entries: 1
+entry value: 0.000000
+entry name: px
+number of entries: 1
+entry value: 0.000000
+entry name: y
+number of entries: 1
+entry value: 0.000000
+entry name: py
+number of entries: 1
+entry value: 0.000000
+number of variables:    8
+user given constraints: 4
+total constraints:      8
+
+START SIMPLEX:
+
+call:      81   Penalty function =   0.52638848E-11
+call:      85   Penalty function =   0.51535183E-11
+call:      87   Penalty function =   0.51105868E-11
+call:      91   Penalty function =   0.45428519E-11
+call:      98   Penalty function =   0.40664376E-11
+call:     100   Penalty function =   0.39919023E-11
+ call limit
+call:     103   Penalty function =   0.39919023E-11
+number of variables:    8
+user given constraints: 4
+total constraints:      8
+
+START LMDIF:
+
+Initial Penalty Function =   0.39919023E-11
+
+
+call:      10   Penalty function =   0.20094981E-11
+call:      19   Penalty function =   0.45903351E-12
+call:      28   Penalty function =   0.11759201E-23
+call:      37   Penalty function =   0.36567972E-32
+ ++++++++++ LMDIF ended: converged successfully
+call:      37   Penalty function =   0.36567972E-32
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+ip5:1                      x            4     7.91424218E-15     7.92280738E-15     7.33626024E-35
+ip5:1                      px           4     2.95000000E-04     2.95000000E-04     2.93873588E-37
+ip5:1                      y            4     7.50000000E-04     7.50000000E-04     1.17549435E-38
+ip5:1                      py           4     8.93699592E-15     8.93697263E-15     5.42582765E-38
+s.ds.r5.b1:1               x            4     0.00000000E+00    -4.93283340E-17     2.43328454E-33
+s.ds.r5.b1:1               px           4     0.00000000E+00     3.05297470E-18     9.32065452E-34
+s.ds.r5.b1:1               y            4     0.00000000E+00    -1.33537118E-17     1.78321619E-34
+s.ds.r5.b1:1               py           4     0.00000000E+00    -6.27718661E-19     3.94030718E-35
+
+
+Final Penalty Function =   3.65679717e-33
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+acbch6.l5b1               8.94463e-08  0.00000e+00 -8.98700e-05  8.98700e-05
+acbcv5.l5b1               4.38307e-08  0.00000e+00 -8.98700e-05  8.98700e-05
+acbch5.r5b1               8.06042e-08  0.00000e+00 -8.98700e-05  8.98700e-05
+acbcv6.r5b1               2.18108e-08  0.00000e+00 -8.98700e-05  8.98700e-05
+acbyhs4.l5b1             -1.20101e-07  0.00000e+00 -9.63000e-05  9.63000e-05
+acbyhs4.r5b1             -1.31875e-07  0.00000e+00 -9.63000e-05  9.63000e-05
+acbyvs4.l5b1             -6.83592e-08  0.00000e+00 -9.63000e-05  9.63000e-05
+acbyvs4.r5b1             -3.09646e-08  0.00000e+00 -9.63000e-05  9.63000e-05
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   3.65679717e-33
+START MATCHING
+
+number of sequences: 1
+sequence name: lhcb1
+entry name: betx
+number of entries: 1
+entry value: 100.000000
+entry name: bety
+number of entries: 1
+entry value: 100.000000
+entry name: x
+number of entries: 1
+entry value: 0.000000
+entry name: px
+number of entries: 1
+entry value: 0.000000
+entry name: y
+number of entries: 1
+entry value: 0.000000
+entry name: py
+number of entries: 1
+entry value: 0.000000
+number of variables:    8
+user given constraints: 4
+total constraints:      8
+
+START SIMPLEX:
+
+call:      64   Penalty function =   0.31184337E-10
+call:      91   Penalty function =   0.30435268E-10
+call:      93   Penalty function =   0.28249337E-10
+call:      97   Penalty function =   0.27225655E-10
+call:      99   Penalty function =   0.26212580E-10
+call:     101   Penalty function =   0.25118998E-10
+ call limit
+call:     102   Penalty function =   0.25118998E-10
+number of variables:    8
+user given constraints: 4
+total constraints:      8
+
+START LMDIF:
+
+Initial Penalty Function =   0.25118998E-10
+
+
+call:      10   Penalty function =   0.15207241E-21
+call:      19   Penalty function =   0.60019318E-32
+ ++++++++++ LMDIF ended: converged successfully
+call:      19   Penalty function =   0.60019318E-32
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+ip8:1                      x            4    -1.56769129E-14    -1.56708414E-14     3.68635028E-35
+ip8:1                      px           4    -3.04987869E-04    -3.04987869E-04     2.93873588E-37
+ip8:1                      y            4    -2.00000000E-03    -2.00000000E-03     4.23177966E-35
+ip8:1                      py           4    -1.80973621E-06    -1.80973621E-06     9.48847216E-37
+s.ds.r8.b1:1               x            4     0.00000000E+00     6.41674304E-19     4.11745913E-37
+s.ds.r8.b1:1               px           4     0.00000000E+00     4.89282339E-19     2.39397207E-35
+s.ds.r8.b1:1               y            4     0.00000000E+00     7.41818588E-17     5.50294817E-33
+s.ds.r8.b1:1               py           4     0.00000000E+00    -1.98546757E-18     3.94208148E-34
+
+
+Final Penalty Function =   6.00193180e-33
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+acbch5.l8b1               3.92185e-05  3.91609e-05 -8.98700e-05  8.98700e-05
+acbyhs4.l8b1              1.07783e-05  1.09110e-05 -9.63000e-05  9.63000e-05
+acbyhs4.r8b1             -3.89483e-05 -3.88074e-05 -9.63000e-05  9.63000e-05
+acbyhs5.r8b1             -3.38849e-05 -3.40225e-05 -9.63000e-05  9.63000e-05
+acbcvs5.l8b1             -3.04794e-05 -3.04040e-05 -8.98700e-05  8.98700e-05
+acbyvs4.l8b1              3.34485e-06  3.28509e-06 -9.63000e-05  9.63000e-05
+acbyvs4.r8b1             -2.75987e-05 -2.75225e-05 -9.63000e-05  9.63000e-05
+acbyvs5.r8b1              5.65216e-06  5.64367e-06 -9.63000e-05  9.63000e-05
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   6.00193180e-33
+
+
+if(mylhcbeam==2)
+
+{
+
+
+
+!!IR1
+
+match,sequence=lhcb2,range=e.ds.l1.b2/s.ds.r1.b2,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb2,range=IP1,x=xnom1,y=ynom1,px=pxnom1,py=pynom1;
+
+constraint,sequence=lhcb2,range=s.ds.r1.b2,x=0.,y=0.,px=0.,py=0.;
+
+
+
+vary, name=ACBCH6.R1b2,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBCV5.R1b2,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBCH5.L1b2,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBCV6.L1b2,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBYHS4.L1b2, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+vary, name=ACBYHS4.R1b2, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+vary, name=ACBYVS4.L1b2, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+vary, name=ACBYVS4.R1b2, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 2000, tolerance=1.E-30;
+
+Endmatch;
+
+
+
+!!IR2
+
+match,sequence=lhcb2,range=e.ds.l2.b2/s.ds.r2.b2,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb2,range=IP2,x=xnom2,y=ynom2,px=pxnom2,py=pynom2;
+
+constraint,sequence=lhcb2,range=s.ds.r2.b2,x=0.,y=0.,px=0.,py=0.;
+
+ 
+
+vary,   name=acbyhs5.l2b2, step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbchs5.r2b2, step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary,   name=acbyvs5.l2b2, step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbcvs5.r2b2, step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary,   name=acbyhs4.l2b2, step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbyhs4.r2b2, step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbyvs4.l2b2, step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbyvs4.r2b2, step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 2000, tolerance=1.E-30;
+
+Endmatch;
+
+
+
+!!IR5
+
+match,sequence=lhcb2,range=e.ds.l5.b2/s.ds.r5.b2,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb2,range=IP5,x=xnom5,y=ynom5,px=pxnom5,py=pynom5;
+
+constraint,sequence=lhcb2,range=s.ds.r5.b2,x=0.,y=0.,px=0.,py=0.;
+
+
+
+vary, name=ACBCH6.R5b2,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBCV5.R5b2,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBCH5.L5b2,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBCV6.L5b2,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary, name=ACBYHS4.L5b2, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+vary, name=ACBYHS4.R5b2, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+vary, name=ACBYVS4.L5b2, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+vary, name=ACBYVS4.R5b2, step = 0.00001,lower=-limitMCBYY,upper=limitMCBYY;
+
+
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 2000, tolerance=1.E-30;
+
+Endmatch;
+
+
+
+!!IR8
+
+match,sequence=lhcb2,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb2,range=IP8,x=xnom8,y=ynom8,px=pxnom8,py=pynom8;
+
+constraint,sequence=lhcb2,range=s.ds.r8.b2,x=0.,y=0.,px=0.,py=0.;
+
+
+
+vary,   name=acbchs5.l8b2,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC; 
+
+vary,   name=acbyhs5.r8b2,  step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbcvs5.l8b2,  step = 0.00001,lower=-limitMCBC,upper=limitMCBC;
+
+vary,   name=acbyvs5.r8b2,  step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbyhs4.l8b2,  step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbyhs4.r8b2,  step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbyvs4.l8b2,  step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+vary,   name=acbyvs4.r8b2,  step = 0.00001,lower=-limitMCBY,upper=limitMCBY;
+
+
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 2000, tolerance=1.E-30;
+
+Endmatch;
+
+
+
+};
+
+
+
+return;
+
+!Rematch the CO in the arc for dispersion correction
+
+if(ON_DISP<>0) {call,file="slhc/toolkit/rematchCOarc.madx";};
+
+!Rematch the orbit in the arcs, S. Fartoukh July 2010
+
+!Add simplex matching command to ease correction, S. Fartoukh March 2012 
+
+
+
+kmcb_max=80.e-6;
+
+
+
+if(mylhcbeam==1)
+
+{
+
+!!IR1-left
+
+match,sequence=lhcb1,range=e.ds.r8.b1/e.ds.l1.b1,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb1,range=e.ds.l1.b1,x=0,y=0,px=0,py=0;
+
+vary, name=acbh14.l1b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbh12.l1b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv15.l1b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv13.l1b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 100, tolerance=1.E-30;
+
+Endmatch;
+
+!!IR1-right
+
+match,sequence=lhcb1,range=s.ds.r1.b1/s.ds.r2.b1,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb1,range=s.ds.r2.b1,x=0,y=0,px=0,py=0;
+
+vary, name=acbh13.r1b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbh15.r1b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv12.r1b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv14.r1b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 100, tolerance=1.E-30;
+
+Endmatch;
+
+!!IR5-left
+
+match,sequence=lhcb1,range=e.ds.r4.b1/e.ds.l5.b1,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb1,range=e.ds.l5.b1,x=0,y=0,px=0,py=0;
+
+vary, name=acbh14.l5b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbh12.l5b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv15.l5b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv13.l5b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 100, tolerance=1.E-30;
+
+Endmatch;
+
+!!IR5-right
+
+match,sequence=lhcb1,range=s.ds.r5.b1/s.ds.r6.b1,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb1,range=s.ds.r6.b1,x=0,y=0,px=0,py=0;
+
+vary, name=acbh13.r5b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbh15.r5b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv12.r5b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv14.r5b1,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 100, tolerance=1.E-30;
+
+Endmatch;
+
+};
+
+START MATCHING
+
+number of sequences: 1
+sequence name: lhcb1
+entry name: betx
+number of entries: 1
+entry value: 100.000000
+entry name: bety
+number of entries: 1
+entry value: 100.000000
+entry name: x
+number of entries: 1
+entry value: 0.000000
+entry name: px
+number of entries: 1
+entry value: 0.000000
+entry name: y
+number of entries: 1
+entry value: 0.000000
+entry name: py
+number of entries: 1
+entry value: 0.000000
+number of variables:    4
+user given constraints: 4
+total constraints:      4
+
+START SIMPLEX:
+
+call:      29   Penalty function =   0.60494685E-10
+call:      31   Penalty function =   0.49939310E-10
+call:      34   Penalty function =   0.46426916E-10
+call:      37   Penalty function =   0.37683431E-10
+call:      45   Penalty function =   0.36529432E-10
+call:      47   Penalty function =   0.32287879E-10
+call:      55   Penalty function =   0.27104166E-10
+call:      58   Penalty function =   0.24420563E-10
+call:      60   Penalty function =   0.17249505E-10
+call:      64   Penalty function =   0.82307451E-11
+call:      66   Penalty function =   0.24668304E-11
+call:      74   Penalty function =   0.23323797E-11
+call:      78   Penalty function =   0.19106747E-11
+call:      81   Penalty function =   0.53460412E-12
+call:      90   Penalty function =   0.39593692E-12
+call:      92   Penalty function =   0.31187330E-12
+call:      96   Penalty function =   0.26131165E-12
+call:      98   Penalty function =   0.18145367E-12
+call:     100   Penalty function =   0.98838280E-13
+ call limit
+call:     102   Penalty function =   0.98838280E-13
+number of variables:    4
+user given constraints: 4
+total constraints:      4
+
+START LMDIF:
+
+Initial Penalty Function =   0.98838280E-13
+
+
+call:       6   Penalty function =   0.30573492E-22
+call:      11   Penalty function =   0.60497508E-37
+ ++++++++++ LMDIF ended: converged successfully
+call:      11   Penalty function =   0.60497508E-37
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+e.ds.l1.b1:1               x            4     0.00000000E+00     8.83378596E-20     7.80357744E-39
+e.ds.l1.b1:1               px           4     0.00000000E+00     2.29996799E-21     5.28985274E-40
+e.ds.l1.b1:1               y            4     0.00000000E+00     1.65402652E-19     2.73580372E-38
+e.ds.l1.b1:1               py           4     0.00000000E+00     1.57502091E-20     2.48069086E-38
+
+
+Final Penalty Function =   6.04975085e-38
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+acbh14.l1b1              -8.87675e-08  2.03334e-08 -8.00000e-05  8.00000e-05
+acbh12.l1b1               7.52657e-07  8.71117e-07 -8.00000e-05  8.00000e-05
+acbv15.l1b1               1.15644e-08 -3.04940e-08 -8.00000e-05  8.00000e-05
+acbv13.l1b1               1.39772e-05  1.40302e-05 -8.00000e-05  8.00000e-05
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   6.04975085e-38
+START MATCHING
+
+number of sequences: 1
+sequence name: lhcb1
+entry name: betx
+number of entries: 1
+entry value: 100.000000
+entry name: bety
+number of entries: 1
+entry value: 100.000000
+entry name: x
+number of entries: 1
+entry value: 0.000000
+entry name: px
+number of entries: 1
+entry value: 0.000000
+entry name: y
+number of entries: 1
+entry value: 0.000000
+entry name: py
+number of entries: 1
+entry value: 0.000000
+number of variables:    4
+user given constraints: 4
+total constraints:      4
+
+START SIMPLEX:
+
+call:      33   Penalty function =   0.13241883E-09
+call:      35   Penalty function =   0.13097357E-09
+call:      37   Penalty function =   0.11329844E-09
+call:      44   Penalty function =   0.11207252E-09
+call:      47   Penalty function =   0.78855549E-10
+call:      54   Penalty function =   0.61116173E-10
+call:      57   Penalty function =   0.58984516E-10
+call:      59   Penalty function =   0.37474991E-10
+call:      61   Penalty function =   0.23593195E-10
+call:      68   Penalty function =   0.22381854E-10
+call:      70   Penalty function =   0.21904078E-10
+call:      73   Penalty function =   0.52698031E-11
+call:      81   Penalty function =   0.35115501E-11
+call:      86   Penalty function =   0.25917143E-11
+call:      88   Penalty function =   0.21920494E-11
+call:      92   Penalty function =   0.83018534E-12
+call:      94   Penalty function =   0.50734859E-12
+call:      96   Penalty function =   0.41182135E-12
+call:     100   Penalty function =   0.24825358E-12
+ call limit
+call:     103   Penalty function =   0.72870954E-13
+number of variables:    4
+user given constraints: 4
+total constraints:      4
+
+START LMDIF:
+
+Initial Penalty Function =   0.72870954E-13
+
+
+call:       6   Penalty function =   0.12445142E-20
+call:      11   Penalty function =   0.15272615E-32
+ ++++++++++ LMDIF ended: converged successfully
+call:      11   Penalty function =   0.15272615E-32
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+s.ds.r2.b1:1               x            4     0.00000000E+00     1.80570156E-18     3.26055812E-36
+s.ds.r2.b1:1               px           4     0.00000000E+00     8.50461059E-21     7.23284014E-39
+s.ds.r2.b1:1               y            4     0.00000000E+00    -3.80796341E-17     1.45005853E-33
+s.ds.r2.b1:1               py           4     0.00000000E+00     8.59855877E-19     7.39352130E-35
+
+
+Final Penalty Function =   1.52726154e-33
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+acbh13.r1b1               2.33852e-07  1.63086e-07 -8.00000e-05  8.00000e-05
+acbh15.r1b1              -1.06529e-07 -6.58842e-11 -8.00000e-05  8.00000e-05
+acbv12.r1b1               1.96004e-05  1.96046e-05 -8.00000e-05  8.00000e-05
+acbv14.r1b1               4.13848e-08  1.28943e-07 -8.00000e-05  8.00000e-05
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   1.52726154e-33
+START MATCHING
+
+number of sequences: 1
+sequence name: lhcb1
+entry name: betx
+number of entries: 1
+entry value: 100.000000
+entry name: bety
+number of entries: 1
+entry value: 100.000000
+entry name: x
+number of entries: 1
+entry value: 0.000000
+entry name: px
+number of entries: 1
+entry value: 0.000000
+entry name: y
+number of entries: 1
+entry value: 0.000000
+entry name: py
+number of entries: 1
+entry value: 0.000000
+number of variables:    4
+user given constraints: 4
+total constraints:      4
+
+START SIMPLEX:
+
+call:      32   Penalty function =   0.21733305E-10
+call:      34   Penalty function =   0.15199540E-10
+call:      38   Penalty function =   0.14049072E-10
+call:      40   Penalty function =   0.13128911E-10
+call:      43   Penalty function =   0.11907138E-10
+call:      45   Penalty function =   0.11358892E-10
+call:      49   Penalty function =   0.11315115E-10
+call:      51   Penalty function =   0.86505512E-11
+call:      54   Penalty function =   0.73518954E-11
+call:      56   Penalty function =   0.41493014E-11
+call:      60   Penalty function =   0.36484190E-11
+call:      66   Penalty function =   0.80811835E-12
+call:      75   Penalty function =   0.41568404E-12
+call:      79   Penalty function =   0.23415997E-12
+call:      83   Penalty function =   0.14201756E-12
+call:      85   Penalty function =   0.14048291E-12
+call:      87   Penalty function =   0.42975448E-13
+call:      94   Penalty function =   0.28893839E-13
+call:      96   Penalty function =   0.24553270E-13
+call:      98   Penalty function =   0.21086218E-13
+call:     100   Penalty function =   0.88196652E-14
+ call limit
+call:     103   Penalty function =   0.40765179E-14
+number of variables:    4
+user given constraints: 4
+total constraints:      4
+
+START LMDIF:
+
+Initial Penalty Function =   0.40765179E-14
+
+
+call:       6   Penalty function =   0.32891798E-25
+call:      11   Penalty function =   0.96505163E-37
+ ++++++++++ LMDIF ended: converged successfully
+call:      11   Penalty function =   0.96505163E-37
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+e.ds.l5.b1:1               x            4     0.00000000E+00     1.15357064E-19     1.33072522E-38
+e.ds.l5.b1:1               px           4     0.00000000E+00     2.88282068E-20     8.31065505E-38
+e.ds.l5.b1:1               y            4     0.00000000E+00     9.42004954E-21     8.87373334E-41
+e.ds.l5.b1:1               py           4     0.00000000E+00     1.61945572E-22     2.62263684E-42
+
+
+Final Penalty Function =   9.65051627e-38
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+acbh14.l5b1              -6.18805e-07 -4.85487e-07 -8.00000e-05  8.00000e-05
+acbh12.l5b1              -1.93421e-05 -1.93792e-05 -8.00000e-05  8.00000e-05
+acbv15.l5b1               1.90389e-07  3.21348e-11 -8.00000e-05  8.00000e-05
+acbv13.l5b1               3.09930e-08 -8.12441e-09 -8.00000e-05  8.00000e-05
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   9.65051627e-38
+START MATCHING
+
+number of sequences: 1
+sequence name: lhcb1
+entry name: betx
+number of entries: 1
+entry value: 100.000000
+entry name: bety
+number of entries: 1
+entry value: 100.000000
+entry name: x
+number of entries: 1
+entry value: 0.000000
+entry name: px
+number of entries: 1
+entry value: 0.000000
+entry name: y
+number of entries: 1
+entry value: 0.000000
+entry name: py
+number of entries: 1
+entry value: 0.000000
+number of variables:    4
+user given constraints: 4
+total constraints:      4
+
+START SIMPLEX:
+
+call:      34   Penalty function =   0.72932112E-10
+call:      37   Penalty function =   0.50191558E-10
+call:      41   Penalty function =   0.49646516E-10
+call:      45   Penalty function =   0.40279264E-10
+call:      47   Penalty function =   0.37036844E-10
+call:      50   Penalty function =   0.36789009E-10
+call:      52   Penalty function =   0.26897380E-10
+call:      58   Penalty function =   0.11502052E-10
+call:      62   Penalty function =   0.10418641E-10
+call:      64   Penalty function =   0.26510510E-11
+call:      70   Penalty function =   0.19456616E-11
+call:      72   Penalty function =   0.16570424E-11
+call:      76   Penalty function =   0.97555655E-12
+call:      78   Penalty function =   0.82744866E-12
+call:      80   Penalty function =   0.51968165E-12
+call:      86   Penalty function =   0.47559653E-12
+call:      88   Penalty function =   0.47255261E-12
+call:      91   Penalty function =   0.41429289E-12
+call:      93   Penalty function =   0.31088229E-12
+call:      95   Penalty function =   0.30707126E-12
+call:      99   Penalty function =   0.25227164E-12
+ call limit
+call:     102   Penalty function =   0.25171231E-12
+number of variables:    4
+user given constraints: 4
+total constraints:      4
+
+START LMDIF:
+
+Initial Penalty Function =   0.25171231E-12
+
+
+call:       6   Penalty function =   0.71220199E-20
+call:      11   Penalty function =   0.25632070E-31
+ ++++++++++ LMDIF ended: converged successfully
+call:      11   Penalty function =   0.25632070E-31
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+s.ds.r6.b1:1               x            4     0.00000000E+00     1.44383448E-16     2.08465800E-32
+s.ds.r6.b1:1               px           4     0.00000000E+00     6.89588919E-18     4.75532877E-33
+s.ds.r6.b1:1               y            4     0.00000000E+00     4.97211231E-18     2.47219008E-35
+s.ds.r6.b1:1               py           4     0.00000000E+00    -2.33214246E-19     5.43888847E-36
+
+
+Final Penalty Function =   2.56320696e-32
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+acbh13.r5b1              -1.66165e-05 -1.66189e-05 -8.00000e-05  8.00000e-05
+acbh15.r5b1               3.35907e-07 -6.07880e-09 -8.00000e-05  8.00000e-05
+acbv12.r5b1               1.00781e-06  1.00350e-06 -8.00000e-05  8.00000e-05
+acbv14.r5b1               3.74069e-08  5.01213e-09 -8.00000e-05  8.00000e-05
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   2.56320696e-32
+
+
+if(mylhcbeam==2)
+
+{
+
+!!IR1-left
+
+match,sequence=lhcb2,range=e.ds.r8.b2/e.ds.l1.b2,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb2,range=e.ds.l1.b2,x=0,y=0,px=0,py=0;
+
+vary, name=acbh13.l1b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbh15.l1b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv12.l1b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv14.l1b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 100, tolerance=1.E-30;
+
+Endmatch;
+
+!!IR1-right
+
+match,sequence=lhcb2,range=s.ds.r1.b2/s.ds.r2.b2,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb2,range=s.ds.r2.b2,x=0,y=0,px=0,py=0;
+
+vary, name=acbh12.r1b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbh14.r1b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv13.r1b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv15.r1b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 100, tolerance=1.E-30;
+
+Endmatch;
+
+!!IR5-left
+
+match,sequence=lhcb2,range=e.ds.r4.b2/e.ds.l5.b2,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb2,range=e.ds.l5.b2,x=0,y=0,px=0,py=0;
+
+vary, name=acbh13.l5b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbh15.l5b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv12.l5b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv14.l5b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 100, tolerance=1.E-30;
+
+Endmatch;
+
+!!IR5-right
+
+match,sequence=lhcb2,range=s.ds.r5.b2/s.ds.r6.b2,betx=100,bety=100,x=0,px=0,y=0,py=0;
+
+WEIGHT,     x = 1, px =  10, y = 1, py = 10;
+
+constraint,sequence=lhcb2,range=s.ds.r6.b2,x=0,y=0,px=0,py=0;
+
+vary, name=acbh12.r5b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbh14.r5b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv13.r5b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+vary, name=acbv15.r5b2,  step = 0.00001,lower=-kmcb_max,upper=kmcb_max;
+
+simplex, calls = 100, tolerance=1.E-30;
+
+lmdif, calls = 100, tolerance=1.E-30;
+
+Endmatch;
+
+};
+
+
+
+
+
+return;
+
+
+
+if(mylhcbeam==1)
+
+{kqtf=kqtf.b1;kqtd=kqtd.b1;kqtf.b1:=kqtf;kqtd.b1:=kqtd;
+
+ ksf=ksf.b1;ksd=ksd.b1;ksf.b1:=ksf;ksd.b1:=ksd;};
+
+
+
+if(mylhcbeam>1)
+
+{kqtf=kqtf.b2;kqtd=kqtd.b2;kqtf.b2:=kqtf;kqtd.b2:=kqtd;
+
+ ksf=ksf.b2;ksd=ksd.b2;ksf.b2:=ksf;ksd.b2:=ksd;};
+
+
+
+ match;
+
+START MATCHING
+
+ global, q1=qx0, q2=qy0;
+
+ vary,   name=kqtf, step=1.0E-7 ;
+
+ vary,   name=kqtd, step=1.0E-7 ;
+
+ lmdif,  calls=100, tolerance=1.0E-21;
+
+number of variables:    2
+user given constraints: 2
+total constraints:      2
+
+START LMDIF:
+
+Initial Penalty Function =   0.85781915E-03
+
+
+call:       4   Penalty function =   0.17249004E-10
+call:       7   Penalty function =   0.41926506E-21
+ ++++++++++ LMDIF ended: converged successfully
+call:       7   Penalty function =   0.41926506E-21
+ endmatch;
+
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+Global constraint:         q1           4     6.23100000E+01     6.23100000E+01     3.46563635E-22
+Global constraint:         q2           4     6.03200000E+01     6.03200000E+01     7.27014210E-23
+
+
+Final Penalty Function =   4.19265056e-22
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+kqtf                     -8.19039e-06  0.00000e+00 -1.00000e+20  1.00000e+20
+kqtd                     -1.56862e-05  0.00000e+00 -1.00000e+20  1.00000e+20
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   4.19265056e-22
+
+
+ match,chrom;
+
+START MATCHING
+
+ global, dq1=qprime, dq2=qprime;
+
+ vary,   name=ksf;
+
+ vary,   name=ksd;
+
+ lmdif,  calls=100, tolerance=1.0E-21;
+
+number of variables:    2
+user given constraints: 2
+total constraints:      2
+
+START LMDIF:
+
+Initial Penalty Function =   0.24059062E+02
+
+
+call:       4   Penalty function =   0.15599629E+02
+call:       7   Penalty function =   0.44162357E+01
+call:      10   Penalty function =   0.14936904E-04
+call:      13   Penalty function =   0.12286248E-09
+call:      16   Penalty function =   0.21892664E-12
+call:      19   Penalty function =   0.38723615E-13
+call:      23   Penalty function =   0.14835769E-13
+ ++++++++++ LMDIF ended: converged without success
+call:      27   Penalty function =   0.14835769E-13
+ endmatch;
+
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+Global constraint:         dq1          4     2.00000000E+00     2.00000007E+00     5.34509935E-15
+Global constraint:         dq2          4     2.00000000E+00     1.99999990E+00     9.49067008E-15
+
+
+Final Penalty Function =   1.48357694e-14
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+ksf                       5.98014e-03  0.00000e+00 -1.00000e+20  1.00000e+20
+ksd                      -4.36510e-03  0.00000e+00 -1.00000e+20  1.00000e+20
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   1.48357694e-14
+
+
+ match,chrom;
+
+START MATCHING
+
+ global, dq1=qprime, dq2=qprime;
+
+ global, q1=qx0, q2=qy0;
+
+ vary,   name=ksf;
+
+ vary,   name=ksd;
+
+ vary,   name=kqtf, step=1.0E-7 ;
+
+ vary,   name=kqtd, step=1.0E-7 ;
+
+ lmdif,  calls=500, tolerance=1.0E-21;
+
+number of variables:    4
+user given constraints: 2
+total constraints:      4
+
+START LMDIF:
+
+Initial Penalty Function =   0.26285493E-11
+
+
+call:       6   Penalty function =   0.61258248E-12
+call:      11   Penalty function =   0.10804108E-12
+call:      16   Penalty function =   0.70313642E-13
+call:      23   Penalty function =   0.54832393E-13
+ ++++++++++ LMDIF ended: converged without success
+call:      28   Penalty function =   0.54832393E-13
+ endmatch;
+
+
+MATCH SUMMARY
+
+Node_Name                  Constraint   Type  Target Value       Final Value        Penalty
+--------------------------------------------------------------------------------------------------
+Global constraint:         dq1          4     2.00000000E+00     2.00000022E+00     4.63191032E-14
+Global constraint:         dq2          4     2.00000000E+00     1.99999991E+00     8.15673472E-15
+Global constraint:         q1           4     6.23100000E+01     6.23100000E+01     2.95824161E-16
+Global constraint:         q2           4     6.03200000E+01     6.03200000E+01     6.07311539E-17
+
+
+Final Penalty Function =   5.48323933e-14
+
+
+
+
+
+Variable                 Final Value  Initial Value Lower Limit  Upper Limit 
+--------------------------------------------------------------------------------
+ksf                       5.98014e-03  5.98014e-03 -1.00000e+20  1.00000e+20
+ksd                      -4.36510e-03 -4.36510e-03 -1.00000e+20  1.00000e+20
+kqtf                     -8.19098e-06 -8.19039e-06 -1.00000e+20  1.00000e+20
+kqtd                     -1.56870e-05 -1.56862e-05 -1.00000e+20  1.00000e+20
+
+END MATCH SUMMARY
+
+VARIABLE "TAR" SET TO   5.48323933e-14
+
+
+
+
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+!                 Check corrector strength
+
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+call, file="slhc/errors/corr_value.madx";
+
+! Revised version for SLHCV3.1b (new IT corrector package), March 2012: S. Fartoukh
+
+
+
+option,-echo;
+
+nrj =               7000 ;
+************************************
+********Triplet correctors**********
+************************************
+kqsx3.l1/kmqsxmax1*100 =                  0 ;
+kqsx3.r1/kmqsxmax1*100 =                  0 ;
+kqsx3.l5/kmqsxmax1*100 =                  0 ;
+kqsx3.r5/kmqsxmax1*100 =                  0 ;
+kqsx3.l2/kmqsxmax2*100 =        2.316879671 ;
+kqsx3.r2/kmqsxmax2*100 =       -4.185848281 ;
+kqsx3.l8/kmqsxmax2*100 =       0.9991061286 ;
+kqsx3.r8/kmqsxmax2*100 =        4.856537743 ;
+kcsx3.l1/kmcsxmax1*100 =       -6.460076389 ;
+kcsx3.r1/kmcsxmax1*100 =           15.72025 ;
+kcsx3.l5/kmcsxmax1*100 =       -14.28267361 ;
+kcsx3.r5/kmcsxmax1*100 =       -8.991451389 ;
+kcsx3.l2/kmcsxmax2*100 =        13.00023351 ;
+kcsx3.r2/kmcsxmax2*100 =       -51.82662254 ;
+kcsx3.l8/kmcsxmax2*100 =        63.16334997 ;
+kcsx3.r8/kmcsxmax2*100 =        3.077565683 ;
+kcssx3.l1/kmcssxmax1*100 =       -2.824602083 ;
+kcssx3.r1/kmcssxmax1*100 =        24.86210417 ;
+kcssx3.l5/kmcssxmax1*100 =            -7.1295 ;
+kcssx3.r5/kmcssxmax1*100 =       0.7329826389 ;
+kcssx3.l2/kmcssxmax2*100 =       -10.46366098 ;
+kcssx3.r2/kmcssxmax2*100 =       -36.67128696 ;
+kcssx3.l8/kmcssxmax2*100 =       -18.81199589 ;
+kcssx3.r8/kmcssxmax2*100 =       -26.83029293 ;
+kcox3.l1/kmcoxmax1*100 =        -10.2458125 ;
+kcox3.r1/kmcoxmax1*100 =       -1.692067708 ;
+kcox3.l5/kmcoxmax1*100 =        5.947642361 ;
+kcox3.r5/kmcoxmax1*100 =        24.37689236 ;
+kcox3.l2/kmcoxmax2*100 =       -35.34739025 ;
+kcox3.r2/kmcoxmax2*100 =       -2.836013201 ;
+kcox3.l8/kmcoxmax2*100 =       -100.0128213 ;
+kcox3.r8/kmcoxmax2*100 =        46.39391457 ;
+kcosx3.l1/kmcosxmax1*100 =       -13.83897569 ;
+kcosx3.r1/kmcosxmax1*100 =        18.91178819 ;
+kcosx3.l5/kmcosxmax1*100 =       -21.13428819 ;
+kcosx3.r5/kmcosxmax1*100 =        8.524237847 ;
+kcosx3.l2/kmcosxmax2*100 =        19.89400744 ;
+kcosx3.r2/kmcosxmax2*100 =       -14.69269751 ;
+kcosx3.l8/kmcosxmax2*100 =        44.92157081 ;
+kcosx3.r8/kmcosxmax2*100 =       -31.40624701 ;
+kcdx3.l1/kmcdxmax1*100 =         -8.7915625 ;
+kcdx3.r1/kmcdxmax1*100 =       -16.12400174 ;
+kcdx3.l5/kmcdxmax1*100 =       -1.362332465 ;
+kcdx3.r5/kmcdxmax1*100 =       0.9773810764 ;
+kcdsx3.l1/kmcdsxmax1*100 =       -16.41612413 ;
+kcdsx3.r1/kmcdsxmax1*100 =       -6.332387153 ;
+kcdsx3.l5/kmcdsxmax1*100 =       -12.48974392 ;
+kcdsx3.r5/kmcdsxmax1*100 =        3.972272135 ;
+kctx3.l1/kmctxmax1*100 =        11.25347222 ;
+kctx3.r1/kmctxmax1*100 =         -10.039511 ;
+kctx3.l5/kmctxmax1*100 =        13.41453993 ;
+kctx3.r5/kmctxmax1*100 =       -9.768706597 ;
+kctx3.l2/kmctxmax2*100 =        -16.6773171 ;
+kctx3.r2/kmctxmax2*100 =       -20.25540163 ;
+kctx3.l8/kmctxmax2*100 =       0.5552731094 ;
+kctx3.r8/kmctxmax2*100 =        18.08453391 ;
+kctsx3.l1/kmctsxmax1*100 =         -9.1109375 ;
+kctsx3.r1/kmctsxmax1*100 =       -22.21397135 ;
+kctsx3.l5/kmctsxmax1*100 =        6.383398438 ;
+kctsx3.r5/kmctsxmax1*100 =       -17.98832899 ;
+************************************
+*************Arc correctors*********
+************************************
+kqtf.a12b1/kmqtmax*100 =        0.127907705 ;
+kqtd.a12b1/kmqtmax*100 =       -1.214094256 ;
+kqtf.a23b1/kmqtmax*100 =       -2.091025301 ;
+kqtd.a23b1/kmqtmax*100 =       -1.520452111 ;
+kqtf.a34b1/kmqtmax*100 =       0.4109248863 ;
+kqtd.a34b1/kmqtmax*100 =       0.6135063625 ;
+kqtf.a45b1/kmqtmax*100 =        4.072508298 ;
+kqtd.a45b1/kmqtmax*100 =        1.114838386 ;
+kqtf.a56b1/kmqtmax*100 =       -4.690389556 ;
+kqtd.a56b1/kmqtmax*100 =       -5.318909338 ;
+kqtf.a67b1/kmqtmax*100 =        -3.44215271 ;
+kqtd.a67b1/kmqtmax*100 =       -4.328434026 ;
+kqtf.a78b1/kmqtmax*100 =       -5.194142896 ;
+kqtd.a78b1/kmqtmax*100 =       -6.653282617 ;
+kqtf.a81b1/kmqtmax*100 =       0.7468430533 ;
+kqtd.a81b1/kmqtmax*100 =        1.517448347 ;
+kqs.r1b1/kmqsmax*100 =        18.66132392 ;
+kqs.l2b1/kmqsmax*100 =        18.66132392 ;
+kqs.a23b1/kmqsmax*100 =       0.9276764371 ;
+kqs.r3b1/kmqsmax*100 =        7.968359959 ;
+kqs.l4b1/kmqsmax*100 =        7.968359959 ;
+kqs.a45b1/kmqsmax*100 =        12.28543575 ;
+kqs.r5b1/kmqsmax*100 =        2.694035361 ;
+kqs.l6b1/kmqsmax*100 =        2.694035361 ;
+kqs.a67b1/kmqsmax*100 =        2.019931988 ;
+kqs.r7b1/kmqsmax*100 =        11.39675254 ;
+kqs.l8b1/kmqsmax*100 =        11.39675254 ;
+kqs.a81b1/kmqsmax*100 =        5.161432111 ;
+ksf1.a12b1/kmsmax*100 =        62.56274012 ;
+ksf2.a12b1/kmsmax*100 =         15.8046875 ;
+ksf1.a23b1/kmsmax*100 =        19.31860258 ;
+ksf2.a23b1/kmsmax*100 =        19.31860258 ;
+ksf1.a34b1/kmsmax*100 =        19.31860258 ;
+ksf2.a34b1/kmsmax*100 =        19.31860258 ;
+ksf1.a45b1/kmsmax*100 =        66.66620547 ;
+ksf2.a45b1/kmsmax*100 =         15.8046875 ;
+ksf1.a56b1/kmsmax*100 =        61.33490273 ;
+ksf2.a56b1/kmsmax*100 =         15.8046875 ;
+ksf1.a67b1/kmsmax*100 =        19.31860258 ;
+ksf2.a67b1/kmsmax*100 =        19.31860258 ;
+ksf1.a78b1/kmsmax*100 =        19.31860258 ;
+ksf2.a78b1/kmsmax*100 =        19.31860258 ;
+ksf1.a81b1/kmsmax*100 =        68.89165117 ;
+ksf2.a81b1/kmsmax*100 =         15.8046875 ;
+ksd1.a12b1/kmsmax*100 =       -26.07773438 ;
+ksd2.a12b1/kmsmax*100 =        -103.272804 ;
+ksd1.a23b1/kmsmax*100 =       -32.41993518 ;
+ksd2.a23b1/kmsmax*100 =       -32.41993518 ;
+ksd1.a34b1/kmsmax*100 =       -32.41993518 ;
+ksd2.a34b1/kmsmax*100 =       -32.41993518 ;
+ksd1.a45b1/kmsmax*100 =       -26.07773438 ;
+ksd2.a45b1/kmsmax*100 =       -105.3997087 ;
+ksd1.a56b1/kmsmax*100 =       -26.07773438 ;
+ksd2.a56b1/kmsmax*100 =         -103.33901 ;
+ksd1.a67b1/kmsmax*100 =       -32.41993518 ;
+ksd2.a67b1/kmsmax*100 =       -32.41993518 ;
+ksd1.a78b1/kmsmax*100 =       -32.41993518 ;
+ksd2.a78b1/kmsmax*100 =       -32.41993518 ;
+ksd1.a81b1/kmsmax*100 =       -26.07773438 ;
+ksd2.a81b1/kmsmax*100 =        -110.487746 ;
+kss.a12b1/kmssmax*100 =       -21.39820341 ;
+kss.a23b1/kmssmax*100 =       -20.36249168 ;
+kss.a34b1/kmssmax*100 =       -17.99459756 ;
+kss.a45b1/kmssmax*100 =       -7.612628266 ;
+kss.a56b1/kmssmax*100 =       -3.502857851 ;
+kss.a67b1/kmssmax*100 =       -1.320560807 ;
+kss.a78b1/kmssmax*100 =       -9.616362823 ;
+kss.a81b1/kmssmax*100 =       -9.291003986 ;
+kcs.a12b1/kmcsmax*100 =       -58.73817204 ;
+kcs.a23b1/kmcsmax*100 =       -60.86275741 ;
+kcs.a34b1/kmcsmax*100 =       -31.84371657 ;
+kcs.a45b1/kmcsmax*100 =       -56.78659658 ;
+kcs.a56b1/kmcsmax*100 =       -47.42798291 ;
+kcs.a67b1/kmcsmax*100 =       -69.30248355 ;
+kcs.a78b1/kmcsmax*100 =       -99.99998899 ;
+kcs.a81b1/kmcsmax*100 =        -54.3413482 ;
+kco.a12b1/kmcomax*100 =        99.99998878 ;
+kco.a23b1/kmcomax*100 =       -99.99998878 ;
+kco.a34b1/kmcomax*100 =       -99.99998878 ;
+kco.a45b1/kmcomax*100 =       -99.99998878 ;
+kco.a56b1/kmcomax*100 =        99.99998878 ;
+kco.a67b1/kmcomax*100 =        99.99998878 ;
+kco.a78b1/kmcomax*100 =        99.99998878 ;
+kco.a81b1/kmcomax*100 =       -99.99998878 ;
+kcd.a12b1/kmcdmax*100 =        64.19006982 ;
+kcd.a23b1/kmcdmax*100 =         21.2920994 ;
+kcd.a34b1/kmcdmax*100 =        5.706460454 ;
+kcd.a45b1/kmcdmax*100 =        63.37051333 ;
+kcd.a56b1/kmcdmax*100 =        94.05942176 ;
+kcd.a67b1/kmcdmax*100 =        10.37091238 ;
+kcd.a78b1/kmcdmax*100 =       -99.99998155 ;
+kcd.a81b1/kmcdmax*100 =       -17.72585358 ;
+kof.a12b1/kmomax*100. =                  0 ;
+kof.a23b1/kmomax*100. =                  0 ;
+kof.a34b1/kmomax*100. =                  0 ;
+kof.a45b1/kmomax*100. =                  0 ;
+kof.a56b1/kmomax*100. =                  0 ;
+kof.a67b1/kmomax*100. =                  0 ;
+kof.a78b1/kmomax*100. =                  0 ;
+kof.a81b1/kmomax*100. =                  0 ;
+kod.a12b1/kmomax*100. =                  0 ;
+kod.a23b1/kmomax*100. =                  0 ;
+kod.a34b1/kmomax*100. =                  0 ;
+kod.a45b1/kmomax*100. =                  0 ;
+kod.a56b1/kmomax*100. =                  0 ;
+kod.a67b1/kmomax*100. =                  0 ;
+kod.a78b1/kmomax*100. =                  0 ;
+kod.a81b1/kmomax*100. =                  0 ;
+return;
+
+
+
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+!                 final twiss before sending to sixtrack
+
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+
+ON_BB_CHARGE:=1;
+
+
+
+/*
+
+twiss;
+
+ value, table(summ,q1);
+
+ value, table(summ,q2);
+
+ value, table(summ,dq1);
+
+ value, table(summ,dq2);
+
+ sixtrack, radius=0.017;
+
+*/
+
+
+
+!/*
+
+if (NRJ<4999.9999) {VRF400:=8. ;LAGRF400.B1=0.5;LAGRF400.B2=0.;};
+
+if (NRJ>5000.0000) {VRF400:=16.;LAGRF400.B1=0.5;LAGRF400.B2=0.;};
+
+twiss;
+
+enter Twiss module
+  
+iteration:   1 error:   3.832312E-05 deltap:   0.000000E+00
+orbit:   2.114737E-06 -1.166845E-07 -2.947111E-06 -3.232213E-08  4.917271E-06  4.139478E-06
+  
+iteration:   2 error:   1.150231E-09 deltap:   0.000000E+00
+orbit:   2.114259E-06 -1.166713E-07 -2.947066E-06 -3.232161E-08  4.917290E-06  4.139495E-06
+
+++++++ table: summ
+
+            length             orbit5               alfa            gammatr 
+        26658.8832   -4.917289523e-06    0.0003465111843        53.72066395 
+
+                q1                dq1            betxmax              dxmax 
+       62.31000842        2.023740567        20953.06554        3.044452966 
+
+             dxrms             xcomax             xcorms                 q2 
+       1.474043709      0.01648489395     0.002015243971        60.32000829 
+
+               dq2            betymax              dymax              dyrms 
+       2.019689733        20601.46373        1.394876492       0.1960509845 
+
+            ycomax             ycorms             deltap            synch_1 
+     0.01640500048     0.001997298824                  0                  0 
+
+           synch_2            synch_3            synch_4            synch_5 
+                 0                  0                  0                  0 
+!emit;
+
+ value, table(summ,q1);
+
+table(__58659__) =        62.31000842 ;
+ value, table(summ,q2);
+
+table(__58660__) =        60.32000829 ;
+ value, table(summ,dq1);
+
+table(__58661__) =        2.023740567 ;
+ value, table(summ,dq2);
+
+table(__58662__) =        2.019689733 ;
+ sixtrack,cavall, radius=0.017;
+
+  ++++++++++++++++++++++++++++
+  +   c6t version 2.0        +
+  ++++++++++++++++++++++++++++
+
+max_mult_ord set to : 11
+Reference radius set to : 0.017000
+
+total block length: 26658.883200
+
+c6t terminated - total number of elements: 23319
+                    field errors    MAD-X: 4668
+                    field errors SixTrack: 4680
+                 alignment errors   MAD-X: 88
+                alignment errors SixTrack: 88
+                          sequence length: 26658.883200 [m]
+!*/
+
+
+
+select, flag=twiss, clear;
+
+twiss,file="last_twiss.35";
+
+enter Twiss module
+  
+iteration:   1 error:   3.832312E-05 deltap:   0.000000E+00
+orbit:   2.114737E-06 -1.166845E-07 -2.947111E-06 -3.232213E-08  4.917271E-06  4.139478E-06
+  
+iteration:   2 error:   1.150231E-09 deltap:   0.000000E+00
+orbit:   2.114259E-06 -1.166713E-07 -2.947066E-06 -3.232161E-08  4.917290E-06  4.139495E-06
+
+++++++ table: summ
+
+            length             orbit5               alfa            gammatr 
+        26658.8832   -4.917289523e-06    0.0003465111843        53.72066395 
+
+                q1                dq1            betxmax              dxmax 
+       62.31000842        2.023740567        20953.06554        3.044452966 
+
+             dxrms             xcomax             xcorms                 q2 
+       1.474043709      0.01648489395     0.002015243971        60.32000829 
+
+               dq2            betymax              dymax              dyrms 
+       2.019689733        20601.46373        1.394876492       0.1960509845 
+
+            ycomax             ycorms             deltap            synch_1 
+     0.01640500048     0.001997298824                  0                  0 
+
+           synch_2            synch_3            synch_4            synch_5 
+                 0                  0                  0                  0 
+System,"gzip last_twiss.35";
+
+
+
+stop;
+
+
+  Number of warnings: 0
+
+  ++++++++++++++++++++++++++++++++++++++++++++
+  + MAD-X 5.02.00 (64 bit) finished normally +
+  ++++++++++++++++++++++++++++++++++++++++++++

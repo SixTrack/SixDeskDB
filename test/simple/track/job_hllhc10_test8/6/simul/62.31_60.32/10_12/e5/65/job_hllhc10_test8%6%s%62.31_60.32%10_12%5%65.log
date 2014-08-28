@@ -1,0 +1,344 @@
+Sender: LSF System <lsfadmin@b68533e925.cern.ch>
+Subject: Job 514412527: <job_hllhc10_test8%6%s%62.31_60.32%10_12%5%65> in cluster batch Done
+
+Job <job_hllhc10_test8%6%s%62.31_60.32%10_12%5%65> was submitted from host <lxplus0160.cern.ch> by user <rdemaria> in cluster <batch>.
+Job was executed on host(s) <b68533e925.cern.ch>, in queue <1nd>, as user <rdemaria> in cluster <batch>.
+</afs/cern.ch/user/r/rdemaria> was used as the home directory.
+</afs/cern.ch/user/r/rdemaria/w6/sixjobs> was used as the working directory.
+Started at Thu Mar 20 16:22:50 2014
+Results reported at Thu Mar 20 17:45:19 2014
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/ksh
+#BSUB -J job_hllhc10_test8%6%s%62.31_60.32%10_12%5%65   	# job name
+
+STAGE_HOST=stageslap
+export STAGE_HOST
+junktmp=/afs/cern.ch/user/r/rdemaria/lxscratch/work/w6/job_hllhc10_test8/lsfjobs/jobs_logs
+export junktmp
+TRACKDIR=/afs/cern.ch/user/r/rdemaria/lxscratch/track
+CASTOR=true
+CASTORDIR=$CASTOR_HOME/direct_track/job_hllhc10_test8/6/simul/62.31_60.32/10_12/e5/65
+pwd		# where am I?
+touch $TRACKDIR/job_hllhc10_test8/6/simul/62.31_60.32/10_12/e5/65/JOB_NOT_YET_COMPLETED
+rm -f $TRACKDIR/job_hllhc10_test8/6/simul/62.31_60.32/10_12/e5/65/JOB_NOT_YET_STARTED
+# copy compressed fortran files from the designated"job"  directory to our work dir
+# pick up inputfiles
+cp $TRACKDIR/job_hllhc10_test8/6/simul/62.31_60.32/10_12/e5/65/fort.2.gz .
+cp $TRACKDIR/job_hllhc10_test8/6/simul/62.31_60.32/10_12/e5/65/fort.3.gz .
+cp $TRACKDIR/job_hllhc10_test8/6/simul/62.31_60.32/10_12/e5/65/fort.8.gz .
+cp $TRACKDIR/job_hllhc10_test8/6/simul/62.31_60.32/10_12/e5/65/fort.16.gz .
+gunzip fort.2.gz
+gunzip fort.3.gz
+gunzip fort.8.gz
+gunzip fort.16.gz
+
+#get  sixtrack image
+cp /afs/cern.ch/group/si/slap/bin/sixdesk/exes/SixTrack_pro sixtrack
+ls -al
+./sixtrack > fort.6  
+ls -al
+tail -100 fort.6
+
+if [ ! -s fort.10 ];then
+  rm -f fort.10
+fi
+gzip fort.*
+cp fort.10.gz $TRACKDIR/job_hllhc10_test8/6/simul/62.31_60.32/10_12/e5/65/
+if test "$CASTOR" = "true"
+then
+  export RFIO_USE_CASTOR_V2="YES"
+  export STAGE_HOST="castorpublic"
+  export STAGE_SVCCLASS="default"
+  nsrm -rf $CASTORDIR
+  nsmkdir -p $CASTORDIR
+  tar cvf job_hllhc10_test8%6%s%62.31_60.32%10_12%5%65.tar fort.*.gz
+  rfcp job_hllhc10_test8%6%s%62.31_60.32%10_12%5%65.tar $CASTORDIR
+fi
+rm -f $TRACKDIR/job_hllhc10_test8/6/simul/62.31_60.32/10_12/e5/65/JOB_NOT_YET_COMPLETED
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time   :   4692.80 sec.
+    Max Memory :        85 MB
+    Max Swap   :       578 MB
+
+    Max Processes  :         6
+    Max Threads    :         7
+
+The output (if any) follows:
+
+@(#)CERN job starter $Date: 2010/06/23 14:22:16 $
+Working directory is </pool/lsf/rdemaria/514412527> on <>
+
+/pool/lsf/rdemaria/514412527
+total 10800
+drwxr-xr-x. 2 rdemaria sa    4096 Mar 20 16:23 .
+drwxr-xr-x. 7 rdemaria sa    4096 Mar 20 16:22 ..
+-rw-r-----. 1 rdemaria sa     138 Mar 20 16:23 1395328954.514412527.out
+-rw-r--r--. 1 rdemaria sa 4426952 Mar 20 16:23 fort.16
+-rw-r--r--. 1 rdemaria sa  447179 Mar 20 16:23 fort.2
+-rw-r--r--. 1 rdemaria sa   10401 Mar 20 16:23 fort.3
+-rw-r--r--. 1 rdemaria sa    5632 Mar 20 16:23 fort.8
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 .lsf.start
+-rwxr-xr-x. 1 rdemaria sa 6147410 Mar 20 16:23 sixtrack
+total 27236
+drwxr-xr-x. 2 rdemaria sa    4096 Mar 20 16:23 .
+drwxr-xr-x. 9 rdemaria sa    4096 Mar 20 17:11 ..
+-rw-r-----. 1 rdemaria sa     652 Mar 20 16:23 1395328954.514412527.out
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 beambeamdist.dat
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 beambeam-lostID.dat
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 beambeam-output.dat
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 checkdist.dat
+-rw-r--r--. 1 rdemaria sa   45030 Mar 20 17:45 fort.10
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.11
+-rw-r--r--. 1 rdemaria sa   14640 Mar 20 17:45 fort.110
+-rw-r--r--. 1 rdemaria sa    1440 Mar 20 16:23 fort.111
+-rw-r--r--. 1 rdemaria sa   78300 Mar 20 17:45 fort.12
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.13
+-rw-r--r--. 1 rdemaria sa     672 Mar 20 17:45 fort.14
+-rw-r--r--. 1 rdemaria sa     672 Mar 20 17:45 fort.15
+-rw-r--r--. 1 rdemaria sa 4426952 Mar 20 16:23 fort.16
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.17
+-rw-r--r--. 1 rdemaria sa    4146 Mar 20 16:23 fort.18
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.19
+-rw-r--r--. 1 rdemaria sa  447179 Mar 20 16:23 fort.2
+-rw-r--r--. 1 rdemaria sa 8418528 Mar 20 17:45 fort.20
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.21
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.22
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.23
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.24
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.25
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.26
+-rw-r--r--. 1 rdemaria sa    5632 Mar 20 16:23 fort.27
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.28
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.29
+-rw-r--r--. 1 rdemaria sa   10401 Mar 20 16:23 fort.3
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.30
+-rw-r--r--. 1 rdemaria sa  829926 Mar 20 16:23 fort.31
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.32
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.33
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.34
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.35
+-rw-r--r--. 1 rdemaria sa 1127899 Mar 20 16:23 fort.4
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.54
+-rw-r--r--. 1 rdemaria sa 1210562 Mar 20 17:45 fort.6
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.61
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.62
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.63
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.64
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.65
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.66
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.67
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.68
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.69
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 fort.7
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.70
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.71
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.72
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.73
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.74
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.75
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.76
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.77
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.78
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.79
+-rw-r--r--. 1 rdemaria sa    5632 Mar 20 16:23 fort.8
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.80
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.81
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.82
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.83
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.84
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.85
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.86
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.87
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.88
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.89
+-rw-r--r--. 1 rdemaria sa 4450680 Mar 20 16:23 fort.9
+-rw-r--r--. 1 rdemaria sa   15968 Mar 20 17:45 fort.90
+-rw-r--r--. 1 rdemaria sa  117360 Mar 20 16:23 fort.98
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 .lsf.start
+-rwxr-xr-x. 1 rdemaria sa 6147410 Mar 20 16:23 sixtrack
+-rw-r--r--. 1 rdemaria sa       0 Mar 20 16:23 SixTwiss.dat
+|        |Y  60.32001|Y  227.1932|Y   3.507198|          |          |        |+/- 0.642D-02|Y  -6|    |Y   5.342|           |
+|        |QS 0.309921|           |            |          |          |        |Y -.54818D+00|     |    |         |           |
+|        |           |           |            |          |          |        |+/- 0.616D-02|     |    |         |           |
+-----------------------------------------------------------------------------------------------------------------------------
+|  100000|X  62.31001|X  122.5173|X   1.234488|0.2700D-03|0.4934D+00|  5.1486|X -.78559D-01|X   1|  6 |X  13.255|X+Y   4.940|
+|        |Y  60.32001|Y  227.1932|Y   3.528454|          |          |        |+/- 0.614D-02|Y   5|    |Y   4.547|           |
+|        |QS 0.309918|           |            |          |          |        |Y -.56560D+00|     |    |         |           |
+|        |           |           |            |          |          |        |+/- 0.600D-02|     |    |         |           |
+-----------------------------------------------------------------------------------------------------------------------------
+|  100000|X  62.31001|X  122.5173|X   1.241924|0.2700D-03|0.5328D+00|  6.9557|X -.11604D+00|X   7| 10 |X  11.617|X+Y   5.275|
+|        |Y  60.32001|Y  227.1932|Y   3.549709|          |          |        |+/- 0.638D-02|Y  -3|    |Y   5.657|           |
+|        |QS 0.309915|           |            |          |          |        |Y -.53602D+00|     |    |         |           |
+|        |           |           |            |          |          |        |+/- 0.618D-02|     |    |         |           |
+-----------------------------------------------------------------------------------------------------------------------------
+|  100000|X  62.31001|X  122.5173|X   1.249361|0.2700D-03|0.4129D+00|  5.0457|X -.15049D+00|X   2|  9 |X  11.791|X+Y   5.229|
+|        |Y  60.32001|Y  227.1932|Y   3.570964|          |          |        |+/- 0.549D-02|Y   7|    |Y   5.419|           |
+|        |QS 0.309912|           |            |          |          |        |Y -.50843D+00|     |    |         |           |
+|        |           |           |            |          |          |        |+/- 0.551D-02|     |    |         |           |
+-----------------------------------------------------------------------------------------------------------------------------
+|  100000|X  62.31001|X  122.5173|X   1.256797|0.2700D-03|0.6346D+00|  6.4501|X -.17335D+00|X   5|  9 |X  12.018|X+Y   5.476|
+|        |Y  60.32001|Y  227.1932|Y   3.592220|          |          |        |+/- 0.547D-02|Y   4|    |Y   5.679|           |
+|        |QS 0.309910|           |            |          |          |        |Y -.49052D+00|     |    |         |           |
+|        |           |           |            |          |          |        |+/- 0.491D-02|     |    |         |           |
+-----------------------------------------------------------------------------------------------------------------------------
+|  100000|X  62.31001|X  122.5173|X   1.264234|0.2700D-03|0.4257D+00|  1.2223|X -.23680D+00|X   1|  9 |X  12.241|X+Y   5.551|
+|        |Y  60.32001|Y  227.1932|Y   3.613475|          |          |        |+/- 0.670D-02|Y  -8|    |Y   6.066|           |
+|        |QS 0.309908|           |            |          |          |        |Y -.43605D+00|     |    |         |           |
+|        |           |           |            |          |          |        |+/- 0.655D-02|     |    |         |           |
+-----------------------------------------------------------------------------------------------------------------------------
+|  100000|X  62.31001|X  122.5173|X   1.271670|0.2700D-03|0.4245D+00|  0.9847|X -.34690D+00|X   3|  8 |X  14.407|X+Y   4.926|
+|        |Y  60.32001|Y  227.1932|Y   3.634731|          |          |        |+/- 0.981D-02|Y  -5|    |Y   5.528|           |
+|        |QS 0.309909|           |            |          |          |        |Y -.34207D+00|     |    |         |           |
+|        |           |           |            |          |          |        |+/- 0.891D-02|     |    |         |           |
+-----------------------------------------------------------------------------------------------------------------------------
+|  100000|X  62.31001|X  122.5173|X   1.279107|0.2700D-03|0.3766D+00|  1.2962|X -.31093D+00|X   1|  1 |X  13.034|X+Y   5.720|
+|        |Y  60.32001|Y  227.1932|Y   3.655986|          |          |        |+/- 0.850D-02|Y   0|    |Y   6.230|           |
+|        |QS 0.309904|           |            |          |          |        |Y -.37125D+00|     |    |         |           |
+|        |           |           |            |          |          |        |+/- 0.865D-02|     |    |         |           |
+-----------------------------------------------------------------------------------------------------------------------------
+|  100000|X  62.31001|X  122.5173|X   1.286543|0.2700D-03|0.4781D+00|  2.5141|X -.39865D+00|X   1|  5 |X  15.227|X+Y   5.503|
+|        |Y  60.32001|Y  227.1932|Y   3.677241|          |          |        |+/- 0.108D-01|Y   4|    |Y   6.146|           |
+|        |QS 0.309905|           |            |          |          |        |Y -.29598D+00|     |    |         |           |
+|        |           |           |            |          |          |        |+/- 0.105D-01|     |    |         |           |
+-----------------------------------------------------------------------------------------------------------------------------
+|  100000|X  62.31001|X  122.5173|X   1.293980|0.2700D-03|0.1016D-04|  0.9704|X -.31467D+00|X   1|  1 |X  12.434|X+Y   5.313|
+|        |Y  60.32001|Y  227.1932|Y   3.698497|          |          |        |+/- 0.593D-02|Y   0|    |Y   5.614|           |
+|        |QS 0.309897|           |            |          |          |        |Y -.37443D+00|     |    |         |           |
+|        |           |           |            |          |          |        |+/- 0.625D-02|     |    |         |           |
+-----------------------------------------------------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------------------------------------------------
+         RANDOM SETS USED
+
+  CASE  |  # OF RANDOM SET  |  MAX. POSSIBLE SETS   |     SEED
+-----------------------------------------------------------------
+    1              1                    1               100000
+    2              1                    1               100000
+    3              1                    1               100000
+    4              1                    1               100000
+    5              1                    1               100000
+    6              1                    1               100000
+    7              1                    1               100000
+    8              1                    1               100000
+    9              1                    1               100000
+   10              1                    1               100000
+   11              1                    1               100000
+   12              1                    1               100000
+   13              1                    1               100000
+   14              1                    1               100000
+   15              1                    1               100000
+   16              1                    1               100000
+   17              1                    1               100000
+   18              1                    1               100000
+   19              1                    1               100000
+   20              1                    1               100000
+   21              1                    1               100000
+   22              1                    1               100000
+   23              1                    1               100000
+   24              1                    1               100000
+   25              1                    1               100000
+   26              1                    1               100000
+   27              1                    1               100000
+   28              1                    1               100000
+   29              1                    1               100000
+   30              1                    1               100000
+-----------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+          The Preparating Calculations took      11.189 second(s) of Computing Time
+
+          For      6000000 Turn(s)   0.465E+04 second(s) of Computing Time was needed
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+          Total Time used:    0.467E+04 second(s)
+
+-----------------------------------------------------------------------------------------------------------------------------------
+ Version 1.29/04 of HIGZ started
+fort.10.gz
+fort.110.gz
+fort.111.gz
+fort.11.gz
+fort.12.gz
+fort.13.gz
+fort.14.gz
+fort.15.gz
+fort.16.gz
+fort.17.gz
+fort.18.gz
+fort.19.gz
+fort.20.gz
+fort.21.gz
+fort.22.gz
+fort.23.gz
+fort.24.gz
+fort.25.gz
+fort.26.gz
+fort.27.gz
+fort.28.gz
+fort.29.gz
+fort.2.gz
+fort.30.gz
+fort.31.gz
+fort.32.gz
+fort.33.gz
+fort.34.gz
+fort.35.gz
+fort.3.gz
+fort.4.gz
+fort.54.gz
+fort.61.gz
+fort.62.gz
+fort.63.gz
+fort.64.gz
+fort.65.gz
+fort.66.gz
+fort.67.gz
+fort.68.gz
+fort.69.gz
+fort.6.gz
+fort.70.gz
+fort.71.gz
+fort.72.gz
+fort.73.gz
+fort.74.gz
+fort.75.gz
+fort.76.gz
+fort.77.gz
+fort.78.gz
+fort.79.gz
+fort.7.gz
+fort.80.gz
+fort.81.gz
+fort.82.gz
+fort.83.gz
+fort.84.gz
+fort.85.gz
+fort.86.gz
+fort.87.gz
+fort.88.gz
+fort.89.gz
+fort.8.gz
+fort.90.gz
+fort.98.gz
+fort.9.gz
+2385920 bytes in 1 seconds through local (in) and eth0 (out) (2330 KB/sec)
+2385920 bytes in remote file
+
+Job finished at Thu Mar 20 17:45:15 CET 2014 on node 
+ under linux version Scientific Linux CERN SLC release 6.5 (Carbon)
+
+CERN statistics: This process used approximately : 2:19:26 KSI2K hours (8366 KSI2K seconds)
+                 This process corresponds to     : 9:03:49 HS06  hours (32629 HS06  seconds)

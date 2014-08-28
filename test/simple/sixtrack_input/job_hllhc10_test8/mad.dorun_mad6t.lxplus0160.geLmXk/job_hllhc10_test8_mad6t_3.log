@@ -1,0 +1,42 @@
+Sender: LSF System <lsfadmin@b610619d39.cern.ch>
+Subject: Job 514355342: <w6_job_hllhc10_test8_mad6t_3> in cluster batch Done
+
+Job <w6_job_hllhc10_test8_mad6t_3> was submitted from host <lxplus0160.cern.ch> by user <rdemaria> in cluster <batch>.
+Job was executed on host(s) <b610619d39.cern.ch>, in queue <1nh>, as user <rdemaria> in cluster <batch>.
+</afs/cern.ch/user/r/rdemaria> was used as the home directory.
+</afs/cern.ch/user/r/rdemaria/lxscratch/sixtrack_input/w6/job_hllhc10_test8/mad.dorun_mad6t.lxplus0160.geLmXk> was used as the working directory.
+Started at Thu Mar 20 12:42:08 2014
+Results reported at Thu Mar 20 13:15:41 2014
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+mad6t_3.lsf
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time   :    613.98 sec.
+    Max Memory :      1353 MB
+    Max Swap   :      2051 MB
+
+    Max Processes  :         8
+    Max Threads    :         9
+
+The output (if any) follows:
+
+@(#)CERN job starter $Date: 2010/06/23 14:22:16 $
+Working directory is </pool/lsf/rdemaria/514355342> on <>
+
+Calling madx version madx in /afs/cern.ch/user/m/mad/bin
+rm: cannot remove `temp/sliceho.res': No such file or directory
+rm: cannot remove `temp/sliceho.input': No such file or directory
+
+Job finished at Thu Mar 20 13:05:21 CET 2014 on node 
+ under linux version Scientific Linux CERN SLC release 6.5 (Carbon)
+
+CERN statistics: This process used approximately : 0:22:27 KSI2K hours (1347 KSI2K seconds)
+                 This process corresponds to     : 1:27:35 HS06  hours (5255 HS06  seconds)

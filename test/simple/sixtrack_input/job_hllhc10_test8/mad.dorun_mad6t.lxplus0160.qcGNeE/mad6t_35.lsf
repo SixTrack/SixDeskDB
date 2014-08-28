@@ -1,0 +1,69 @@
+#!/bin/ksh
+export junktmp=/afs/cern.ch/user/r/rdemaria/lxscratch/sixtrack_input/w6/job_hllhc10_test8/mad.dorun_mad6t.lxplus0160.qcGNeE
+export i=35
+export filejob=job_hllhc10_test8
+export sixtrack_input=/afs/cern.ch/user/r/rdemaria/lxscratch/sixtrack_input/w6/job_hllhc10_test8
+export CORR_TEST=0
+export fort_34=
+export MADX_PATH=/afs/cern.ch/user/m/mad/bin
+export MADX=madx
+echo "Calling madx version $MADX in $MADX_PATH"
+$MADX_PATH/$MADX < $junktmp/$filejob."$i" > $filejob.out."$i"
+
+ls -l
+touch fc.3
+cp -f fc.3 $sixtrack_input/fort.3.mad
+
+touch fc.2
+touch fc.16
+touch fc.8
+touch fc.34
+touch fc.3.aux
+
+mv fc.2 fort.2_"$i"
+mv fc.16 fort.16_"$i"
+mv fc.8 fort.8_"$i"
+if test "$fort_34" != ""
+then
+  mv fc.34 fort.34_"$i"
+  gzip -f fort.34_"$i"
+  cp -f fort.34_"$i".gz $sixtrack_input
+fi
+gzip -f fort.2_"$i" fort.16_"$i" fort.8_"$i"
+cp -f fort.2_"$i".gz fort.16_"$i".gz fort.8_"$i".gz $sixtrack_input
+cp -f $filejob.out."$i" $junktmp
+if test "$CORR_TEST" -ne 0
+then
+  cp temp/MCSSX_errors  $sixtrack_input/MCSSX_errors_$i
+  cp temp/MCOSX_errors  $sixtrack_input/MCOSX_errors_$i
+  cp temp/MCOX_errors   $sixtrack_input/MCOX_errors_$i
+  cp temp/MCSX_errors   $sixtrack_input/MCSX_errors_$i
+  cp temp/MCTX_errors   $sixtrack_input/MCTX_errors_$i
+fi
+# update fort.3.mother1.tmp and fort.3.mother2.tmp
+# Save the fc.3.aux file anyway
+cp -f fc.3.aux $sixtrack_input/fort.3.aux
+# and update fort.3.mother1.tmp and fort.3.mother2.tmp
+n=0
+while read line 
+do
+  n=`expr $n + 1`
+  if test $n -eq 1
+  then
+    echo $line | grep SYNC   
+    if test $? != 0
+    then
+      echo "First line of fc.3.aux does NOT contain SYNC!!!"
+    fi
+  else
+    echo $line
+    myline=`echo $line | sed -e's/^ *//' \
+                             -e's/  */ /g'`
+    mylength=`echo $myline | cut -d" " -f 5`
+    echo $mylength
+    sed -e 's/%length/'$mylength'/g' \
+        $sixtrack_input/fort.3.mother1.tmp > $sixtrack_input/fort.3.mother1
+    sed -e 's/%length/'$mylength'/g' $sixtrack_input/fort.3.mother2.tmp > $sixtrack_input/fort.3.mother2
+    break
+  fi
+done < fc.3.aux

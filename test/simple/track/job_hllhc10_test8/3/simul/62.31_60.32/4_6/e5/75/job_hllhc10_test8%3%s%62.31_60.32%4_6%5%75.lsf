@@ -1,0 +1,47 @@
+#!/bin/ksh
+#BSUB -J job_hllhc10_test8%3%s%62.31_60.32%4_6%5%75   	# job name
+
+STAGE_HOST=stageslap
+export STAGE_HOST
+junktmp=/afs/cern.ch/user/r/rdemaria/lxscratch/work/w6/job_hllhc10_test8/lsfjobs/jobs_logs
+export junktmp
+TRACKDIR=/afs/cern.ch/user/r/rdemaria/lxscratch/track
+CASTOR=true
+CASTORDIR=$CASTOR_HOME/direct_track/job_hllhc10_test8/3/simul/62.31_60.32/4_6/e5/75
+pwd		# where am I?
+touch $TRACKDIR/job_hllhc10_test8/3/simul/62.31_60.32/4_6/e5/75/JOB_NOT_YET_COMPLETED
+rm -f $TRACKDIR/job_hllhc10_test8/3/simul/62.31_60.32/4_6/e5/75/JOB_NOT_YET_STARTED
+# copy compressed fortran files from the designated"job"  directory to our work dir
+# pick up inputfiles
+cp $TRACKDIR/job_hllhc10_test8/3/simul/62.31_60.32/4_6/e5/75/fort.2.gz .
+cp $TRACKDIR/job_hllhc10_test8/3/simul/62.31_60.32/4_6/e5/75/fort.3.gz .
+cp $TRACKDIR/job_hllhc10_test8/3/simul/62.31_60.32/4_6/e5/75/fort.8.gz .
+cp $TRACKDIR/job_hllhc10_test8/3/simul/62.31_60.32/4_6/e5/75/fort.16.gz .
+gunzip fort.2.gz
+gunzip fort.3.gz
+gunzip fort.8.gz
+gunzip fort.16.gz
+
+#get  sixtrack image
+cp /afs/cern.ch/group/si/slap/bin/sixdesk/exes/SixTrack_pro sixtrack
+ls -al
+./sixtrack > fort.6  
+ls -al
+tail -100 fort.6
+
+if [ ! -s fort.10 ];then
+  rm -f fort.10
+fi
+gzip fort.*
+cp fort.10.gz $TRACKDIR/job_hllhc10_test8/3/simul/62.31_60.32/4_6/e5/75/
+if test "$CASTOR" = "true"
+then
+  export RFIO_USE_CASTOR_V2="YES"
+  export STAGE_HOST="castorpublic"
+  export STAGE_SVCCLASS="default"
+  nsrm -rf $CASTORDIR
+  nsmkdir -p $CASTORDIR
+  tar cvf job_hllhc10_test8%3%s%62.31_60.32%4_6%5%75.tar fort.*.gz
+  rfcp job_hllhc10_test8%3%s%62.31_60.32%4_6%5%75.tar $CASTORDIR
+fi
+rm -f $TRACKDIR/job_hllhc10_test8/3/simul/62.31_60.32/4_6/e5/75/JOB_NOT_YET_COMPLETED
