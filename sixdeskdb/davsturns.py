@@ -1,11 +1,16 @@
 # DA vs turns module
+import os as os
 import numpy as np
 import matplotlib.pyplot as pl
-import glob
+import glob as glob
+from SixdeskDB import SixDeskDB
 
+# basic functions
 def ang_to_i(ang,angmax):
   """converts angle [degrees] to index (sixtrack)"""
   return int(ang/(90./(angmax+1))-1)
+
+# functions necessary for the analysis
 def get_min_turn_ang(s,t,a,it):
   """returns array with (angle,minimum sigma,sturn) of particles with lost turn number < it.
 
@@ -71,8 +76,8 @@ def get_da_vs_turns(data,turnstep):
       dacount=dacount+1
     currentDAw     =DAw
     currenttlossmin=tlossmin
-
   return DAout[DAout['DAw']>0]#delete 0 from errors
+
 def save_daout(data,path):
   np.savetxt(path+'/DA.out',data,fmt='%.8f %.8f %.8f %.8f %.8f %d %d')
 def reload_daout(path):
@@ -114,7 +119,8 @@ def plot_da_vs_turns(data,seed,ampmin=2,ampmax=14,tmax=1.e6,slog=False):
   pl.xlim([ampmin,ampmax])
   pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)
   pl.ylabel(r'Number of turns',labelpad=15,fontsize=12)
-  pl.legend(loc='best',fontsize=12)
+#  pl.legend(loc='best',fontsize='12')
+  pl.legend(loc='best')
   if(slog):
     pl.ylim([5.e3,tmax])
     pl.yscale('log')
@@ -133,10 +139,64 @@ def plot_da_vs_turns_comp(data,lbldata,datacomp,lbldatacomp,seed,ampmin=2,ampmax
   pl.xlim([ampmin,ampmax])
   pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)
   pl.ylabel(r'Number of turns',labelpad=15,fontsize=12)
-  pl.legend(loc='best',fontsize=12)
+  pl.legend(loc='best')
+#  pl.legend(loc='best',fontsize=12)
   if(slog):
     pl.ylim([5.e3,tmax])
     pl.yscale('log')
   else:
     pl.ylim([0,tmax])
     pl.ticklabel_format(style='sci',axis='y',scilimits=(0,0))
+
+# main analysis - putting the pieces together
+def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst,plotlog=False,comp=False,compdirname='',lblname='',complblname=''):
+'''Da vs turns analysis for study dbname'''
+  db=SixDeskDB(dbname)
+  study=db.orig_env_var['LHCDescrip']
+  if(not glob.glob(study+'-analysis')):
+    print('create new directory: '+study+'-analysis')
+    os.mkdir(study+'-analysis')
+  for seed in db.get_seeds():
+    seed=int(seed)
+    print('analyzing seed {0}').format(str(seed))
+    dirname=study+'-analysis/'+str(seed)
+    # case: create DA.out files
+    if(createdaout):
+      if(not glob.glob(dirname)):
+        os.mkdir(dirname)
+      #remove all old files
+      count=0
+      for filename in glob.glob(dirname+'/*'):
+        os.remove(filename)
+        if(count==0):
+          print('remove old files in '+dirname)
+        count=count+1
+      #load and save the data
+      print('get the data ...')
+      DAsurv=db.get_surv(seed)
+      save_dasurv(DAsurv,dirname)
+      DAout=get_da_vs_turns(DAsurv,turnstep)
+      save_daout(DAout,dirname)
+    # case: reload DA.out files
+    else:
+      print('reload the data ...')
+      DAout = reload_daout(dirname)
+      DAsurv= reload_dasurv(dirname)
+    print('create the plots ...')
+    pl.close('all')
+    plot_surv_2d(DAsurv,str(seed),ampmaxsurv)
+    pl.savefig(dirname+'/DA.png')
+    plot_da_vs_turns(DAout,str(seed),ampmindavst,ampmaxdavst,tmax,plotlog)
+    if(plotlog==True):
+      pl.savefig(dirname+'/DAsurv_log.png')
+    else:
+      pl.savefig(dirname+'/DAsurv.png')
+    if(comp==True):
+      compdirnameseed=compdirname+'/'+str(seed)
+      DAoutcomp=reload_daout(compdirnameseed)
+      plot_da_vs_turns_comp(DAout,lblname,DAoutcomp,complblname,str(seed),ampmindavst,ampmaxdavst,tmax,plotlog)
+      if(plotlog==True):
+        pl.savefig(dirname+'/DAsurv_comp_log.png')
+      else:
+        pl.savefig(dirname+'/DAsurv_comp.png')
+  

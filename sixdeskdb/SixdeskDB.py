@@ -1130,6 +1130,7 @@ class SixDeskDB(object):
     return p
 
   def get_surv(self,seed):
+    '''get survival turns from DB calculated from emitI and emitII'''
     #change for new db version
     emit=float(self.env_var['emit'])
     gamma=float(self.env_var['gamma'])
@@ -1143,7 +1144,7 @@ class SixDeskDB(object):
     data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
     angles=len(set(data['angle']))
     return data.reshape(angles,-1)
-  
+
   def get_survival_turns(self,seed):
     '''get survival turns from DB '''
     cmd="""SELECT angle,amp1+(amp2-amp1)*row_num/30,
