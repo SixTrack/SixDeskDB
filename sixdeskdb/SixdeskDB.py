@@ -914,11 +914,11 @@ class SixDeskDB(object):
           print 'creating directory',path1
       if verbose:
         print 'creating fort.3.gz at %s'%(path1)
-      temp = path1+'/fort.3.gz'
-      if os.path.exists(temp):
-        print 'file already exists please remove it and try again'
-        exit(0)
       if not dryrun:
+        temp = path1+'/fort.3.gz'
+        if os.path.exists(temp):
+          print 'file already exists please remove it and try again'
+          exit(0)
         f = open(temp,'w')
         f.write(str(row[9]))
       sql = """SELECT * from six_results where six_input_id=?"""
@@ -932,11 +932,11 @@ class SixDeskDB(object):
         stri += str1 + '\n'
       if verbose:
         print 'creating fort.10.gz at %s'%(path1)
-      temp = path1+'/fort.10.gz'
-      if os.path.exists(temp):
-        print 'file already exists please remove it and try again'
-        exit(0)
       if not dryrun:
+        temp = path1+'/fort.10.gz'
+        if os.path.exists(temp):
+          print 'file already exists please remove it and try again'
+          exit(0)
         f = gzip.open(temp,'w')
         f.write(stri)
         f.close()
@@ -954,6 +954,7 @@ class SixDeskDB(object):
         print 
       return 1
     else:
+      print 'no fort.10 files missing'
       return 0
 
   def get_incomplete_fort10(self):
@@ -972,6 +973,7 @@ class SixDeskDB(object):
         print
       return 1
     else:
+      print 'no fort.10 files incomplete'
       return 0
 
   def join10(self):

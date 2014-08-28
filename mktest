@@ -3,9 +3,25 @@ rm DA*job_hllhc10_test8*
 
 if [ ! -f test/simple/sixdeskenv ];
 then
+  echo '';
+  echo '';
+  echo '-----------------create_study------------------';
   (cd test; tar xvfz simple.tgz;)
 fi
 
+echo '';
+echo '';
+echo '-----------------load_dir-----------------------';
 ./sixdb load_dir test/simple
+echo '';
+echo '';
+echo '-----------------restore_dir--------------------';
+./sixdb restore_dir job_hllhc10_test8.db -verbose -dryrun
+echo '';
+echo '';
+echo '-----------------info--------------------------';
 ./sixdb info job_hllhc10_test8.db
+echo '';
+echo '';
+echo '-----------------da---------------------------';
 ./sixdb da job_hllhc10_test8.db
