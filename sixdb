@@ -9,9 +9,14 @@
 
 import sys,os
 
-from sixdeskdb import SixDeskDB,Mad6tOut
-
+from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns
 #from dbtocentral,config
+
+def str2bool(st):
+  if(st=='True' or st=='true'):
+    return True
+  else:
+    return False
 
 if __name__ == "__main__":
   args = sys.argv[1:]
@@ -29,15 +34,19 @@ Commands:
 
     info <database>: printout information from DataBase.
 
-    da_vs_turns <database> [options]:
-        Options:
-          -createdaout
-          -turnstep <nn>
-          -ampmaxsurv <nn>
-          -ampmindavst <nn>
-          -comp <compstudy> <studylblname> <compstudylblname>
-          -plotlog
-    interactive <database>: run an interactive ipython shell
+    run_da_vs_turns <database> [options]:
+        options:
+          -createdaout (default: True): create the DA.out files for the da vs turns analysis
+          -turnstep (default: 100)    : steps in the number of turns
+          -tmax (default: 1.e6)       : maximum number of turns
+          -ampmaxsurv (default: 12)   : maximum amplitude for survival plot
+          -ampmindavst (default: 4)   : minimum amplitude for da vs turns plots
+          -ampmaxdavst (default: 10)  : maximum amplitude for da vs turns plots
+          -plotlog (default: False)   : if True plot da vs turns in logscale
+          -comp <compdirname> <lblname> <complblname> : flag to compare two studies (default: False)
+                compdirname  : analysis directory (e.g. studyname-analysis) of study to compare with
+                lblname      : labelname to be used for <database> for plots
+                complblname  : labelname to be used for <compdatabase> for plots
     """
   todebug="""
       restore_dir <database>: restore the directory using data from the database.            Options:
@@ -101,8 +110,8 @@ Commands:
       if len(args)==2:
         a = SixDeskDB(args[1])
         a.info()
-        a.get_missing_fort10()
-        a.get_incomplete_fort10()
+        #a.get_missing_fort10()
+        #a.get_incomplete_fort10()
       else:
         print "invalid see help with h or help"
         exit(0)
@@ -129,23 +138,83 @@ Commands:
       else:
         print "invalid see help with h or help"
         exit(0)
-    elif args[0] in ("da_vs_turns",):
+    elif args[0] in ("da_vs_turns","da_vs_turns"):
         try:
-          dbame=args[1]
+          dbname=args[1]
         except IndexError:
-          print "Error in command `da_vs_turns`"
+          print "Error in command `da_vs_turns` - you have to specify a database to be analyzed!"
           sys.exit(0)
-        # defaults
-        createdaout=True
-        comp=False
-        # parse arguments
+        # define default values
         try:
-            opti=args.index('-comp')
-            compstudy,studylblname,compstudylblname=args[opti+1,opti+4]
-            comp=True
+            createdaout=str2bool(args[args.index('-createdaout')])
         except ValueError:
-            print "Error in option -comp"
-            sys.exit(0)
+            createdaout=True
+        try:
+            turnstep=args[args.index('-turnstep')+1]
+        except ValueError:
+            turnstep=100
+        try:
+            tmax=args[args.index('-tmax')+1]
+        except ValueError:
+            tmax=int(1.e6)
+        try:
+            ampmaxsurv=args[args.index('-ampmaxsurv')+1]
+        except ValueError:
+            ampmaxsurv=12
+        try:
+            ampmindavst=args[args.index('-ampmindavst')+1]
+        except ValueError:
+            ampmindavst=4
+        try:
+            ampmaxdavst=args[args.index('-ampmaxdavst')+1]
+        except ValueError:
+            ampmaxdavst=10
+        try:
+            plotlog=str2bool(args[args.index('-plotlog')+1])
+        except ValueError:
+            plotlog=False
+        try:
+            comp=str2bool(args[args.index('-comp')+1])
+        except ValueError:
+            comp=False
+            compdirname=''
+            lblname=''
+            complblname=''
+        # now handle exceptions if values are not well defined
+        try:
+            turnstep=int(turnstep)
+        except ValueError:
+            print('Error in command `da_vs_turns` - integer value expected for option `turnstep`')
+            sys,exit(0)
+        try:
+            tmax=int(tmax)
+        except ValueError:
+            print('Error in command `da_vs_turns` - integer value expected for option `tmax`')
+            sys,exit(0)
+        try:
+            ampmaxsurv=float(ampmaxsurv)
+        except ValueError:
+            print('Error in command `da_vs_turns` - float value expected for option `ampmaxsurv`')
+            sys,exit(0)
+        try:
+            ampmindavst=float(ampmindavst)
+        except ValueError:
+            print('Error in command `da_vs_turns` - float value expected for option `ampmindavst`')
+            sys,exit(0)
+        try:
+            ampmaxdavst=float(ampmaxdavst)
+        except ValueError:
+            print('Error in command `da_vs_turns` - float value expected for option `ampmaxdavst`')
+            sys,exit(0)
+        if(comp):
+          try:
+              compdirname=args[args.index('-compdirname')+1]
+              lblname=args[args.index('-lblname')+1]
+              complblname=args[args.index('-complblname')+1]
+          except ValueError:
+              print "Error for option -comp=True: If comp=True you have to specify the directory name of the comparison study (-compdirname) and the labelnames for plotting (-lblname,-complblname)"
+              sys.exit(0)
+        RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst,plotlog,comp,compdirname,lblname,complblname)
         #open db
         #setup opton
         #call

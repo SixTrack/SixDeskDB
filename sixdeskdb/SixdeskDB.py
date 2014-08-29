@@ -285,7 +285,9 @@ class SixDeskDB(object):
           print "%s(%d):\n  %s"%(tab,rows,', '.join(columms))
 
   def mad_out(db):
-      mad_runs=db.execute('SELECT DISTINCT  run_id FROM mad6t_run')
+      mad_runs=db.execute('SELECT DISTINCT run_id FROM mad6t_run')
+      if len(mad_runs)==0:
+          print "No mad outout data"
       for run in mad_runs:
           print "Checking %s"%run
           sql="SELECT mad_out FROM mad6t_run WHERE run_id=='%s'"%run
@@ -1203,6 +1205,7 @@ class SixDeskDB(object):
     return p
 
   def get_surv(self,seed):
+    '''get survival turns from DB calculated from emitI and emitII'''
     #change for new db version
     emit=float(self.env_var['emit'])
     gamma=float(self.env_var['gamma'])
@@ -1216,7 +1219,6 @@ class SixDeskDB(object):
     data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
     angles=len(set(data['angle']))
     return data.reshape(angles,-1)
-
 
   def get_survival_turns(self,seed):
     '''get survival turns from DB '''
