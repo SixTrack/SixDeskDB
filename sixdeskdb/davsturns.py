@@ -1,5 +1,6 @@
 # DA vs turns module
 import os as os
+import sys as sys
 import numpy as np
 import matplotlib.pyplot as pl
 import glob as glob
@@ -93,8 +94,8 @@ def reload_dasurv(path):
 
 def plot_surv_2d(data,seed,ampmax=14):
   """survival plot, blue=all particles, red=stable particles"""
-  pl.close('seed '+seed)
-  pl.figure('seed '+seed,figsize=(6,6))
+  pl.close('all')
+  pl.figure(figsize=(6,6))
   s,a,t=data['sigma'],data['angle'],data['sturn']
   s,a,t=s[s>0],a[s>0],t[s>0]#delete 0 values
   tmax=np.max(t)
@@ -111,42 +112,44 @@ def plot_surv_2d(data,seed,ampmax=14):
   pl.ylabel(r'Vertical amplitude [$\sigma$]',labelpad=10,fontsize=12)
 def plot_da_vs_turns(data,seed,ampmin=2,ampmax=14,tmax=1.e6,slog=False):
   """dynamic aperture vs number of turns, blue=simple average, red=weighted average"""
-  pl.close('seed '+seed)
-  pl.figure('seed '+seed,figsize=(6,6))
+  pl.close('all')
+  pl.figure(figsize=(6,6))
   pl.errorbar(data['DAs'],data['tlossmin'],xerr=data['DAserr'],fmt='bo',markersize=2,label='simple average')
   pl.plot(data['DAw'],data['tlossmin'],'ro',markersize=3,label='weighted average')
   pl.title('seed '+seed)
   pl.xlim([ampmin,ampmax])
   pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)
   pl.ylabel(r'Number of turns',labelpad=15,fontsize=12)
-#  pl.legend(loc='best',fontsize='12')
-  pl.legend(loc='best')
+  plleg=pl.gca().legend(loc='best')
+  for label in plleg.get_texts():
+      label.set_fontsize(12)
   if(slog):
     pl.ylim([5.e3,tmax])
     pl.yscale('log')
   else:
     pl.ylim([0,tmax])
-    pl.ticklabel_format(style='sci',axis='y',scilimits=(0,0))
+    pl.gca().ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 def plot_da_vs_turns_comp(data,lbldata,datacomp,lbldatacomp,seed,ampmin=2,ampmax=14,tmax=1.e6,slog=False):
   """dynamic aperture vs number of turns, blue/green=simple average, red/orange=weighted average"""
-  pl.close('seed '+seed)
-  pl.figure('seed '+seed,figsize=(6,6))
-  pl.errorbar(data['DAs'],data['tlossmin'],xerr=data['DAserr'],fmt='bo',markersize=2,label='simple average'+lbldata)
-  pl.plot(data['DAw'],data['tlossmin'],'ro',markersize=3,label='weighted average'+lbldata)
-  pl.errorbar(datacomp['DAs'],datacomp['tlossmin'],xerr=datacomp['DAserr'],fmt='go',markersize=2,label='simple average'+lbldatacomp)
-  pl.plot(datacomp['DAw'],datacomp['tlossmin'],'o',color='orange',markersize=3,label='weighted average'+lbldatacomp)
+  pl.close('all')
+  pl.figure(figsize=(6,6))
+  pl.errorbar(data['DAs'],data['tlossmin'],xerr=data['DAserr'],fmt='bo',markersize=2,label='simple average '+lbldata)
+  pl.plot(data['DAw'],data['tlossmin'],'ro',markersize=3,label='weighted average '+lbldata)
+  pl.errorbar(datacomp['DAs'],datacomp['tlossmin'],xerr=datacomp['DAserr'],fmt='go',markersize=2,label='simple average '+lbldatacomp)
+  pl.plot(datacomp['DAw'],datacomp['tlossmin'],'o',color='orange',markersize=3,label='weighted average '+lbldatacomp)
   pl.title('seed '+seed)
   pl.xlim([ampmin,ampmax])
   pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)
   pl.ylabel(r'Number of turns',labelpad=15,fontsize=12)
-  pl.legend(loc='best')
-#  pl.legend(loc='best',fontsize=12)
+  plleg=pl.gca().legend(loc='best')
+  for label in plleg.get_texts():
+    label.set_fontsize(12)
   if(slog):
     pl.ylim([5.e3,tmax])
     pl.yscale('log')
   else:
     pl.ylim([0,tmax])
-    pl.ticklabel_format(style='sci',axis='y',scilimits=(0,0))
+    pl.gca().ticklabel_format(style='sci',axis='y',scilimits=(0,0))
 
 # main analysis - putting the pieces together
 def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst,plotlog=False,comp=False,compdirname='',lblname='',complblname=''):
@@ -158,7 +161,7 @@ def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxd
     os.mkdir(study+'-analysis')
   for seed in db.get_seeds():
     seed=int(seed)
-    print('analyzing seed {0}').format(str(seed))
+    print('analyzing seed {0} ...').format(str(seed))
     dirname=study+'-analysis/'+str(seed)
     # case: create DA.out files
     if(createdaout):
@@ -169,34 +172,52 @@ def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxd
       for filename in glob.glob(dirname+'/*'):
         os.remove(filename)
         if(count==0):
-          print('remove old files in '+dirname)
+          print('- remove old files in '+dirname)
         count=count+1
       #load and save the data
-      print('get the data ...')
+      print('- load and save the data')
+      print('... creating file DAsurv.out')
       DAsurv=db.get_surv(seed)
       save_dasurv(DAsurv,dirname)
+      print('... creating file DA.out')
       DAout=get_da_vs_turns(DAsurv,turnstep)
       save_daout(DAout,dirname)
     # case: reload DA.out files
     else:
-      print('reload the data ...')
-      DAout = reload_daout(dirname)
-      DAsurv= reload_dasurv(dirname)
-    print('create the plots ...')
-    pl.close('all')
+      try:
+        DAout = reload_daout(dirname)
+      except IndexError:
+        print('Error in RunDaVsTurns - DA.out file not found for seed {0}!').format(str(seed))
+        sys.exit(0)
+      try:
+        DAsurv= reload_dasurv(dirname)
+      except IndexError:
+        print('Error in RunDaVsTurns - DAsurv.out file not found for seed {0}!').format(str(seed))
+        sys.exit(0)
+      print('- reload the data')
+    print('- create the plots')
     plot_surv_2d(DAsurv,str(seed),ampmaxsurv)
     pl.savefig(dirname+'/DA.png')
+    print('... creating plot DA.png')
     plot_da_vs_turns(DAout,str(seed),ampmindavst,ampmaxdavst,tmax,plotlog)
     if(plotlog==True):
       pl.savefig(dirname+'/DAsurv_log.png')
+      print('... creating plot DAsurv_log.png')
     else:
       pl.savefig(dirname+'/DAsurv.png')
+      print('... creating plot DAsurv.png')
     if(comp==True):
       compdirnameseed=compdirname+'/'+str(seed)
-      DAoutcomp=reload_daout(compdirnameseed)
+      try:
+          DAoutcomp=reload_daout(compdirnameseed)
+      except IndexError:
+          print('Error in RunDaVsTurns - file {} does not exist!').format(compdirnameseed)
+          sys.exit(0)
       plot_da_vs_turns_comp(DAout,lblname,DAoutcomp,complblname,str(seed),ampmindavst,ampmaxdavst,tmax,plotlog)
       if(plotlog==True):
         pl.savefig(dirname+'/DAsurv_comp_log.png')
+        print('... creating plot DAsurv_comp_log.png')
       else:
         pl.savefig(dirname+'/DAsurv_comp.png')
+        print('... creating plot DAsurv_comp.png')
 
