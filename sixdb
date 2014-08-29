@@ -34,15 +34,14 @@ Commands:
 
     info <database>: printout information from DataBase.
 
-    run_da_vs_turns <database> [options]:
+    da_vs_turns <database> [options]:
         options:
-          -createdaout (default: True): create the DA.out files for the da vs turns analysis
-          -turnstep (default: 100)    : steps in the number of turns
-          -tmax (default: 1.e6)       : maximum number of turns
-          -ampmaxsurv (default: 12)   : maximum amplitude for survival plot
-          -ampmindavst (default: 4)   : minimum amplitude for da vs turns plots
-          -ampmaxdavst (default: 10)  : maximum amplitude for da vs turns plots
-          -plotlog (default: False)   : if True plot da vs turns in logscale
+          -createdaout (default: True)   : create the DA.out files for the da vs turns analysis
+          -turnstep (default: 100)       : steps in the number of turns
+          -tmax (default: 1.e6)          : maximum number of turns
+          -ampmaxsurv (default: 12)      : maximum amplitude for survival plot
+          -amprangedavst (default: 4 10) : minimum maximum amplitude for da vs turns plots
+          -plotlog (default: False)      : if True plot da vs turns in logscale
           -comp <compdirname> <lblname> <complblname> : flag to compare two studies (default: False)
                 compdirname  : analysis directory (e.g. studyname-analysis) of study to compare with
                 lblname      : labelname to be used for <database> for plots
@@ -162,12 +161,10 @@ Commands:
         except ValueError:
             ampmaxsurv=12
         try:
-            ampmindavst=args[args.index('-ampmindavst')+1]
+            ampmindavst=args[args.index('-amprangedavst')+1]
+            ampmaxdavst=args[args.index('-amprangedavst')+2]
         except ValueError:
             ampmindavst=4
-        try:
-            ampmaxdavst=args[args.index('-ampmaxdavst')+1]
-        except ValueError:
             ampmaxdavst=10
         try:
             plotlog=str2bool(args[args.index('-plotlog')+1])
@@ -199,12 +196,12 @@ Commands:
         try:
             ampmindavst=float(ampmindavst)
         except ValueError:
-            print('Error in command `da_vs_turns` - float value expected for option `ampmindavst`')
+            print('Error in command `da_vs_turns` - float values expected for option `amprangedavst`')
             sys,exit(0)
         try:
             ampmaxdavst=float(ampmaxdavst)
         except ValueError:
-            print('Error in command `da_vs_turns` - float value expected for option `ampmaxdavst`')
+            print('Error in command `da_vs_turns` - float values expected for option `amprangedavst`')
             sys,exit(0)
         if(comp):
           try:

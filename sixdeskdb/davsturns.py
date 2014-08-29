@@ -1,5 +1,6 @@
 # DA vs turns module
 import os as os
+import sys as sys
 import numpy as np
 import matplotlib.pyplot as pl
 import glob as glob
@@ -158,7 +159,7 @@ def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxd
     os.mkdir(study+'-analysis')
   for seed in db.get_seeds():
     seed=int(seed)
-    print('analyzing seed {0}').format(str(seed))
+    print('analyzing seed {0} ...').format(str(seed))
     dirname=study+'-analysis/'+str(seed)
     # case: create DA.out files
     if(createdaout):
@@ -169,34 +170,53 @@ def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxd
       for filename in glob.glob(dirname+'/*'):
         os.remove(filename)
         if(count==0):
-          print('remove old files in '+dirname)
+          print('- remove old files in '+dirname)
         count=count+1
       #load and save the data
-      print('get the data ...')
+      print('- load and save the data')
       DAsurv=db.get_surv(seed)
       save_dasurv(DAsurv,dirname)
+      print('... creating file DAsurv.out')
       DAout=get_da_vs_turns(DAsurv,turnstep)
       save_daout(DAout,dirname)
+      print('... creating file DA.out')
     # case: reload DA.out files
     else:
-      print('reload the data ...')
-      DAout = reload_daout(dirname)
-      DAsurv= reload_dasurv(dirname)
-    print('create the plots ...')
+      try:
+        DAout = reload_daout(dirname)
+      except IndexError:
+        print('Error in RunDaVsTurns - DA.out file not found for seed {0}!').format(str(seed))
+        sys.exit(0)
+      try:
+        DAsurv= reload_dasurv(dirname)
+      except IndexError:
+        print('Error in RunDaVsTurns - DAsurv.out file not found for seed {0}!').format(str(seed))
+        sys.exit(0)
+      print('- reload the data')
+    print('- create the plots')
     pl.close('all')
     plot_surv_2d(DAsurv,str(seed),ampmaxsurv)
     pl.savefig(dirname+'/DA.png')
+    print('... creating plot DA.png')
     plot_da_vs_turns(DAout,str(seed),ampmindavst,ampmaxdavst,tmax,plotlog)
     if(plotlog==True):
       pl.savefig(dirname+'/DAsurv_log.png')
+      print('... creating plot DAsurv_log.png')
     else:
       pl.savefig(dirname+'/DAsurv.png')
+      print('... creating plot DAsurv.png')
     if(comp==True):
       compdirnameseed=compdirname+'/'+str(seed)
-      DAoutcomp=reload_daout(compdirnameseed)
+      try:
+          DAoutcomp=reload_daout(compdirnameseed)
+      except IndexError:
+          print('Error in RunDaVsTurns - file {} does not exist!').format(compdirnameseed)
+          sys.exit(0)
       plot_da_vs_turns_comp(DAout,lblname,DAoutcomp,complblname,str(seed),ampmindavst,ampmaxdavst,tmax,plotlog)
       if(plotlog==True):
         pl.savefig(dirname+'/DAsurv_comp_log.png')
+        print('... creating plot DAsurv_comp_log.png')
       else:
         pl.savefig(dirname+'/DAsurv_comp.png')
+        print('... creating plot DAsurv_comp.png')
 
