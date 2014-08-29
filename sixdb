@@ -145,7 +145,7 @@ Commands:
           sys.exit(0)
         # define default values
         try:
-            createdaout=str2bool(args[args.index('-createdaout')])
+            createdaout=str2bool(args[args.index('-createdaout')+1])
         except ValueError:
             createdaout=True
         try:
