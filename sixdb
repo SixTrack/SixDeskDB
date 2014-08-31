@@ -24,34 +24,38 @@ if __name__ == "__main__":
 Usage: sixdb <command> <arguments>
 
 Commands:
-    load_dir <studydir>: load data from from a directory tree into the
-           database. The directory is read from sixdeskenv and sysenv found in
-           studydir (default '.')
+  load_dir <studydir>: load tracking data from from a SixDesk study.
+    <studydir>: the directory that contains `sixdeskenv` and `sysenv`
+    files like w1/sixjobs/studies/job_tracking.
 
-    da <database>: compute DAres files from database
+  da <database>: compute DAres files from database
 
-    mad <database>: analyse the output of mad6t (HL-LHC specific)
+  mad <database>: analyse the output of mad6t (HL-LHC specific)
 
-    info <database>: printout information from DataBase.
+  info <database>: printout information from DataBase.
 
-    da_vs_turns <database> [options]:
-        options:
-          -createdaout (default: True)   : create the DA.out files for the da vs turns analysis
-          -turnstep (default: 100)       : steps in the number of turns
-          -tmax (default: 1.e6)          : maximum number of turns
-          -ampmaxsurv (default: 12)      : maximum amplitude for survival plot
-          -amprangedavst (default: 4 10) : minimum maximum amplitude for da vs turns plots
-          -plotlog (default: False)      : if True plot da vs turns in logscale
-          -comp <compdirname> <lblname> <complblname> : flag to compare two studies (default: False)
-                compdirname  : analysis directory (e.g. studyname-analysis) of study to compare with
-                lblname      : labelname to be used for <database> for plots
-                complblname  : labelname to be used for <compdatabase> for plots
-    """
+  da_vs_turns <database> [options]: plot DA vs turns.
+    options:
+    -createdaout (default: True)   : create the DA.out files for the da vs
+      turns analysis
+    -turnstep (default: 100)       : steps in the number of turns
+    -tmax (default: 1.e6)          : maximum number of turns
+    -ampmaxsurv (default: 12)      : maximum amplitude for survival plot
+    -amprangedavst (default: 4 10) : minimum maximum amplitude for da vs
+      turns plots
+    -plotlog (default: False)      : if True plot da vs turns in logscale
+    -comp <compdirname> <lblname> <complblname>: flag to compare two studies
+      (default: False)
+      <compdirname>: analysis directory (e.g. studyname-analysis) of
+        study to compare with
+      <lblname>    : labelname to be used for <database> for plots
+      <complblname>: labelname to be used for <compdatabase> for plots
+  """
   todebug="""
-      restore_dir <database>: restore the directory using data from the database.            Options:
-            -basedir: specify a new root for saving data
-            -verbose: printout the filename name created
-            -dryrun : will not create files and directory
+  restore_dir <database>: restore the directory using data from the database.      Options:
+      -basedir: specify a new root for saving data
+      -verbose: printout the filename name created
+      -dryrun : will not create files and directory
   """
   if args:
   # try:
