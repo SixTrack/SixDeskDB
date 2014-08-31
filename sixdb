@@ -1,13 +1,25 @@
 #!/usr/bin/python
 
-# python executable for Sixdesk
-# Moonis Javed (monis.javed@gmail.com),
-# Riccardo De Maria (riccardo.de.maria@cern.ch)
-# Xavier Valls Pla  (xavier.valls.pla@cern.ch)
+# python executable for SixdeskDB
+# Moonis Javed <monis.javed@gmail.com>,
+# Riccardo De Maria <riccardo.de.maria@cern.ch>
+# Xavier Valls Pla  <xavier.valls.pla@cern.ch>
+# Danilo Banfi <danilo.banfi@cern.ch>
 #
+# This software is distributed under the terms of the GNU Lesser General Public
+# License version 2.1, copied verbatim in the file ``COPYING''.
+
+# In applying this licence, CERN does not waive the privileges and immunities
+# granted to it by virtue of its status as an Intergovernmental Organization or
+# submit itself to any jurisdiction.
+
 # Needs Python version >=2.6
 
 import sys,os
+
+if sys.version_info < (2, 6):
+  print "SixDeskDB requires Python version >=2.6"
+  sys.exit(1)
 
 from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns
 #from dbtocentral,config

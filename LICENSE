@@ -1,8 +1,9 @@
-SixDesk - Envinroment for Massive Tracking Simulation with SixTrack
+SixDeskDB - Envinroment for Massive Tracking Simulation with SixTrack
 
 © Copyright 2014 CERN.
 
-Authors: Danilo Banfi, Riccardo De Maria, Moonis Javed.
+Authors: Danilo Banfi, Riccardo De Maria, Moonis Javed, Miriam Fitterer, Xavier
+Valls Pla
 
 This software is distributed under the terms of the GNU Lesser General Public
 License version 2.1, copied verbatim in the file “COPYING”.
@@ -10,6 +11,3 @@ License version 2.1, copied verbatim in the file “COPYING”.
 In applying this licence, CERN does not waive the privileges and immunities
 granted to it by virtue of its status as an Intergovernmental Organization or
 submit itself to any jurisdiction.
-
-
-
