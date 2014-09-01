@@ -80,7 +80,7 @@ class SQLTable(object):
     db.commit()
   def insertl(self,data,artype="?",replace=True):
     db=self.db
-    table=self.name 
+    table=self.name
     dbtype = self.dbtype
     if replace:
       sql="REPLACE INTO %s VALUES (%s)"
@@ -92,11 +92,11 @@ class SQLTable(object):
     if len(data) == 0:
       return
     if not isinstance(data[0], list):
-      vals=','.join([artype for _ in xrange(len(data))])
+      vals=','.join([artype] * len(data))
       sql_cmd=sql%(table,vals)
       cur.execute(sql_cmd, data)
     else:
-      vals=','.join([artype for _ in xrange(len(data[0]))])
+      vals=','.join([artype] * len(data[0]))
       # print vals
       sql_cmd=sql%(table,vals)
       cur.executemany(sql_cmd, data)

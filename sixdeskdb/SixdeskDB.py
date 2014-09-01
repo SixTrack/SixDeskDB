@@ -568,6 +568,7 @@ class SixDeskDB(object):
     file_count=0
     for dirName in glob.iglob(os.path.join(workdir,'*','*','*','*','*','*')):
       f3=os.path.join(dirName, 'fort.3.gz')
+      f10=os.path.join(dirName, 'fort.10.gz')
       #dirName,files=os.path.split(dirName.strip())
       ranges= dirName.split('/')[-3]
       if '_' in ranges and os.path.exists(f3):
@@ -575,12 +576,12 @@ class SixDeskDB(object):
         if file_count%100==0:
             sys.stdout.write('.')
             sys.stdout.flush()
-        mtime = os.path.getmtime(f3)
-        if mtime>maxtime:
+        mtime3 = os.path.getmtime(f3)
+        if mtime3>maxtime:
             dirn = dirName.replace(workdir + '/', '')
             dirn = re.split('/|_', dirn)
             dirn = [six_id] + dirn
-            dirn.extend([sqlite3.Binary(open(f3).read()),mtime])
+            dirn.extend([sqlite3.Binary(open(f3).read()),mtime3])
             rows.append(dirn)
             dirn = []
             six_id += 1
@@ -1327,19 +1328,24 @@ class SixDeskDB(object):
     database= '%s.db'%(self.studyName)
     fntxt='DA_%s.txt'%self.studyName
     fhtxt = open(fntxt, 'w')
-
-    rectype=[('seed','int'),('betx'    ,'float'),('bety'    ,'float'),('sigx1'   ,'float'),('sigy1'   ,'float'),('emitx'   ,'float'),('emity'   ,'float'),
-            ('sigxavgnld' ,'float') ,('sigyavgnld' ,'float'),('betx2'   ,'float'),('bety2'   ,'float'),('distp'   ,'float'),('dist'    ,'float'),
-            ('sturns1' ,'int')   ,('sturns2' ,'int')  ,('turn_max','int')  ,('amp1'    ,'float'),('amp2'    ,'float'),('angle'   ,'float')]
-    names='seed,betx,bety,sigx1,sigy1,emitx,emity,sigxavgnld,sigyavgnld,betx2,bety2,distp,dist,sturns1,sturns2,turn_max,amp1,amp2,angle'
-    outtype=[('study','S100'),('seed','int'),('angle','float'),('achaos','float'),('achaos1','float'),('alost1','float'),('alost2','float'),('Amin','float'),('Amax','float')]
-
+    rectype=[('seed','int'),('betx','float'),('bety','float'),
+             ('sigx1','float'),('sigy1','float'),
+             ('emitx','float'),('emity','float'),
+             ('sigxavgnld','float'),('sigyavgnld','float'),
+             ('betx2','float'),('bety2','float'),
+             ('distp','float'),('dist','float'),
+             ('sturns1' ,'int'),('sturns2','int'),('turn_max','int'),
+             ('amp1','float'),('amp2','float'),('angle','float')]
+    names=','.join(zip(*rectype)[0])
+    outtype=[('study','S100'),('seed','int'),('angle','float'),
+             ('achaos','float'),('achaos1','float'),
+             ('alost1','float'),('alost2','float'),
+             ('Amin','float'),('Amax','float')]
     LHCDesName=self.env_var['LHCDesName']
     turnse=self.env_var['turnse']
     sixdesktunes=self.env_var['tunex']+"_"+self.env_var['tuney']
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
-
     tmp=np.array(self.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     anumber=1
