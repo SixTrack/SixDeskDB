@@ -562,27 +562,25 @@ class SixDeskDB(object):
     rows = []
     six_id = 1
     print "Looking for fort.3.gz files in\n %s"%workdir
-    cmd = """find %s -type f -name 'fort.3.gz'"""%(workdir)
+    #cmd = """find %s -type f -name 'fort.3.gz'"""%(workdir)
     #a = os.popen(cmd).read().split('\n')[:-1]
     #print 'fort.3 files =',len(a)
     file_count=0
-    for dirName in os.popen(cmd):
-      dirName,files=os.path.split(dirName.strip())
+    for dirName in glob.iglob(os.path.join(workdir,'*','*','*','*','*','*')):
+      f3=os.path.join(dirName, 'fort.3.gz')
+      #dirName,files=os.path.split(dirName.strip())
       ranges= dirName.split('/')[-3]
-      if '_' in ranges:
+      if '_' in ranges and os.path.exists(f3):
         file_count+=1
         if file_count%100==0:
             sys.stdout.write('.')
             sys.stdout.flush()
-        mtime = os.path.getmtime(dirName)
+        mtime = os.path.getmtime(f3)
         if mtime>maxtime:
             dirn = dirName.replace(workdir + '/', '')
             dirn = re.split('/|_', dirn)
             dirn = [six_id] + dirn
-            dirn.extend([sqlite3.Binary(open(
-              os.path.join(dirName, files), 'r'
-            ).read()
-            ),mtime])
+            dirn.extend([sqlite3.Binary(open(f3).read()),mtime])
             rows.append(dirn)
             dirn = []
             six_id += 1
@@ -1447,7 +1445,7 @@ class SixDeskDB(object):
                 name1+=" "
             if(anumber<10):
                 name1+=" "
-            fmt=' %s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
+            fmt=' %-39s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
             fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
             fhtxt.write('%s %s %s %s %s %s %s %s %s \n'%( name2, seed,angle,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
         anumber+=1
