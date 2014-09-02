@@ -133,7 +133,7 @@ Commands:
     elif args[0] in ("da","da"):
       if len(args)==2:
         a = SixDeskDB(args[1])
-        a.read10b()
+        a.mk_da()
       else:
         print "sixdb error: too few arguments for da"
         print helpmsg

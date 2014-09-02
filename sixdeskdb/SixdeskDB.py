@@ -223,10 +223,10 @@ class SixDeskDB(object):
     conn.text_factory=str
     cols=SQLTable.cols_from_fields(tables.Env.fields)
     tab = SQLTable(conn,'env',cols,tables.Env.key)
-    temp = tab.select('count(*)')[0][0]
+    temp = tab.selectl('count(*)')[0][0]
     if temp > 0:
       print "Updating %s"%db
-      lst = tab.select("keyname,value")
+      lst = tab.selectl("keyname,value")
       cls = SixDeskDB(env_var['LHCDescrip'],basedir,verbose,dryrun)
       mtime = os.path.getmtime(studyDir+"/sixdeskenv")
       cls.set_variable(lst,mtime)
@@ -355,7 +355,7 @@ class SixDeskDB(object):
     extra_files = []
     a = []
     workdir = env_var['sixtrack_input']
-    a = tab.select('distinct run_id')
+    a = tab.selectl('distinct run_id')
     if a:
       a = [str(i[0]) for i in a]
     print "Looking for fort.2, fort.8, fort.16 in\n %s"%workdir
@@ -421,7 +421,7 @@ class SixDeskDB(object):
     env_var = self.orig_env_var
     cols = SQLTable.cols_from_fields(tables.Mad_Res.fields)
     tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
-    maxtime = tab.select("max(fort_mtime)")[0][0]
+    maxtime = tab.selectl("max(fort_mtime)")[0][0]
     if not maxtime:
       maxtime = 0
     rows = []
@@ -556,7 +556,7 @@ class SixDeskDB(object):
     cols = SQLTable.cols_from_fields(tables.Six_In.fields)
     tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
     #tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
-    maxtime = tab.select("max(mtime)")[0][0]
+    maxtime = tab.selectl("max(mtime)")[0][0]
     count = 0
     if not maxtime:
       maxtime = 0
@@ -605,12 +605,12 @@ class SixDeskDB(object):
     tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
     workdir = os.path.join(env_var['sixdesktrack'],env_var['LHCDescrip'])
     rows = []
-    inp = tab.select("""distinct id,seed,simul,tunex,tuney,amp1,amp2,turns,
+    inp = tab.selectl("""distinct id,seed,simul,tunex,tuney,amp1,amp2,turns,
         angle""")
     inp = [[str(i) for i in j] for j in inp]
     cols = SQLTable.cols_from_fields(tables.Six_Res.fields)
     tab = SQLTable(conn,'six_results',cols,tables.Six_Res.key)
-    maxtime = tab.select("max(mtime)")[0][0]
+    maxtime = tab.selectl("max(mtime)")[0][0]
     if not maxtime:
       maxtime = 0
     print "Looking for fort.10.gz files in\n %s"%workdir
@@ -1051,7 +1051,7 @@ class SixDeskDB(object):
     cols = [i.replace("STRING","VARCHAR(128)") for i in cols]
     cols = ['study VARCHAR(128)'] + cols
     tab = SQLTable(conn,'six_results',cols)
-    maxtime = tab.select("max(mtime)")[0][0]
+    maxtime = tab.selectl("max(mtime)")[0][0]
     if not maxtime:
       maxtime = 0
     cur = conn.cursor()
@@ -1350,13 +1350,14 @@ class SixDeskDB(object):
              ('betx2','float'),('bety2','float'),
              ('distp','float'),('dist','float'),
              ('sturns1' ,'int'),('sturns2','int'),('turn_max','int'),
-             ('amp1','float'),('amp2','float'),('angle','float')]
+             ('amp1','float'),('amp2','float'),('angle','float'),
+             ('six_results.mtime','int')]
     names=','.join(zip(*rectype)[0])
     outtype=[('study', '|S100'), ('tunex','float'),('tuney','float'),
              ('seed','int'),('angle','float'),
              ('achaos','float'),('achaos1','float'),
              ('alost1','float'),('alost2','float'),
-             ('Amin','float'),('Amax','float')]
+             ('Amin','float'),('Amax','float'),('mtime','int')]
     LHCDesName=self.env_var['LHCDesName']
     turnse=self.env_var['turnse']
     tunex=float(self.env_var['tunex'])
@@ -1369,6 +1370,7 @@ class SixDeskDB(object):
     anumber=1
     angles=np.unique(tmp['angle'])
     seeds=np.unique(tmp['seed'])
+    mtime=tmp['six_results.mtime'].max()
     final=np.zeros(len(seeds)*len(angles),dtype=outtype)
     irec=0
     for angle in angles:
@@ -1476,15 +1478,44 @@ class SixDeskDB(object):
             fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
             final[irec]=(name2, tunex, tuney, seed,
                            angle,achaos,achaos1,alost1,alost2,
-                           rad*inp['sigx1'][0],rad*inp['sigx1'][iel])
+                           rad*inp['sigx1'][0],rad*inp['sigx1'][iel],mtime)
             irec+=1
         anumber+=1
         fhdot.close()
         print fndot
     cols=SQLTable.cols_from_dtype(final.dtype)
     datab=SQLTable(self.conn,'da_post',cols)
-    print list(final[0])
     datab.insert(final)
+
+  def mk_da(self):
+    dirname,=self.mk_analysis_dir()
+    LHCDesName=self.env_var['LHCDesName']
+    outtype=[('study', '|S100'), ('tunex','float'),('tuney','float'),
+             ('seed','int'),('angle','float'),
+             ('achaos','float'),('achaos1','float'),
+             ('alost1','float'),('alost2','float'),
+             ('Amin','float'),('Amax','float'),('mtime','int')]
+    cols=SQLTable.cols_from_dtype(np.dtype(outtype))
+    datab=SQLTable(self.conn,'da_post',cols)
+    final=datab.select(orderby='angle,seed')
+    turnse=self.env_var['turnse']
+    tunex=float(self.env_var['tunex'])
+    tuney=float(self.env_var['tuney'])
+    sixdesktunes=self.env_var['tunex']+"_"+self.env_var['tuney']
+    ns1l=self.env_var['ns1l']
+    ns2l=self.env_var['ns2l']
+    if len(final)>0:
+        an_mtime=final['mtime']
+        res_mtime=self.execute('SELECT max(mtime) FROM six_results')[0][0]
+        if res_mtime>an_mtime:
+            self.read10b()
+            final=datab.select(orderby='angle,seed')
+    else:
+      self.read10b()
+      final=datab.select(orderby='angle,seed')
+
+    #print final['mtime']
+    #print self.execute('SELECT max(mtime) FROM six_results')[0][0]
 
     fnplot='DAres.%s.%s.%s.plot'%(LHCDesName,sixdesktunes,turnse)
     fnplot= os.path.join(dirname,fnplot)
@@ -1523,6 +1554,7 @@ class SixDeskDB(object):
           print "Maximum:  %.2f  Sigma at Seed #: %d" %(maxi, smaxi)
           print "Average: %.2f Sigma" %(mean)
         print "# of (Aav-A0)/A0 >10%%:  %d"  %nega
+        name2 = "DAres."+self.studyName+"."+sixdesktunes+"."+turnse
         fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
     fhplot.close()
 
