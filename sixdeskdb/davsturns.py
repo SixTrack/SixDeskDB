@@ -4,7 +4,7 @@ import sys as sys
 import numpy as np
 import matplotlib.pyplot as pl
 import glob as glob
-from SixdeskDB import SixDeskDB
+from SixdeskDB import SixDeskDB,tune_dir
 
 # basic functions
 def ang_to_i(ang,angmax):
@@ -161,12 +161,13 @@ def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxd
     for tune in db.get_tunes():
       if(createdaout):
         pp=db.mk_analysis_dir(seed,tune)
-        for file in 'DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png':
-          ppf=os.path.join(pp,'DA.out')
-          if os.path.exists(ppf): os.remove(ppf)
-        if(count==0):
-          print('remove old DA.out, DAsurv.out ... files in '+db.LHCDescrip)
-          count=count+1
+        for filename in 'DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png':
+          ppf=os.path.join(pp,filename)
+          if(os.path.exists(ppf)):
+            os.remove(ppf)
+            if(count==0):
+              print('remove old DA.out, DAsurv.out ... files in '+db.LHCDescrip)
+              count=count+1
 # start analysis
   for seed in db.get_seeds():
     for tune in db.get_tunes():
@@ -208,7 +209,7 @@ def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxd
         pl.savefig(dirname+'/DAsurv.png')
         print('... creating plot DAsurv.png')
       if(comp==True):
-        compdirnameseed=self.mk_analysis_dir(seed,tune)
+        compdirnameseed=os.path.join(compdirname,str(seed),tune_dir(tune))
         try:
             DAoutcomp=reload_daout(compdirnameseed)
         except IndexError:
