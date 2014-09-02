@@ -4,7 +4,7 @@ import sys as sys
 import numpy as np
 import matplotlib.pyplot as pl
 import glob as glob
-from SixdeskDB import SixDeskDB
+from SixdeskDB import SixDeskDB,tune_dir
 
 # basic functions
 def ang_to_i(ang,angmax):
@@ -209,7 +209,7 @@ def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxd
         pl.savefig(dirname+'/DAsurv.png')
         print('... creating plot DAsurv.png')
       if(comp==True):
-        compdirnameseed=self.mk_analysis_dir(seed,tune)
+        compdirnameseed=os.path.join(compdirname,str(seed),tune_dir(tune))
         try:
             DAoutcomp=reload_daout(compdirnameseed)
         except IndexError:

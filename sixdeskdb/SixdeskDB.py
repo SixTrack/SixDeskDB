@@ -1126,7 +1126,6 @@ class SixDeskDB(object):
   def get_seeds(self):
     ''' get seeds from DB '''
     out=zip(*self.execute('SELECT DISTINCT seed FROM six_input'))[0]
-    print out
     return out
 
   def get_env_angles(self):

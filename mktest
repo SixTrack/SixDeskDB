@@ -30,3 +30,5 @@ echo '-- test default --'
 ./sixdb da_vs_turns job_hllhc10_test8.db
 echo '-- test options --'
 ./sixdb da_vs_turns job_hllhc10_test8.db -createdaout False -turnstep 100.0 -tmax 1.e6 -ampmaxsurv 12 -amrangedavst 4 10 -plotlog True -comp True -compdirname job_hllhc10_test8_comp -lblname test -complblname testcomp
+echo '-- clean up (delete) plots --'
+rm job_hllhc10_test8/*/*/*.png
