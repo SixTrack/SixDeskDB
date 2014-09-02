@@ -19,9 +19,12 @@ class SQLTable(object):
     types=[]
     for i in names:
       ttt=dtype.fields[i][0]
-      if ttt == np.float_: types.append('REAL')
-      elif ttt == np.string_: types.append('TEXT')
-      elif ttt == np.int_: types.append('INTEGER')
+      #print i,ttt,types
+      if ttt.kind=='f': types.append('REAL')
+      elif ttt.kind == 'S': types.append('TEXT')
+      elif ttt.kind in 'iu': types.append('INTEGER')
+      else:
+        raise ValueError,"%s not understood"% ttt
     return [' '.join(c) for c in zip(names,types)]
   @staticmethod
   def query_from_dict(query):
@@ -37,7 +40,7 @@ class SQLTable(object):
     db=self.db;table=self.name
     cols=self.cols
     keys=self.keys
-    dbtype = self.dbtype 
+    dbtype = self.dbtype
     sql="CREATE TABLE IF NOT EXISTS %s(%s);"
     sql_cols=','.join(cols)
     sql_cmd=sql%(table,sql_cols)
@@ -73,9 +76,7 @@ class SQLTable(object):
     cols=','.join(data.dtype.names)
     vals=','.join(('?',)*len(data.dtype.names))
     sql_cmd=sql%(table,cols,vals)
-    print sql_cmd
     cur=db.cursor()
-    data = [('abc', 'testing')]
     cur.executemany(sql_cmd, data)
     db.commit()
   def insertl(self,data,artype="?",replace=True):
@@ -139,38 +140,36 @@ class SQLTable(object):
 
 
 if __name__=='__main__':
-  # db=sqlite3.connect(':memory:')
+  db=sqlite3.connect(':memory:')
+  rectype=[
+      ('f1','float'),
+      ('f2','float'),
+      ('f3','int')]
+  records=[(1,2,3),(4,5,6),(7,8,9),(1,5,2)]
+  data=np.array(records,dtype=rectype)
+  cols=SQLTable.cols_from_dtype(data.dtype)
+  print cols
+  db=sqlite3.connect(':memory:')
+  tab=SQLTable(db,'tab1',cols,['f1','f2'])
+  tab.insert(data)
+  print tab.select()
+  print tab.select('f3 f2',where='f3 = 2',orderby='f3 f2')
+  tab.insert(data)
+  tab.select()
+  try:
+    tab.insert(data,replace=False)
+  except sqlite3.IntegrityError,msg:
+    print 'ERROR:',msg
+  data=np.random.rand(10000*3).view(rectype)
+  tab.insert(data)
+  print tab.select()
 
-  # rectype=[
-  #     ('f1','float'),
-  #     ('f2','float'),
-  #     ('f3','int')]
-  # records=[(1,2,3),(4,5,6),(7,8,9),(1,5,2)]
-
-  # data=np.array(records,dtype=rectype)
-  # cols=SQLTable.cols_from_dtype(data.dtype)
-  # print cols
-  # db=sqlite3.connect(':memory:')
-  # tab=SQLTable(db,'tab1',cols,['f1','f2'])
-  # tab.insert(data)
-  # print tab.select()
-  # print tab.select('f3 f2',where='f3 = 2',orderby='f3 f2')
-  # tab.insert(data)
-  # tab.select()
-  # try:
-  #   tab.insert(data,replace=False)
-  # except sqlite3.IntegrityError,msg:
-  #   print 'ERROR:',msg
-  # data=np.random.rand(10000*3).view(rectype)
-  # tab.insert(data)
-  # print tab.select()
-
-  rectype=[(i,ttt) for i,ttt,desc in Env.fields]
-  a = sixdeskdir.parse_env('./files/w7/sixjobs/')
-  data=[(1,i,str(a[i])) for i in a.keys()]
-  cols=SQLTable.cols_from_fields(Env.fields)
-  # print cols
-  db=sqlite3.connect('test.db')
-  tab=SQLTable(db,'env',cols,['env_id','key'])
-  tab.insertl(data)
+  #rectype=[(i,ttt) for i,ttt,desc in Env.fields]
+  #a = sixdeskdir.parse_env('./files/w7/sixjobs/')
+  #data=[(1,i,str(a[i])) for i in a.keys()]
+  #cols=SQLTable.cols_from_fields(Env.fields)
+  ## print cols
+  #db=sqlite3.connect('test.db')
+  #tab=SQLTable(db,'env',cols,['env_id','key'])
+  #tab.insertl(data)
 
