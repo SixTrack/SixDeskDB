@@ -1281,7 +1281,8 @@ class SixDeskDB(object):
     pl.ylabel(r'$\sigma_y$')
     pl.colorbar()
   def mk_analysis_dir(self,seed=None,tunes=None,angle=None):
-    out=[mk_dir(self.studyName)]
+    dirname=self.studyName
+    out=[mk_dir(dirname)]
     if seed is not None:
        seedame=os.path.join(dirname,seed)
        out.append(mk_dir(seedname))
