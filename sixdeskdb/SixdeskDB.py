@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # python implementation of Sixdesk storage using local database and creation of
 # study using database

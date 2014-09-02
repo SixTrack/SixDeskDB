@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # python daemon for storing boinc files directly to central Db in background
 # done by Moonis Javed (monis.javed@gmail.com)
