@@ -25,3 +25,5 @@ echo '';
 echo '';
 echo '-----------------da---------------------------';
 ./sixdb da job_hllhc10_test8.db
+
+./sixdb da_vs_turns job_hllhc10_test8.db

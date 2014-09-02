@@ -1289,12 +1289,12 @@ class SixDeskDB(object):
     out=[mk_dir(dirname)]
     if seed is not None:
       seed=str(seed)
-      seedame=os.path.join(dirname,seed)
+      seedname=os.path.join(dirname,seed)
       out.append(mk_dir(seedname))
     if tunes is not None:
       tunes=tune_dir(tunes)
       tunename=os.path.join(dirname,seed,tunes)
-      out.append(mk_dir(tunenamename))
+      out.append(mk_dir(tunename))
     if angle is not None:
       angle=str(angle)
       anglename=os.path.join(dirname,seed,angle)
