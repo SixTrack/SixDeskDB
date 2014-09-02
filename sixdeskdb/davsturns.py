@@ -162,11 +162,12 @@ def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxd
       if(createdaout):
         pp=db.mk_analysis_dir(seed,tune)
         for file in 'DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png':
-          ppf=os.path.join(pp,'DA.out')
-          if os.path.exists(ppf): os.remove(ppf)
-        if(count==0):
-          print('remove old DA.out, DAsurv.out ... files in '+db.studyName)
-          count=count+1
+          ppf=os.path.join(pp,file)
+          if(os.path.exists(ppf)):
+            os.remove(ppf)
+            if(count==0):
+              print('remove old DA.out, DAsurv.out ... files in '+db.studyName)
+              count=count+1
 # start analysis
   for seed in db.get_seeds():
     for tune in db.get_tunes():

@@ -1284,7 +1284,9 @@ class SixDeskDB(object):
     pl.xlabel(r'$\sigma_x$')
     pl.ylabel(r'$\sigma_y$')
     pl.colorbar()
+
   def mk_analysis_dir(self,seed=None,tunes=None,angle=None):
+    '''create analysis directory structure'''
     dirname=self.studyName
     out=[mk_dir(dirname)]
     if seed is not None:
@@ -1300,6 +1302,7 @@ class SixDeskDB(object):
       anglename=os.path.join(dirname,seed,angle)
       out.append(mk_dir(anglename))
     return out[-1]
+
   def plot_survival_avg(self,seed):
     data=self.get_survival_turns(seed)
     a,s,t=data['angle'],data['amp'],data['surv']
