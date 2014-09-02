@@ -58,8 +58,7 @@ Commands:
                      (default: False)
     -comp <compdirname> <lblname> <complblname>: flag to compare 
                      two studies (default: False)
-        <compdirname> : analysis directory (e.g. studyname-analysis)
-                        of study to compare with
+        <compdirname> : analysis directory of study to compare with
         <lblname>     : labelname to be used for <database> for plots
         <complblname> : labelname to be used for <compdatabase> for 
                         plots
