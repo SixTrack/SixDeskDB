@@ -200,7 +200,7 @@ Commands:
             print('Error in command `da_vs_turns` - integer value expected for option `turnstep`')
             sys,exit(0)
         try:
-            tmax=int(tmax)
+            tmax=int(float(tmax))
         except ValueError:
             print('Error in command `da_vs_turns` - integer value expected for option `tmax`')
             sys,exit(0)
