@@ -1,5 +1,5 @@
 rm job_hllhc10_test8.db
-rm DA*job_hllhc10_test8*
+rm -r job_hllhc10_test8
 
 if [ ! -f test/simple/sixdeskenv ];
 then
@@ -15,10 +15,10 @@ echo '-----------------load_dir-----------------------';
 ./sixdb load_dir test/simple
 echo '';
 echo '';
-echo '-----------------restore_dir--------------------';
-./sixdb restore_dir job_hllhc10_test8.db -verbose -dryrun
-echo '';
-echo '';
+#echo '-----------------restore_dir--------------------';
+#./sixdb restore_dir job_hllhc10_test8.db -verbose -dryrun
+#echo '';
+#echo '';
 echo '-----------------info--------------------------';
 ./sixdb info job_hllhc10_test8.db
 echo '';

@@ -63,6 +63,11 @@ def col_count(cur, table):
   cur.execute(sql)
   return len(cur.fetchall())
 
+def mk_dir(dirname):
+   if not os.path.isdir(dirname):
+     os.mkdir(dirname)
+     print "Make dir %s"%dirname
+   return dirname
 
 def dict_to_list(dict):
   '''convert dictionary to list for DB insert'''
@@ -1276,22 +1281,17 @@ class SixDeskDB(object):
     pl.ylabel(r'$\sigma_y$')
     pl.colorbar()
   def mk_analysis_dir(self,seed=None,tunes=None,angle=None):
-    dirname=self.studyName
-    if os.path.exists(dirname):
-        os.mkdir(dirname)
-        print "Make dir %s"%dirname
+    out=[mk_dir(self.studyName)]
     if seed is not None:
-       dirname=os.path.join(dirname,seed)
+       seedame=os.path.join(dirname,seed)
+       out.append(mk_dir(seedname))
     if tunes is not None:
-       self.mk_analysis_dir(self,seed)
-       dirname=os.path.join(dirname,seed,tunes)
-       os.mkdir(dirname)
-       print "Make dir %s"%dirname
+       tunename=os.path.join(dirname,seed,tunes)
+       out.append(mk_dir(tunenamename))
     if angle is not None:
-       self.mk_analysis_dir(self,seed,tunes)
-       dirname=os.path.join(dirname,seed,tunes,angle)
-       os.mkdir(dirname)
-       print "Make dir %s"%dirname
+       anglename=os.path.join(dirname,seed,angle)
+       out.append(mk_dir(anglename))
+    return out
   def plot_survival_avg(self,seed):
     data=self.get_survival_turns(seed)
     a,s,t=data['angle'],data['amp'],data['surv']
@@ -1341,10 +1341,9 @@ class SixDeskDB(object):
     return table
 
   def read10b(self):
-    database= '%s.db'%(self.studyName)
-    fntxt='DA_%s.txt'%self.studyName
-    fhtxt = open(fntxt, 'w')
-    rectype=[('seed','int'),('betx','float'),('bety','float'),
+    dirname,=self.mk_analysis_dir()
+    rectype=[('tunex','float'),('tuney','float'),
+             ('seed','int'),('betx','float'),('bety','float'),
              ('sigx1','float'),('sigy1','float'),
              ('emitx','float'),('emity','float'),
              ('sigxavgnld','float'),('sigyavgnld','float'),
@@ -1353,12 +1352,15 @@ class SixDeskDB(object):
              ('sturns1' ,'int'),('sturns2','int'),('turn_max','int'),
              ('amp1','float'),('amp2','float'),('angle','float')]
     names=','.join(zip(*rectype)[0])
-    outtype=[('study','S100'),('seed','int'),('angle','float'),
+    outtype=[('study', '|S100'), ('tunex','float'),('tuney','float'),
+             ('seed','int'),('angle','float'),
              ('achaos','float'),('achaos1','float'),
              ('alost1','float'),('alost2','float'),
              ('Amin','float'),('Amax','float')]
     LHCDesName=self.env_var['LHCDesName']
     turnse=self.env_var['turnse']
+    tunex=float(self.env_var['tunex'])
+    tuney=float(self.env_var['tuney'])
     sixdesktunes=self.env_var['tunex']+"_"+self.env_var['tuney']
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
@@ -1367,8 +1369,11 @@ class SixDeskDB(object):
     anumber=1
     angles=np.unique(tmp['angle'])
     seeds=np.unique(tmp['seed'])
+    final=np.zeros(len(seeds)*len(angles),dtype=outtype)
+    irec=0
     for angle in angles:
         fndot='DAres.%s.%s.%s.%d'%(LHCDesName,sixdesktunes,turnse,anumber)
+        fndot=os.path.join(dirname,fndot)
         fhdot = open(fndot, 'w')
         for seed in seeds:
             ich1 = 0
@@ -1469,18 +1474,20 @@ class SixDeskDB(object):
                 name1+=" "
             fmt=' %-39s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
             fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
-            fhtxt.write('%s %s %s %s %s %s %s %s %s \n'%( name2, seed,angle,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
+            final[irec]=(name2, tunex, tuney, seed,
+                           angle,achaos,achaos1,alost1,alost2,
+                           rad*inp['sigx1'][0],rad*inp['sigx1'][iel])
+            irec+=1
         anumber+=1
         fhdot.close()
         print fndot
-    fhtxt.close()
-    print fntxt
-
-    fhtxt = open(fntxt, 'r')
-    final=np.genfromtxt(fhtxt,dtype=outtype)
-    fhtxt.close()
+    cols=SQLTable.cols_from_dtype(final.dtype)
+    datab=SQLTable(self.conn,'da_post',cols)
+    print list(final[0])
+    datab.insert(final)
 
     fnplot='DAres.%s.%s.%s.plot'%(LHCDesName,sixdesktunes,turnse)
+    fnplot= os.path.join(dirname,fnplot)
     fhplot = open(fnplot, 'w')
     fn=0
     for angle in np.unique(final['angle']):
