@@ -16,6 +16,15 @@ class Mad_Run(object):
   ('mad_out_mtime','double','last modification time')]
   key=['run_id','seed']
 
+class Da_Res(object):
+  fields=[
+      ('study', '|S100'), ('tunex','float'),('tuney','float'),
+      ('seed','int'),('angle','float'),
+      ('achaos','float'),('achaos1','float'),
+      ('alost1','float'),('alost2','float'),
+      ('Amin','float'),('Amax','float'),('mtime','int')]
+  key=['study','tunex','tuney']
+
 class Mad_Res(object):
   fields=[
   ('seed','int','seed value'),

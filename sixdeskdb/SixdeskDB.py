@@ -67,6 +67,11 @@ def col_count(cur, table):
   cur.execute(sql)
   return len(cur.fetchall())
 
+def mk_dir(dirname):
+   if not os.path.isdir(dirname):
+     os.mkdir(dirname)
+     print "Make dir %s"%dirname
+   return dirname
 
 def dict_to_list(dict):
   '''convert dictionary to list for DB insert'''
@@ -222,10 +227,10 @@ class SixDeskDB(object):
     conn.text_factory=str
     cols=SQLTable.cols_from_fields(tables.Env.fields)
     tab = SQLTable(conn,'env',cols,tables.Env.key)
-    temp = tab.select('count(*)')[0][0]
+    temp = tab.selectl('count(*)')[0][0]
     if temp > 0:
       print "Updating %s"%db
-      lst = tab.select("keyname,value")
+      lst = tab.selectl("keyname,value")
       cls = SixDeskDB(env_var['LHCDescrip'],basedir,verbose,dryrun)
       mtime = os.path.getmtime(studyDir+"/sixdeskenv")
       cls.set_variable(lst,mtime)
@@ -354,7 +359,7 @@ class SixDeskDB(object):
     extra_files = []
     a = []
     workdir = env_var['sixtrack_input']
-    a = tab.select('distinct run_id')
+    a = tab.selectl('distinct run_id')
     if a:
       a = [str(i[0]) for i in a]
     print "Looking for fort.2, fort.8, fort.16 in\n %s"%workdir
@@ -420,7 +425,7 @@ class SixDeskDB(object):
     env_var = self.orig_env_var
     cols = SQLTable.cols_from_fields(tables.Mad_Res.fields)
     tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
-    maxtime = tab.select("max(fort_mtime)")[0][0]
+    maxtime = tab.selectl("max(fort_mtime)")[0][0]
     if not maxtime:
       maxtime = 0
     rows = []
@@ -555,7 +560,7 @@ class SixDeskDB(object):
     cols = SQLTable.cols_from_fields(tables.Six_In.fields)
     tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
     #tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
-    maxtime = tab.select("max(mtime)")[0][0]
+    maxtime = tab.selectl("max(mtime)")[0][0]
     count = 0
     if not maxtime:
       maxtime = 0
@@ -604,12 +609,12 @@ class SixDeskDB(object):
     tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
     workdir = os.path.join(env_var['sixdesktrack'],env_var['LHCDescrip'])
     rows = []
-    inp = tab.select("""distinct id,seed,simul,tunex,tuney,amp1,amp2,turns,
+    inp = tab.selectl("""distinct id,seed,simul,tunex,tuney,amp1,amp2,turns,
         angle""")
     inp = [[str(i) for i in j] for j in inp]
     cols = SQLTable.cols_from_fields(tables.Six_Res.fields)
     tab = SQLTable(conn,'six_results',cols,tables.Six_Res.key)
-    maxtime = tab.select("max(mtime)")[0][0]
+    maxtime = tab.selectl("max(mtime)")[0][0]
     if not maxtime:
       maxtime = 0
     print "Looking for fort.10.gz files in\n %s"%workdir
@@ -1050,7 +1055,7 @@ class SixDeskDB(object):
     cols = [i.replace("STRING","VARCHAR(128)") for i in cols]
     cols = ['study VARCHAR(128)'] + cols
     tab = SQLTable(conn,'six_results',cols)
-    maxtime = tab.select("max(mtime)")[0][0]
+    maxtime = tab.selectl("max(mtime)")[0][0]
     if not maxtime:
       maxtime = 0
     cur = conn.cursor()
@@ -1094,38 +1099,6 @@ class SixDeskDB(object):
     if rows:
       cur.executemany(sql,rows)
       conn.commit()
-
-  def mk_analysis_dir(self,seed=None,tune=None,angle=None):
-    ''' create analysis directory structure '''
-    dirname=self.studyName
-    if not os.path.exists(dirname):
-      os.mkdir(dirname)
-      print("Creating directory {0} ...").format(dirname)
-    if seed is not None:
-      seed=str(seed)
-      dirnameseed=os.path.join(dirname,seed)
-      if not os.path.exists(dirnameseed):
-        os.mkdir(dirnameseed)
-        print("Creating directory {0} ...").format(dirnameseed)
-    if tune is not None:
-      dirnametune=os.path.join(dirname,seed,tune_dir(tune))
-      if not os.path.exists(dirnametune):
-        try:
-          os.mkdir(dirnametune)
-          print("Creating directory {0} ...").format(dirnametune)
-        except OSError:
-          print("You have to specify a seed! The directory structure is studyname/seed/tune/angles.")
-#          exit(0)
-    if angle is not None:
-      angle=str(angle)
-      dirnameangle=os.path.join(dirname,seed,tune_dir(tune),angle)
-      if not os.path.exists(dirnameangle):
-        try:
-          os.mkdir(dirnameangle)
-          print("Creating directory {0} ...").format(dirnameangle)
-        except OSError:
-          print("You have to specify a seed and tune! The directory structure is studyname/seed/tune/angles.")
-#          exit(0)
 
   def inspect_results(self):
     ''' inspect input (seed, tunes, amps, turn and angle) values '''
@@ -1311,6 +1284,37 @@ class SixDeskDB(object):
     pl.xlabel(r'$\sigma_x$')
     pl.ylabel(r'$\sigma_y$')
     pl.colorbar()
+  def mk_analysis_dir(self,seed=None,tunes=None,angle=None):
+    dirname=self.studyName
+    out=[mk_dir(dirname)]
+    if seed is not None:
+      seed=str(seed)
+      seedname=os.path.join(dirname,seed)
+      out.append(mk_dir(seedname))
+    if tunes is not None:
+      tunes=tune_dir(tunes)
+      tunename=os.path.join(dirname,seed,tunes)
+      out.append(mk_dir(tunename))
+    if angle is not None:
+      angle=str(angle)
+      anglename=os.path.join(dirname,seed,angle)
+      out.append(mk_dir(anglename))
+    return out[-1]
+  def plot_survival_avg(self,seed):
+    data=self.get_survival_turns(seed)
+    a,s,t=data['angle'],data['amp'],data['surv']
+    rad=np.pi*a/180
+    drad=rad[0,0]
+    slab='Seed %d'%seed
+    #savg2=s**4*np.sin(2*rad)*drad
+    pl.plot(s.mean(axis=0),t.min(axis=0) ,label='min')
+    pl.plot(s.mean(axis=0),t.mean(axis=0),label='avg')
+    pl.plot(s.mean(axis=0),t.max(axis=0) ,label='max')
+    pl.ylim(0,pl.ylim()[1]*1.1)
+    pl.xlabel(r'$\sigma$')
+    pl.ylabel(r'survived turns')
+    pl.legend(loc='lower left')
+    return data
 
   def plot_survival_avg2(self,seed):
     def mk_tuple(a,s,t,nlim):
@@ -1345,24 +1349,27 @@ class SixDeskDB(object):
     return table
 
   def read10b(self):
-    database= '%s.db'%(self.studyName)
-    fntxt='DA_%s.txt'%self.studyName
-    fhtxt = open(fntxt, 'w')
-    rectype=[('seed','int'),('betx','float'),('bety','float'),
+    dirname=self.mk_analysis_dir()
+    rectype=[('tunex','float'),('tuney','float'),
+             ('seed','int'),('betx','float'),('bety','float'),
              ('sigx1','float'),('sigy1','float'),
              ('emitx','float'),('emity','float'),
              ('sigxavgnld','float'),('sigyavgnld','float'),
              ('betx2','float'),('bety2','float'),
              ('distp','float'),('dist','float'),
              ('sturns1' ,'int'),('sturns2','int'),('turn_max','int'),
-             ('amp1','float'),('amp2','float'),('angle','float')]
+             ('amp1','float'),('amp2','float'),('angle','float'),
+             ('six_results.mtime','int')]
     names=','.join(zip(*rectype)[0])
-    outtype=[('study','S100'),('seed','int'),('angle','float'),
+    outtype=[('study', '|S100'), ('tunex','float'),('tuney','float'),
+             ('seed','int'),('angle','float'),
              ('achaos','float'),('achaos1','float'),
              ('alost1','float'),('alost2','float'),
-             ('Amin','float'),('Amax','float')]
+             ('Amin','float'),('Amax','float'),('mtime','int')]
     LHCDesName=self.env_var['LHCDesName']
     turnse=self.env_var['turnse']
+    tunex=float(self.env_var['tunex'])
+    tuney=float(self.env_var['tuney'])
     sixdesktunes=self.env_var['tunex']+"_"+self.env_var['tuney']
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
@@ -1371,8 +1378,12 @@ class SixDeskDB(object):
     anumber=1
     angles=np.unique(tmp['angle'])
     seeds=np.unique(tmp['seed'])
+    mtime=tmp['six_results.mtime'].max()
+    final=np.zeros(len(seeds)*len(angles),dtype=outtype)
+    irec=0
     for angle in angles:
         fndot='DAres.%s.%s.%s.%d'%(LHCDesName,sixdesktunes,turnse,anumber)
+        fndot=os.path.join(dirname,fndot)
         fhdot = open(fndot, 'w')
         for seed in seeds:
             ich1 = 0
@@ -1473,18 +1484,49 @@ class SixDeskDB(object):
                 name1+=" "
             fmt=' %-39s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
             fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
-            fhtxt.write('%s %s %s %s %s %s %s %s %s \n'%( name2, seed,angle,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
+            final[irec]=(name2, tunex, tuney, seed,
+                           angle,achaos,achaos1,alost1,alost2,
+                           rad*inp['sigx1'][0],rad*inp['sigx1'][iel],mtime)
+            irec+=1
         anumber+=1
         fhdot.close()
         print fndot
-    fhtxt.close()
-    print fntxt
+    cols=SQLTable.cols_from_dtype(final.dtype)
+    datab=SQLTable(self.conn,'da_post',cols)
+    datab.insert(final)
 
-    fhtxt = open(fntxt, 'r')
-    final=np.genfromtxt(fhtxt,dtype=outtype)
-    fhtxt.close()
+  def mk_da(self):
+    dirname=self.mk_analysis_dir()
+    LHCDesName=self.env_var['LHCDesName']
+    outtype=[('study', '|S100'), ('tunex','float'),('tuney','float'),
+             ('seed','int'),('angle','float'),
+             ('achaos','float'),('achaos1','float'),
+             ('alost1','float'),('alost2','float'),
+             ('Amin','float'),('Amax','float'),('mtime','int')]
+    cols=SQLTable.cols_from_dtype(np.dtype(outtype))
+    datab=SQLTable(self.conn,'da_post',cols)
+    final=datab.select(orderby='angle,seed')
+    turnse=self.env_var['turnse']
+    tunex=float(self.env_var['tunex'])
+    tuney=float(self.env_var['tuney'])
+    sixdesktunes=self.env_var['tunex']+"_"+self.env_var['tuney']
+    ns1l=self.env_var['ns1l']
+    ns2l=self.env_var['ns2l']
+    if len(final)>0:
+        an_mtime=final['mtime']
+        res_mtime=self.execute('SELECT max(mtime) FROM six_results')[0][0]
+        if res_mtime>an_mtime:
+            self.read10b()
+            final=datab.select(orderby='angle,seed')
+    else:
+      self.read10b()
+      final=datab.select(orderby='angle,seed')
+
+    #print final['mtime']
+    #print self.execute('SELECT max(mtime) FROM six_results')[0][0]
 
     fnplot='DAres.%s.%s.%s.plot'%(LHCDesName,sixdesktunes,turnse)
+    fnplot= os.path.join(dirname,fnplot)
     fhplot = open(fnplot, 'w')
     fn=0
     for angle in np.unique(final['angle']):
@@ -1520,6 +1562,7 @@ class SixDeskDB(object):
           print "Maximum:  %.2f  Sigma at Seed #: %d" %(maxi, smaxi)
           print "Average: %.2f Sigma" %(mean)
         print "# of (Aav-A0)/A0 >10%%:  %d"  %nega
+        name2 = "DAres."+self.studyName+"."+sixdesktunes+"."+turnse
         fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
     fhplot.close()
 

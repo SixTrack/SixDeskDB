@@ -111,10 +111,22 @@ class SQLTable(object):
     cur=db.cursor()
     cur.execute(sql_cmd)
     db.commit()
-  def select(self,cols='*',where=None,orderby=None):
+  def selectl(self,cols='*',where=None,orderby=None):
     db=self.db;table=self.name
     if not 'distinct' in cols:
       cols=','.join(cols.split())
+    sql="SELECT %s FROM %s"%(cols,table)
+    if where is not None:
+      sql+=' WHERE %s'%where
+    if orderby is not None:
+      sql+=' ORDER BY %s'%orderby
+    cur=db.cursor()
+    cur.execute(sql)
+    data=list(cur)
+    return data
+  def select(self,cols='*',where=None,orderby=None):
+    db=self.db;table=self.name
+    cols=','.join(cols.split())
     sql="SELECT %s FROM %s"%(cols,table)
     if where is not None:
       sql+=' WHERE %s'%where
@@ -124,19 +136,14 @@ class SQLTable(object):
     cur.execute(sql)
     types = []
     data=list(cur)
+    if len(data)>0:
+      for i in data[0]:
+        if type(i) == float : types.append('float')
+        elif type(i) == unicode: types.append('|S100')
+        elif type(i) == int: types.append('int')
+      names=[i[0] for i in cur.description]
+      data = np.array(data, dtype = zip(names,types))
     return data
-    # data=[(i) for i in data]
-    # if len(data)>0:
-    #   for i in data[0]:
-    #     print type(i),i
-    #     if type(i) == float : types.append('float')
-    #     elif type(i) == unicode: types.append('str')
-    #     elif type(i) == int: types.append('int')
-    #     else: types.append('str')
-    #   names=[i[0] for i in cur.description]
-    #   print zip(names,types)
-    #   data = np.array(data, dtype = zip(names,types))
-    #   return data
 
 
 if __name__=='__main__':

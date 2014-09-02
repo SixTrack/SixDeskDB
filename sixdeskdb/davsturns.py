@@ -4,7 +4,7 @@ import sys as sys
 import numpy as np
 import matplotlib.pyplot as pl
 import glob as glob
-from SixdeskDB import SixDeskDB, tune_dir
+from SixdeskDB import SixDeskDB
 
 # basic functions
 def ang_to_i(ang,angmax):
@@ -159,9 +159,8 @@ def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxd
   count=0
   for seed in db.get_seeds():
     for tune in db.get_tunes():
-      db.mk_analysis_dir(seed,tune)
       if(createdaout):
-        pp=os.path.join(db.studyName,str(seed),tune_dir(tune))
+        pp=db.mk_analysis_dir(seed,tune)
         for file in 'DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png':
           ppf=os.path.join(pp,'DA.out')
           if os.path.exists(ppf): os.remove(ppf)
@@ -173,7 +172,7 @@ def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxd
     for tune in db.get_tunes():
       seed=int(seed)
       print('analyzing seed {0} ...').format(str(seed))
-      dirname=os.path.join(db.studyName,str(seed),tune_dir(tune))
+      dirname=db.mk_analysis_dir(seed,tune)
       # case: create DA.out and DAsurv.out file
       if(createdaout):
         #load and save the data
@@ -209,7 +208,7 @@ def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxd
         pl.savefig(dirname+'/DAsurv.png')
         print('... creating plot DAsurv.png')
       if(comp==True):
-        compdirnameseed=os.path.join(compdirname,str(seed),tune_dir(tune))
+        compdirnameseed=self.mk_analysis_dir(seed,tune)
         try:
             DAoutcomp=reload_daout(compdirnameseed)
         except IndexError:
@@ -217,9 +216,9 @@ def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxd
             sys.exit(0)
         plot_da_vs_turns_comp(DAout,lblname,DAoutcomp,complblname,str(seed),ampmindavst,ampmaxdavst,tmax,plotlog)
         if(plotlog==True):
-          pl.savefig(dirname+'/DAsurv_comp_log.png')
-          print('... creating plot DAsurv_comp_log.png')
+          figname=os.path.join(dirname,"DAsurv_comp_log.png")
         else:
-          pl.savefig(dirname+'/DAsurv_comp.png')
-          print('... creating plot DAsurv_comp.png')
+          figname=os.path.join(dirname,"DAsurv_comp.png")
+        pl.savefig(dirname+'/DAsurv_comp.png')
+        print('... creating plot DAsurv_comp.png')
 
