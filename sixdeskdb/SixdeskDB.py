@@ -24,19 +24,15 @@ except ImportError:
   raise ImportError
 
 import tables
-import sixdeskdir
 from sqltable import SQLTable
 
-def load_dict(cur,table):
-  sql='SELECT keyname,value,mtime from %s'%(table)
-  cur.execute(sql)
-  a = cur.fetchall()
-  data = {}
-  timestamps= {}
-  for key,val,mtime in a:
-    data[str(key)]= str(val)
-    timestamps[key] = float(mtime)
-  return data,timestamps
+
+def parse_env(studydir):
+  tmp="sh -c '. %s/sixdeskenv;. %s/sysenv; python -c %s'"
+  cmd=tmp%(studydir,studydir,'"import os;print os.environ"')
+  return eval(os.popen(cmd).read())
+
+
 
 def compressBuf(file):
   '''file compression for storing in DB'''
@@ -204,88 +200,63 @@ class SixDeskDB(object):
     tab1.insertl(extra_files) 
 
   @classmethod
-  def from_dir(cls,studyDir,basedir='.',verbose=False,dryrun=False):
+  def from_dir(cls,studyDir):
     '''create local Database for storing study'''
-    cls = None
-    if not (os.path.exists(studyDir+'/sixdeskenv') and \
-      os.path.exists(studyDir+'/sysenv')):
-      print "Error in loaddir from %s:"%studyDir,
-      print "`sixdeskenv` and `sysenv` files should both be present"
-      exit(0)
-    env_var = sixdeskdir.parse_env(studyDir)
+    sixdeskenv=os.path.join(studyDir,'sixdeskenv')
+    sysenv=os.path.join(studyDir,'sysenv')
+    if not (os.path.exists(sixdeskenv) and os.path.exists(sysenv)):
+        print "Error: sixdeskenv or sysenv not found in %s:"%studyDir,
+        exit(0)
+    env_var = parse_env(studyDir)
     for key in env_var.keys():
       if key not in tables.acc_var:
         del env_var[key]
-    env_var['env_timestamp']=str(time.time())
-    db = env_var['LHCDescrip'] + ".db"
-    conn = sqlite3.connect(db, isolation_level="IMMEDIATE")
-    cur = conn.cursor()
-    cur.execute("PRAGMA synchronous = OFF")
-    cur.execute("PRAGMA journal_mode = MEMORY")
-    cur.execute("PRAGMA auto_vacuum = FULL")
-    cur.execute("PRAGMA temp_store = MEMORY")
-    cur.execute("PRAGMA count_changes = OFF")
-    cur.execute("PRAGMA mmap_size=2335345345")
-    conn.text_factory=str
-    cols=SQLTable.cols_from_fields(tables.Env.fields)
-    tab = SQLTable(conn,'env',cols,tables.Env.key)
-    temp = tab.selectl('count(*)')[0][0]
-    if temp > 0:
-      print "Updating %s"%db
-      lst = tab.selectl("keyname,value")
-      cls = SixDeskDB(env_var['LHCDescrip'],basedir,verbose,dryrun)
-      mtime = os.path.getmtime(studyDir+"/sixdeskenv")
-      cls.set_variable(lst,mtime)
-    else:
-      print "Creating %s"%db
-    SixDeskDB.st_env(conn,env_var,studyDir)
-    if cls is None:
-      cls = SixDeskDB(env_var['LHCDescrip'],basedir,verbose,dryrun)
-    cls.st_mad6t_run()
-    cls.st_mad6t_run2(env_var)
-    cls.st_mad6t_results(env_var)
-    cls.st_six_beta(env_var)
-    cls.st_six_input(env_var)
-    cls.st_six_results(env_var)
-    return cls
+    mtime=time.time()
+    dbname = env_var['LHCDescrip'] + ".db"
+    db=cls(dbname)
+    db.set_variables(env_var.items(),mtime)
+    db.st_mad6t_run()
+    db.st_mad6t_run2()
+    db.st_mad6t_results()
+    db.st_six_beta()
+    db.st_six_input()
+    db.st_six_results()
+    return db
 
-  def __init__(self,studyName,basedir='.',verbose=False,dryrun=False):
+  def __init__(self,dbname):
     '''initialise variables and location for study creation 
         or database creation, usage listed in main.py'''
-    self.verbose = verbose
-    self.dryrun = dryrun
-    self.studyName = studyName
-    self.basedir = basedir
-    db = studyName
-    if not studyName.endswith('.db'):
-      db = studyName+".db"
-    if '/' in studyName:
-      self.studyName = studyName.split('/')[-1]
-    self.studyName = self.studyName.replace(".db","")
-    if not os.path.isfile(db):
-      print "file %s doesn't exist "%(db)
-      print "see if you have typed the name correctly"
-      raise IOError
+    if not dbname.endswith('.db'):
+        dbname+='.db'
     try:
-      conn = sqlite3.connect(db,isolation_level="IMMEDIATE")
+      conn = sqlite3.connect(dbname,isolation_level="IMMEDIATE")
+      cur = conn.cursor()
+      cur.execute("PRAGMA synchronous = OFF")
+      cur.execute("PRAGMA journal_mode = MEMORY")
+      cur.execute("PRAGMA auto_vacuum = FULL")
+      cur.execute("PRAGMA temp_store = MEMORY")
+      cur.execute("PRAGMA count_changes = OFF")
+      cur.execute("PRAGMA mmap_size=2335345345")
     except sqlite3.Error:
-      print 'error'
-      return
-    print "Opened %s successfully"%db
+      print 'Error creating database %s'%dbname
+      sys.exit(1)
+    print "Opened %s successfully"%dbname
     self.conn = conn
-    self.load_env_var()
-    env_var = self.env_var
-    self.orig_env_var = copy.copy(env_var)
-    if not self.basedir.endswith('/'):
-      self.basedir += '/'
-      # print self.basedir
-    #print self.basedir
-    #if env_var['basedir'] != self.basedir:
-    #  for i in env_var.keys():
-    #    if env_var['basedir'] in self.env_var[i]:
-    #      self.env_var[i] = self.env_var[i].replace(
-    #        env_var['basedir']+'/',self.basedir)
-    #      #print self.env_var[i]
+    conn.text_factory=str
+    self.load_env()
+
+  def load_env(self):
+    cols=SQLTable.cols_from_fields(tables.Env.fields)
+    tab = SQLTable(self.conn,'env',cols,tables.Env.key)
+    sql="SELECT keyname,value,mtime FROM env"
+    cur=self.conn.cursor()
+    cur.execute(sql)
+    self.env_var={}
+    self.env_mtime={}
+    for key,val,mtime in cur.fetchall():
+      self.env_var[key]=val
+      self.env_mtime[key]=float(mtime)
+    self.LHCDescrip=self.env_var.get('LHCDescrip')
 
   def print_table_info(self):
       out=self.execute("SELECT name FROM sqlite_master WHERE type='table';")
@@ -306,7 +277,7 @@ class SixDeskDB(object):
           bufs=[StringIO(decompressBuf(buf[0])) for buf in bufs]
           check_mad_out(bufs)
 
-  def set_variable(self,lst,mtime):
+  def set_variables(self,lst,mtime):
     '''set additional variables besides predefined environment variables
         in sixdeskenv and sysenv'''
     conn = self.conn
@@ -314,17 +285,19 @@ class SixDeskDB(object):
     cols=SQLTable.cols_from_fields(tables.Env.fields)
     tab = SQLTable(conn,'env',cols,tables.Env.key)
     toupdate=[]
-    for key,val in lst:
+    for key,val in sorted(lst):
       if key in tables.acc_var:
           if key in self.env_mtime and self.env_mtime[key]<mtime:
               oldval=self.env_var[key]
               print "Updating %s from %s to %s"%(key,oldval,val)
-          else:
-              print "Inserting %s = %s" (key,val)
+          #else:
+          #    print "Inserting %s = %s"%(key,val)
           toupdate.append([key,val,mtime])
       else:
         print 'variable %s illegal'%key
+    print "Inserting or updating %d variables"%(len(toupdate))
     tab.insertl(toupdate)
+    self.load_env()
 
   def info(self):
     ''' provide info of study'''
@@ -333,14 +306,17 @@ class SixDeskDB(object):
     'sixdeskpairs', 'turnsl', 'turnsle', 'writebinl',
     'kstep', 'kendl', 'kmaxl',
     'trackdir', 'sixtrack_input']
-    env_var = self.orig_env_var
+    env_var = self.env_var
     for keys in var:
-      print '%s=%s'%(keys,env_var[keys])
+      val=env_var[keys]
+      if is_number(val):
+          val="%6g"%float(val)
+      print '%-15s %s'%(keys,val)
 
   def st_mad6t_run(self):
     ''' store mad run files'''
     conn = self.conn
-    env_var = self.orig_env_var
+    env_var = self.env_var
     cols = SQLTable.cols_from_fields(tables.Mad_Run.fields)
     tab = SQLTable(conn,'mad6t_run',cols,tables.Mad_Run.key)
     cols = SQLTable.cols_from_fields(tables.Files.fields)
@@ -390,10 +366,10 @@ class SixDeskDB(object):
     if extra_files:
       tab1.insertl(extra_files)
 
-  def st_mad6t_run2(self,env_var):
+  def st_mad6t_run2(self):
     ''' store fort.3 and tmp files'''
     conn = self.conn
-    env_var = self.orig_env_var
+    env_var = self.env_var
     cols = SQLTable.cols_from_fields(tables.Files.fields)
     tab1 = SQLTable(conn,'files',cols,tables.Files.key)
     workdir = env_var['sixtrack_input']
@@ -409,10 +385,10 @@ class SixDeskDB(object):
     if extra_files:
       tab1.insertl(extra_files)
 
-  def st_mad6t_results(self,env_var):
+  def st_mad6t_results(self):
     ''' store fort.2, fort.8, fort.16 files'''
     conn = self.conn
-    env_var = self.orig_env_var
+    env_var = self.env_var
     cols = SQLTable.cols_from_fields(tables.Mad_Res.fields)
     tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
     maxtime = tab.selectl("max(fort_mtime)")[0][0]
@@ -487,10 +463,10 @@ class SixDeskDB(object):
     print 'no of fort.8 updated/found: %d/%d'%(up_b,f_b)
     print 'no of fort.16 updated/found: %d/%d'%(up_c,f_c)
 
-  def st_six_beta(self,env_var):
+  def st_six_beta(self):
     ''' store sixdesktunes, betavalues '''
     conn = self.conn
-    env_var = self.orig_env_var
+    env_var = self.env_var
     cols = SQLTable.cols_from_fields(tables.Six_Be.fields)
     tab = SQLTable(conn,'six_beta',cols,tables.Six_Be.key)
     cols = SQLTable.cols_from_fields(tables.Files.fields)
@@ -542,11 +518,11 @@ class SixDeskDB(object):
     if extra_files:
       tab1.insertl(extra_files)
 
-  def st_six_input(self,env_var):
+  def st_six_input(self):
     ''' store input values (seed,tunes,amps,etc) along with fort.3 file'''
     conn = self.conn
     cur = conn.cursor()
-    env_var = self.orig_env_var
+    env_var = self.env_var
     cols = SQLTable.cols_from_fields(tables.Six_In.fields)
     tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
     #tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
@@ -590,10 +566,10 @@ class SixDeskDB(object):
       rows = []
     print '\n no of fort.3 updated/found: %d/%d'%(count,file_count)
 
-  def st_six_results(self,env_var):
+  def st_six_results(self):
     '''store fort.10 values'''
     conn = self.conn
-    env_var = self.orig_env_var
+    env_var = self.env_var
     cols = SQLTable.cols_from_fields(tables.Six_In.fields)
     aff_count = 0
     tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
@@ -658,19 +634,6 @@ class SixDeskDB(object):
     cur.execute(sql)
     self.conn.commit()
     return list(cur)
-
-  def load_env_var(self):
-    ''' long environment variables from DB'''
-    conn = self.conn
-    cur = conn.cursor()
-    sql = """SELECT count(*) from env where keyname='LHCDescrip'
-    and value='%s'"""%(self.studyName)
-    cur.execute(sql)
-    temp = int(list(cur)[0][0])
-    if temp == 0:
-      print 'studyname not found'
-      return
-    self.env_var,self.env_mtime = load_dict(cur,"env")
 
   def load_extra(self):
     ''' load extra files from DB '''
@@ -1286,7 +1249,7 @@ class SixDeskDB(object):
     pl.ylabel(r'$\sigma_y$')
     pl.colorbar()
   def mk_analysis_dir(self,seed=None,tunes=None,angle=None):
-    dirname=self.studyName
+    dirname=self.LHCDescrip
     out=[mk_dir(dirname)]
     if seed is not None:
       seed=str(seed)
@@ -1477,7 +1440,7 @@ class SixDeskDB(object):
                 alost1 = 1.0
 
             alost1=alost1*alost2
-            name2 = "DAres."+self.studyName+"."+sixdesktunes+"."+turnse
+            name2 = "DAres."+self.LHCDescrip+"."+sixdesktunes+"."+turnse
             name1= '%s%ss%s%s-%s%s.%d'%(LHCDesName,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
             if(seed<10):
                 name1+=" "
@@ -1563,12 +1526,12 @@ class SixDeskDB(object):
           print "Maximum:  %.2f  Sigma at Seed #: %d" %(maxi, smaxi)
           print "Average: %.2f Sigma" %(mean)
         print "# of (Aav-A0)/A0 >10%%:  %d"  %nega
-        name2 = "DAres."+self.studyName+"."+sixdesktunes+"."+turnse
+        name2 = "DAres."+self.LHCDescrip+"."+sixdesktunes+"."+turnse
         fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
     fhplot.close()
 
 if __name__ == '__main__':
-  SixDeskDB.from_dir('/home/monis/Desktop/GSOC/files/w7/sixjobs/')
+  SixDeskDB.from_dir('./')
 
 
 

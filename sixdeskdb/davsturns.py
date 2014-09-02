@@ -165,7 +165,7 @@ def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxd
           ppf=os.path.join(pp,'DA.out')
           if os.path.exists(ppf): os.remove(ppf)
         if(count==0):
-          print('remove old DA.out, DAsurv.out ... files in '+db.studyName)
+          print('remove old DA.out, DAsurv.out ... files in '+db.LHCDescrip)
           count=count+1
 # start analysis
   for seed in db.get_seeds():
