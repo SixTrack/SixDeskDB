@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # python implementation of Sixdesk synchronisation between
 # local user DB and centralized DB

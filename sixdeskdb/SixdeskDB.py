@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # python implementation of Sixdesk storage using local database and creation of
 # study using database
@@ -58,6 +58,10 @@ def is_number(s):
   except ValueError:
     pass
 
+def tune_dir(tune):
+  """converts the list of tuples into the standard directory name, e.g. (62.31, 60.32) -> 62.31_60.32"""
+  return str(tune[0])+'_'+str(tune[1])
+    
 def col_count(cur, table):
   sql = 'pragma table_info(%s)' % (table)
   cur.execute(sql)
@@ -1284,15 +1288,18 @@ class SixDeskDB(object):
     dirname=self.studyName
     out=[mk_dir(dirname)]
     if seed is not None:
-       seedame=os.path.join(dirname,seed)
-       out.append(mk_dir(seedname))
+      seed=str(seed)
+      seedame=os.path.join(dirname,seed)
+      out.append(mk_dir(seedname))
     if tunes is not None:
-       tunename=os.path.join(dirname,seed,tunes)
-       out.append(mk_dir(tunenamename))
+      tunes=tune_dir(tunes)
+      tunename=os.path.join(dirname,seed,tunes)
+      out.append(mk_dir(tunenamename))
     if angle is not None:
-       anglename=os.path.join(dirname,seed,angle)
-       out.append(mk_dir(anglename))
-    return out
+      angle=str(angle)
+      anglename=os.path.join(dirname,seed,angle)
+      out.append(mk_dir(anglename))
+    return out[-1]
   def plot_survival_avg(self,seed):
     data=self.get_survival_turns(seed)
     a,s,t=data['angle'],data['amp'],data['surv']
@@ -1342,7 +1349,7 @@ class SixDeskDB(object):
     return table
 
   def read10b(self):
-    dirname,=self.mk_analysis_dir()
+    dirname=self.mk_analysis_dir()
     rectype=[('tunex','float'),('tuney','float'),
              ('seed','int'),('betx','float'),('bety','float'),
              ('sigx1','float'),('sigy1','float'),
@@ -1489,7 +1496,7 @@ class SixDeskDB(object):
     datab.insert(final)
 
   def mk_da(self):
-    dirname,=self.mk_analysis_dir()
+    dirname=self.mk_analysis_dir()
     LHCDesName=self.env_var['LHCDesName']
     outtype=[('study', '|S100'), ('tunex','float'),('tuney','float'),
              ('seed','int'),('angle','float'),
