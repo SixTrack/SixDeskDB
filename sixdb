@@ -13,9 +13,7 @@
 # granted to it by virtue of its status as an Intergovernmental Organization or
 # submit itself to any jurisdiction.
 
-# Needs Python version >=2.6
-
-import sys,os
+import sys,os,time
 
 if sys.version_info < (2, 6):
   print "SixDeskDB requires Python version >=2.6"
@@ -65,6 +63,9 @@ Commands:
         <lblname>     : labelname to be used for <database> for plots
         <complblname> : labelname to be used for <compdatabase> for 
                         plots
+
+  (i)nteractive <database>: open an IPython shell
+  set  <database> <key1> <value1> ... : change environment variables
   """
   todebug="""
   restore_dir <database>: restore the directory using data from the database.      Options:
@@ -124,7 +125,7 @@ Commands:
 #        print 'Invalid number of Arguments'
 #        exit(1)
 #      dbtocentral(host,user,password,db,args[1],bo)
-    elif args[0] in ("info"):
+    elif args[0] in ("info",):
       if len(args)==2:
         a = SixDeskDB(args[1])
         a.info()
@@ -145,6 +146,16 @@ Commands:
       if len(args)==2:
         a = SixDeskDB(args[1])
         a.mad_out()
+      else:
+        print "invalid see help with h or help"
+        exit(0)
+    elif args[0] in ("set","set"):
+      keys=args[2::2]
+      values=args[3::2]
+      if len(keys)==len(values):
+        lst=zip(keys,values)
+        db = SixDeskDB(args[1])
+        db.set_variable(lst,time.time())
       else:
         print "invalid see help with h or help"
         exit(0)
@@ -235,7 +246,8 @@ Commands:
         #open db
         #setup opton
         #call
-    elif args[0] in ('interactive',):
+    elif args[0] in ('interactive','i'):
+      print args[0]
       import IPython
       import matplotlib.pyplot as pl
       import numpy, scipy

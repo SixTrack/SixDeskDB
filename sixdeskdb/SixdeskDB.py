@@ -8,7 +8,7 @@
 # You have to use it from main like
 # python main.py loaddir <study location>
 # python main.py loaddb <studyDB> <new location of study>
-# 
+#
 # NOTA: please use python version >=2.6
 
 import sqlite3, time, os, re, gzip, sys, glob
@@ -28,13 +28,15 @@ import sixdeskdir
 from sqltable import SQLTable
 
 def load_dict(cur,table):
-  sql='SELECT keyname,value from %s'%(table)
+  sql='SELECT keyname,value,mtime from %s'%(table)
   cur.execute(sql)
   a = cur.fetchall()
-  dict = {}
-  for row in a:
-    dict[str(row[0])] = str(row[1])
-  return dict
+  data = {}
+  timestamps= {}
+  for key,val,mtime in a:
+    data[str(key)]= str(val)
+    timestamps[key] = float(mtime)
+  return data,timestamps
 
 def compressBuf(file):
   '''file compression for storing in DB'''
@@ -61,7 +63,7 @@ def is_number(s):
 def tune_dir(tune):
   """converts the list of tuples into the standard directory name, e.g. (62.31, 60.32) -> 62.31_60.32"""
   return str(tune[0])+'_'+str(tune[1])
-    
+
 def col_count(cur, table):
   sql = 'pragma table_info(%s)' % (table)
   cur.execute(sql)
@@ -278,12 +280,12 @@ class SixDeskDB(object):
       self.basedir += '/'
       # print self.basedir
     #print self.basedir
-    if env_var['basedir'] != self.basedir:
-      for i in env_var.keys():
-        if env_var['basedir'] in self.env_var[i]:
-          self.env_var[i] = self.env_var[i].replace(
-            env_var['basedir']+'/',self.basedir)
-          #print self.env_var[i]
+    #if env_var['basedir'] != self.basedir:
+    #  for i in env_var.keys():
+    #    if env_var['basedir'] in self.env_var[i]:
+    #      self.env_var[i] = self.env_var[i].replace(
+    #        env_var['basedir']+'/',self.basedir)
+    #      #print self.env_var[i]
 
   def print_table_info(self):
       out=self.execute("SELECT name FROM sqlite_master WHERE type='table';")
@@ -308,33 +310,21 @@ class SixDeskDB(object):
     '''set additional variables besides predefined environment variables
         in sixdeskenv and sysenv'''
     conn = self.conn
-    env_var = self.orig_env_var
+    env_var = self.env_var
     cols=SQLTable.cols_from_fields(tables.Env.fields)
     tab = SQLTable(conn,'env',cols,tables.Env.key)
-    flag = 0
-    upflag = 0
-    for i in lst:
-      if not ('env_timestamp' in str(i[0]) or str(i[0] in tables.def_var)):
-        if str(i[0]) in env_var.keys():
-          if str(i[1]) != env_var[str(i[0])]:
-            if is_number(str(i[1])) and is_number(env_var[str(i[0])]):
-              if float(str(i[1])) != float(env_var[str(i[0])]):
-                upflag = 1
-            else:
-              upflag = 1
-            if upflag == 1:
-              print 'variable',str(i[0]),'already present updating value from',
-              print env_var[str(i[0])],'to',str(i[1])
-              flag = 1
-        else:
-          print 'variable',str(i[0]),'not present adding'
-          flag = 1
-        env_var[str(i[0])] = str(i[1])
-        upflag = 0
-    if flag == 1:
-      env_var['env_timestamp']=str(time.time())
-    env_var = [[i,env_var[i],mtime] for i in env_var.keys()]
-    tab.insertl(env_var)
+    toupdate=[]
+    for key,val in lst:
+      if key in tables.acc_var:
+          if key in self.env_mtime and self.env_mtime[key]<mtime:
+              oldval=self.env_var[key]
+              print "Updating %s from %s to %s"%(key,oldval,val)
+          else:
+              print "Inserting %s = %s" (key,val)
+          toupdate.append([key,val,mtime])
+      else:
+        print 'variable %s illegal'%key
+    tab.insertl(toupdate)
 
   def info(self):
     ''' provide info of study'''
@@ -673,14 +663,14 @@ class SixDeskDB(object):
     ''' long environment variables from DB'''
     conn = self.conn
     cur = conn.cursor()
-    sql = """SELECT count(*) from env where keyname='LHCDescrip' 
+    sql = """SELECT count(*) from env where keyname='LHCDescrip'
     and value='%s'"""%(self.studyName)
     cur.execute(sql)
     temp = int(list(cur)[0][0])
     if temp == 0:
       print 'studyname not found'
       return
-    self.env_var = load_dict(cur,"env")
+    self.env_var,self.env_mtime = load_dict(cur,"env")
 
   def load_extra(self):
     ''' load extra files from DB '''
@@ -1124,17 +1114,23 @@ class SixDeskDB(object):
 
   def get_num_results(self):
     ''' get results count from DB '''
-    return self.execute('SELECT count(*) from six_results')[0][0]/30
+    return self.execute('SELECT count(*) FROM six_results')[0][0]/30
 
-  def get_seeds(self):
-    ''' get seeds from DB'''
+  def get_env_seeds(self):
+    ''' get seeds from env table'''
     env_var = self.env_var
     ista = int(env_var['ista'])
     iend = int(env_var['iend'])
     return range(ista,iend+1)
 
-  def get_angles(self):
-    ''' get angles from DB '''
+  def get_seeds(self):
+    ''' get seeds from DB '''
+    out=zip(*self.execute('SELECT DISTINCT seed FROM six_input'))[0]
+    print out
+    return out
+
+  def get_env_angles(self):
+    ''' get angles from env table '''
     env_var = self.env_var
     kmaxl = int(env_var['kmaxl'])
     kinil = int(env_var['kinil'])
@@ -1142,6 +1138,11 @@ class SixDeskDB(object):
     kstep = int(env_var['kstep'])
     s=90./(kmaxl+1)
     return np.arange(kinil,kendl+1,kstep)*s
+
+  def get_angles(self):
+    ''' get angles from DB'''
+    out=zip(*self.execute('SELECT DISTINCT angle FROM six_input'))[0]
+    return out
 
   def get_amplitudes(self):
     ''' get_amplitudes from DB '''
