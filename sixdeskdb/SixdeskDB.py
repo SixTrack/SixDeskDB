@@ -58,6 +58,10 @@ def is_number(s):
   except ValueError:
     pass
 
+def tune_dir(tune):
+  """converts the list of tuples into the standard directory name, e.g. (62.31, 60.32) -> 62.31_60.32"""
+  return str(tune[0])+'_'+str(tune[1])
+    
 def col_count(cur, table):
   sql = 'pragma table_info(%s)' % (table)
   cur.execute(sql)
@@ -1091,6 +1095,38 @@ class SixDeskDB(object):
     if rows:
       cur.executemany(sql,rows)
       conn.commit()
+
+  def mk_analysis_dir(self,seed=None,tune=None,angle=None):
+    ''' create analysis directory structure '''
+    dirname=self.studyName
+    if not os.path.exists(dirname):
+      os.mkdir(dirname)
+      print("Creating directory {0} ...").format(dirname)
+    if seed is not None:
+      seed=str(seed)
+      dirnameseed=os.path.join(dirname,seed)
+      if not os.path.exists(dirnameseed):
+        os.mkdir(dirnameseed)
+        print("Creating directory {0} ...").format(dirnameseed)
+    if tune is not None:
+      dirnametune=os.path.join(dirname,seed,tune_dir(tune))
+      if not os.path.exists(dirnametune):
+        try:
+          os.mkdir(dirnametune)
+          print("Creating directory {0} ...").format(dirnametune)
+        except OSError:
+          print("You have to specify a seed! The directory structure is studyname/seed/tune/angles.")
+#          exit(0)
+    if angle is not None:
+      angle=str(angle)
+      dirnameangle=os.path.join(dirname,seed,tune_dir(tune),angle)
+      if not os.path.exists(dirnameangle):
+        try:
+          os.mkdir(dirnameangle)
+          print("Creating directory {0} ...").format(dirnameangle)
+        except OSError:
+          print("You have to specify a seed and tune! The directory structure is studyname/seed/tune/angles.")
+#          exit(0)
 
   def inspect_results(self):
     ''' inspect input (seed, tunes, amps, turn and angle) values '''
