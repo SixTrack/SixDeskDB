@@ -566,27 +566,26 @@ class SixDeskDB(object):
     rows = []
     six_id = 1
     print "Looking for fort.3.gz files in\n %s"%workdir
-    cmd = """find %s -type f -name 'fort.3.gz'"""%(workdir)
+    #cmd = """find %s -type f -name 'fort.3.gz'"""%(workdir)
     #a = os.popen(cmd).read().split('\n')[:-1]
     #print 'fort.3 files =',len(a)
     file_count=0
-    for dirName in os.popen(cmd):
-      dirName,files=os.path.split(dirName.strip())
+    for dirName in glob.iglob(os.path.join(workdir,'*','*','*','*','*','*')):
+      f3=os.path.join(dirName, 'fort.3.gz')
+      f10=os.path.join(dirName, 'fort.10.gz')
+      #dirName,files=os.path.split(dirName.strip())
       ranges= dirName.split('/')[-3]
-      if '_' in ranges:
+      if '_' in ranges and os.path.exists(f3):
         file_count+=1
         if file_count%100==0:
             sys.stdout.write('.')
             sys.stdout.flush()
-        mtime = os.path.getmtime(dirName)
-        if mtime>maxtime:
+        mtime3 = os.path.getmtime(f3)
+        if mtime3>maxtime:
             dirn = dirName.replace(workdir + '/', '')
             dirn = re.split('/|_', dirn)
             dirn = [six_id] + dirn
-            dirn.extend([sqlite3.Binary(open(
-              os.path.join(dirName, files), 'r'
-            ).read()
-            ),mtime])
+            dirn.extend([sqlite3.Binary(open(f3).read()),mtime3])
             rows.append(dirn)
             dirn = []
             six_id += 1
@@ -1313,22 +1312,6 @@ class SixDeskDB(object):
     pl.ylabel(r'$\sigma_y$')
     pl.colorbar()
 
-  def plot_survival_avg(self,seed):
-    data=self.get_survival_turns(seed)
-    a,s,t=data['angle'],data['amp'],data['surv']
-    rad=np.pi*a/180
-    drad=rad[0,0]
-    slab='Seed %d'%seed
-    #savg2=s**4*np.sin(2*rad)*drad
-    pl.plot(s.mean(axis=0),t.min(axis=0) ,label='min')
-    pl.plot(s.mean(axis=0),t.mean(axis=0),label='avg')
-    pl.plot(s.mean(axis=0),t.max(axis=0) ,label='max')
-    pl.ylim(0,pl.ylim()[1]*1.1)
-    pl.xlabel(r'$\sigma$')
-    pl.ylabel(r'survived turns')
-    pl.legend(loc='lower left')
-    return data
-
   def plot_survival_avg2(self,seed):
     def mk_tuple(a,s,t,nlim):
       region=[]
@@ -1365,19 +1348,24 @@ class SixDeskDB(object):
     database= '%s.db'%(self.studyName)
     fntxt='DA_%s.txt'%self.studyName
     fhtxt = open(fntxt, 'w')
-
-    rectype=[('seed','int'),('betx'    ,'float'),('bety'    ,'float'),('sigx1'   ,'float'),('sigy1'   ,'float'),('emitx'   ,'float'),('emity'   ,'float'),
-            ('sigxavgnld' ,'float') ,('sigyavgnld' ,'float'),('betx2'   ,'float'),('bety2'   ,'float'),('distp'   ,'float'),('dist'    ,'float'),
-            ('sturns1' ,'int')   ,('sturns2' ,'int')  ,('turn_max','int')  ,('amp1'    ,'float'),('amp2'    ,'float'),('angle'   ,'float')]
-    names='seed,betx,bety,sigx1,sigy1,emitx,emity,sigxavgnld,sigyavgnld,betx2,bety2,distp,dist,sturns1,sturns2,turn_max,amp1,amp2,angle'
-    outtype=[('study','S100'),('seed','int'),('angle','float'),('achaos','float'),('achaos1','float'),('alost1','float'),('alost2','float'),('Amin','float'),('Amax','float')]
-
+    rectype=[('seed','int'),('betx','float'),('bety','float'),
+             ('sigx1','float'),('sigy1','float'),
+             ('emitx','float'),('emity','float'),
+             ('sigxavgnld','float'),('sigyavgnld','float'),
+             ('betx2','float'),('bety2','float'),
+             ('distp','float'),('dist','float'),
+             ('sturns1' ,'int'),('sturns2','int'),('turn_max','int'),
+             ('amp1','float'),('amp2','float'),('angle','float')]
+    names=','.join(zip(*rectype)[0])
+    outtype=[('study','S100'),('seed','int'),('angle','float'),
+             ('achaos','float'),('achaos1','float'),
+             ('alost1','float'),('alost2','float'),
+             ('Amin','float'),('Amax','float')]
     LHCDesName=self.env_var['LHCDesName']
     turnse=self.env_var['turnse']
     sixdesktunes=self.env_var['tunex']+"_"+self.env_var['tuney']
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
-
     tmp=np.array(self.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     anumber=1
@@ -1483,7 +1471,7 @@ class SixDeskDB(object):
                 name1+=" "
             if(anumber<10):
                 name1+=" "
-            fmt=' %s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
+            fmt=' %-39s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
             fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
             fhtxt.write('%s %s %s %s %s %s %s %s %s \n'%( name2, seed,angle,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
         anumber+=1
