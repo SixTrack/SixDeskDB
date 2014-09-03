@@ -1336,7 +1336,7 @@ class SixDeskDB(object):
     turnse=self.env_var['turnse']
     tunex=float(self.env_var['tunex'])
     tuney=float(self.env_var['tuney'])
-    sixdesktunes=self.env_var['tunex']+"_"+self.env_var['tuney']
+    sixdesktunes='%s_%s'%(self.env_var['tunex'], self.env_var['tuney'])
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
     tmp=np.array(self.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
@@ -1442,8 +1442,8 @@ class SixDeskDB(object):
                 alost1 = 1.0
 
             alost1=alost1*alost2
-            name2 = "DAres."+self.LHCDescrip+"."+sixdesktunes+"."+turnse
-            name1= '%s%ss%s%s-%s%s.%d'%(LHCDesName,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
+            name2 = 'DAres.%s.%s.%s'%(self.LHCDescrip,sixdesktunes,turnse)
+            name1 = '%s%ss%s%s-%s%s.%d'%(LHCDesName,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
             if(seed<10):
                 name1+=" "
             if(anumber<10):
