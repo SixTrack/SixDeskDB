@@ -12,7 +12,7 @@ fi
 echo '';
 echo '';
 echo '-----------------load_dir-----------------------';
-./sixdb load_dir test/simple
+./sixdb test/simple load_dir
 echo '';
 echo '';
 #echo '-----------------restore_dir--------------------';
@@ -20,15 +20,15 @@ echo '';
 #echo '';
 #echo '';
 echo '-----------------info--------------------------';
-./sixdb info job_hllhc10_test8.db
+./sixdb job_hllhc10_test8.db info
 echo '';
 echo '';
 echo '-----------------da---------------------------';
-./sixdb da job_hllhc10_test8.db
+./sixdb job_hllhc10_test8.db da
 echo '-----------------da_vs_turns---------------------------';
 echo '-- test default --'
-./sixdb da_vs_turns job_hllhc10_test8.db
+./sixdb job_hllhc10_test8.db da_vs_turns
 echo '-- test options --'
-./sixdb da_vs_turns job_hllhc10_test8.db -createdaout False -turnstep 100.0 -tmax 1.e6 -ampmaxsurv 12 -amrangedavst 4 10 -plotlog True -comp True -compdirname job_hllhc10_test8_comp -lblname test -complblname testcomp
+./sixdb job_hllhc10_test8.db da_vs_turns  -createdaout False -turnstep 100.0 -tmax 1.e6 -ampmaxsurv 12 -amrangedavst 4 10 -plotlog True -comp True -compdirname test/job_hllhc10_test8_comp -lblname test -complblname testcomp
 echo '-- clean up (delete) plots --'
 rm job_hllhc10_test8/*/*/*.png

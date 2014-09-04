@@ -176,21 +176,20 @@ def plot_da_vs_turns_comp(data,lbldata,datacomp,lbldatacomp,seed,ampmin=2,ampmax
     pl.gca().ticklabel_format(style='sci',axis='y',scilimits=(0,0))
 
 # main analysis - putting the pieces together
-def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst,plotlog=False,comp=False,compdirname='',lblname='',complblname=''):
+def RunDaVsTurns(db,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst,plotlog=False,comp=False,compdirname='',lblname='',complblname=''):
   '''Da vs turns analysis for study dbname'''
-  db=SixDeskDB(dbname)
 # create directory structure and delete old files if createdaout=true
   count=0
   for seed in db.get_seeds():
     for tune in db.get_tunes():
       if(createdaout):
         pp=db.mk_analysis_dir(seed,tune)
-        for file in 'DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png':
-          ppf=os.path.join(pp,file)
+        for filename in 'DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png':
+          ppf=os.path.join(pp,filename)
           if(os.path.exists(ppf)):
             os.remove(ppf)
             if(count==0):
-              print('remove old DA.out, DAsurv.out ... files in '+db.studyName)
+              print('remove old DA.out, DAsurv.out ... files in '+db.LHCDescrip)
               count=count+1
 # start analysis
   for seed in db.get_seeds():

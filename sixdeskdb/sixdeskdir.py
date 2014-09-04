@@ -53,9 +53,6 @@ def guess_range(l):
 
 def parse_env(studydir):
   tmp="sh -c '. %s/sixdeskenv;. %s/sysenv; python -c %s'"
-  # for open(studydir/sixdeskenv) as FileObj:
-  #   for lines in FileObj:
-	#print lines
   cmd=tmp%(studydir,studydir,'"import os;print os.environ"')
   return eval(os.popen(cmd).read())
 
