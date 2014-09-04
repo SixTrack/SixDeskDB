@@ -14,6 +14,15 @@ class SQLTable(object):
       elif ttt == 'blob': types.append('%s BLOB'%i)
     return types
   @staticmethod
+  def dtype_from_fields(fields):
+    types=[]
+    for i,ttt,desc in fields:
+      if ttt == 'float' or ttt == 'double': types.append((i,float))
+      elif ttt == 'str' or ttt == "string": types.append((i,'|S100') )
+      elif ttt == 'int': types.append((i,int))
+      elif ttt == 'blob': types.append((i,'S1000'))
+    return types
+  @staticmethod
   def cols_from_dtype(dtype):
     names=dtype.names
     types=[]
@@ -139,7 +148,7 @@ class SQLTable(object):
     if len(data)>0:
       for i in data[0]:
         if type(i) == float : types.append('float')
-        elif type(i) == unicode: types.append('|S100')
+        elif type(i) == str: types.append('|S100')
         elif type(i) == int: types.append('int')
       names=[i[0] for i in cur.description]
       data = np.array(data, dtype = zip(names,types))
