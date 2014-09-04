@@ -21,68 +21,92 @@ def get_min_turn_ang(s,t,a,it):
   """
   angmax=len(a[:,0])#number of angles
   ftype=[('angle',float),('sigma',float),('sturn',float)]
-  minturnang=np.ndarray(angmax,dtype=ftype)
+  mta=np.ndarray(angmax,dtype=ftype)
   #initialize to 0
-  for i in range(len(minturnang)):
-    minturnang[i]=(0,0,0)
+  for i in range(len(mta)):
+    mta[i]=(0,0,0)
   for ang in set(a[:,0]):
-  #save in minturnang
+  #save in mta
     tang=t[a==ang]
     sang=s[a==ang]
     if(any(tang[tang<it])):
       sangit=np.amin(sang[tang<it])
       argminit=np.amin(np.where(sang==sangit)[0])#get index of smallest amplitude with sturn<it - amplitudes are ordered ascending
 #      print(argminit)
-      minturnang[ang_to_i(ang,angmax)]=(ang,sang[argminit-1],tang[argminit-1])#last stable amplitude -> index argminit-1
+      mta[ang_to_i(ang,angmax)]=(ang,sang[argminit-1],tang[argminit-1])#last stable amplitude -> index argminit-1
     else: 
-      minturnang[ang_to_i(ang,angmax)]=(ang,np.amax(sang),np.amin(tang))
-  return minturnang
+      mta[ang_to_i(ang,angmax)]=(ang,np.amax(sang),np.amin(tang))
+  return mta
 def get_da_vs_turns(data,turnstep):
-  """returns DAout with DAw,DAs,DAserr,DAserrang,DAserramp,nturn,tlossmin.
-  DAs:       simple average over radius r, trapezoidal rule
+  """returns DAout with DAwtrap,DAstrap,DAwsimp,DAssimp,DAstraperr,DAstraperrang,DAstraperramp,nturn,tlossmin.
+  DAs:       simple average over radius 
              DAs = 2/pi*int_0^(2pi)[r(theta)]dtheta=<r(theta)>
                  = 2/pi*dtheta*sum(r(theta_i))
-  DAw:       weighted average, integration with trapezoidal rule
+  DAw:       weighted average
              DAw = (int_0^(2pi)[(r(theta))^4*sin(2*theta)]dtheta)^1/4
                  = (dtheta*sum(r(theta_i)^4*sin(2*theta_i)))^1/4
+  trapezoidal and simpson rule: numerical recipes open formulas 4.1.15 and 4.1.18		 
   """
   s,a,t=data['sigma'],data['angle'],data['sturn']
   tmax=np.max(t[s>0])#maximum number of turns
 #  print tmax
-  #set the 0 in t to tmax*100 in order to use t.any()<it later
+  #set the 0 in t to tmax*100 in order to check if turnnumber<it (any(tang[tang<it])<it in get_min_turn_ang)
   t[s==0]=tmax*100
   angmax=len(a[:,0])#number of angles
   angstep=np.pi/(2*(angmax+1))#step in angle in rad
   ampstep=np.abs((s[s>0][1])-(s[s>0][0]))
-#  print(ampstep)
-  ftype=[('DAw',float),('DAs',float),('DAserr',float),('DAserrang',float),('DAserramp',float),('nturn',float),('tlossmin',float)]
+  ftype=[('DAwtrap',float),('DAstrap',float),('DAwsimp',float),('DAssimp',float),('DAstraperr',float),('DAstraperrang',float),('DAstraperramp',float),('nturn',float),('tlossmin',float)]
   DAout=np.ndarray(len(np.arange(turnstep,tmax,turnstep)),dtype=ftype)
   for i in range(len(DAout)):
-    DAout[i]=(0,0,0,0,0,0,0)
+    DAout[i]=np.zeros(len(DAout))
   dacount=0
-  currentDAw=0
+  currentDAwtrap=0
   currenttlossmin=0
   for it in np.arange(turnstep,tmax,turnstep):
-    minturnang=get_min_turn_ang(s,t,a,it)
-    minturnang['angle']=minturnang['angle']*np.pi/180#convert to rad
+    mta=get_min_turn_ang(s,t,a,it)
+    mta['angle']=mta['angle']*np.pi/180#convert to rad
+    if(len(mta['angle'])>2):
+      ajtrap=(np.append(np.append(np.array([3/2.]),np.ones(len(mta['angle'])-2)),np.array([3/2.])))#define coefficients for simpson rule
+    else:
+      print('Error in get_da_vs_turns: You need at least 3 angles to calculate the DA vs turns!')
+      sys.exit(0)
+    if(len(mta['angle'])>6):
+      ajsimp=(np.append(np.append(np.array([55/24.,-1/6.,11/8.]),np.ones(len(mta['angle'])-6)),np.array([11/8.,-1/6.,55/24.])))#define coefficients for simpson rule
+      calcsimp=True
+    else:
+      print('Error in get_da_vs_turns: You need at least 7 angles to calculate the DA vs turns with the simpson rule! DA*simp* will be set to 0.') 
+      calcsimp=False
+    # integral trapezoidal rule
     #MF: should add factor 3/2 for first and last angle
-    DAw=(np.sum(minturnang['sigma']**4*np.sin(2*minturnang['angle']))*angstep)**(1/4.)
-    DAs=(2./np.pi)*np.sum(minturnang['sigma'])*angstep
-    DAserrang=np.sum(np.abs(np.diff(minturnang['sigma'])))/(2*angmax)
-    DAserramp=ampstep/2
-    DAserr=np.sqrt(DAserrang**2+DAserramp**2)
-    tlossmin=np.min(minturnang['sturn'])
-    if(DAw!=currentDAw and it-turnstep > 0 and tlossmin!=currenttlossmin):
-      DAout[dacount]=(DAw,DAs,DAserr,DAserrang,DAserramp,it-turnstep,tlossmin)
+    DAwtrap=(np.sum(mta['sigma']**4*np.sin(2*mta['angle']))*angstep)**(1/4.)
+    DAstrap=(2./np.pi)*np.sum(mta['sigma'])*angstep
+    # error trapezoidal rule
+    DAstraperrang=np.sum(np.abs(np.diff(mta['sigma'])))/(2*angmax)
+    DAstraperramp=ampstep/2
+    DAstraperr=np.sqrt(DAstraperrang**2+DAstraperramp**2)
+    if(calcsimp):
+      # integral simpson rule
+      DAwsimpint = np.sum(ajsimp*((mta['sigma']**4)*np.sin(2*mta['angle'])))*angstep
+      DAssimpint = np.sum(ajsimp*mta['sigma'])*angstep
+      DAwsimp    = (DAwsimpint)**(1/4.)
+      DAssimp    = (2./np.pi)*DAssimpint
+      # error simpson rule
+    else:
+      (DAwsimp,DAssimp)=np.zeros(2)
+    tlossmin=np.min(mta['sturn'])
+    if(DAwtrap!=currentDAwtrap and it-turnstep > 0 and tlossmin!=currenttlossmin):
+      DAout[dacount]=(DAwtrap,DAstrap,DAwsimp,DAssimp,DAstraperr,DAstraperrang,DAstraperramp,it-turnstep,tlossmin)
       dacount=dacount+1
-    currentDAw     =DAw
+    currentDAwtrap     =DAwtrap
     currenttlossmin=tlossmin
-  return DAout[DAout['DAw']>0]#delete 0 from errors
+  return DAout[DAout['DAwtrap']>0]#delete 0 from errors
 
+# functions to reload and create DA.out files for previous scripts
 def save_daout(data,path):
-  np.savetxt(path+'/DA.out',data,fmt='%.8f %.8f %.8f %.8f %.8f %d %d')
+  DAoutold=data[['DAwtrap','DAstrap','DAstraperr','DAstraperrang','DAstraperramp','nturn','tlossmin']]
+  np.savetxt(path+'/DA.out',DAoutold,fmt='%.6f %.6f %.6f %.6f %.6f %d %d')
 def reload_daout(path):
-  ftype=[('DAw',float),('DAs',float),('DAserr',float),('DAserrang',float),('DAserramp',float),('nturn',float),('tlossmin',float)]
+  ftype=[('DAwtrap',float),('DAstrap',float),('DAstraperr',float),('DAstraperrang',float),('DAstraperramp',float),('nturn',float),('tlossmin',float)]
   return np.loadtxt(glob.glob(path+'/DA.out*')[0],dtype=ftype,delimiter=' ')
 def save_dasurv(data,path):
   np.savetxt(path+'/DAsurv.out',np.reshape(data,-1),fmt='%.8f %.8f %d')
@@ -114,8 +138,8 @@ def plot_da_vs_turns(data,seed,ampmin=2,ampmax=14,tmax=1.e6,slog=False):
   """dynamic aperture vs number of turns, blue=simple average, red=weighted average"""
   pl.close('all')
   pl.figure(figsize=(6,6))
-  pl.errorbar(data['DAs'],data['tlossmin'],xerr=data['DAserr'],fmt='bo',markersize=2,label='simple average')
-  pl.plot(data['DAw'],data['tlossmin'],'ro',markersize=3,label='weighted average')
+  pl.errorbar(data['DAstrap'],data['tlossmin'],xerr=data['DAstraperr'],fmt='bo',markersize=2,label='simple average')
+  pl.plot(data['DAwtrap'],data['tlossmin'],'ro',markersize=3,label='weighted average')
   pl.title('seed '+seed)
   pl.xlim([ampmin,ampmax])
   pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)
@@ -133,10 +157,10 @@ def plot_da_vs_turns_comp(data,lbldata,datacomp,lbldatacomp,seed,ampmin=2,ampmax
   """dynamic aperture vs number of turns, blue/green=simple average, red/orange=weighted average"""
   pl.close('all')
   pl.figure(figsize=(6,6))
-  pl.errorbar(data['DAs'],data['tlossmin'],xerr=data['DAserr'],fmt='bo',markersize=2,label='simple average '+lbldata)
-  pl.plot(data['DAw'],data['tlossmin'],'ro',markersize=3,label='weighted average '+lbldata)
-  pl.errorbar(datacomp['DAs'],datacomp['tlossmin'],xerr=datacomp['DAserr'],fmt='go',markersize=2,label='simple average '+lbldatacomp)
-  pl.plot(datacomp['DAw'],datacomp['tlossmin'],'o',color='orange',markersize=3,label='weighted average '+lbldatacomp)
+  pl.errorbar(data['DAstrap'],data['tlossmin'],xerr=data['DAstraperr'],fmt='bo',markersize=2,label='simple average '+lbldata)
+  pl.plot(data['DAwtrap'],data['tlossmin'],'ro',markersize=3,label='weighted average '+lbldata)
+  pl.errorbar(datacomp['DAstrap'],datacomp['tlossmin'],xerr=datacomp['DAstraperr'],fmt='go',markersize=2,label='simple average '+lbldatacomp)
+  pl.plot(datacomp['DAwtrap'],datacomp['tlossmin'],'o',color='orange',markersize=3,label='weighted average '+lbldatacomp)
   pl.title('seed '+seed)
   pl.xlim([ampmin,ampmax])
   pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)
@@ -180,10 +204,12 @@ def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxd
         print('- load and save the data')
         print('... creating file DAsurv.out')
         DAsurv=db.get_surv(seed)
-        save_dasurv(DAsurv,dirname)
+        # create DAsurv.out file used for survival plots in old scripts
+	save_dasurv(DAsurv,dirname)
         print('... creating file DA.out')
         DAout=get_da_vs_turns(DAsurv,turnstep)
-        save_daout(DAout,dirname)
+        # create DA.out file used for DA vs turns plots in old scripts
+	save_daout(DAout,dirname)
       # case: reload DA.out files
       else:
         try:
