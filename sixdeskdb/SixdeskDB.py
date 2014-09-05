@@ -578,7 +578,7 @@ class SixDeskDB(object):
                     FileObj = gzip.open(f10,"r").read().split("\n")[:-1]
                     countl = 1
                     for lines in FileObj:
-                      rows10.append([six_id,count]+lines.split()+[mtime10])
+                      rows10.append([six_id,countl]+lines.split()+[mtime10])
                       countl += 1
                     count10 += 1
                     rows.append(dirn)
