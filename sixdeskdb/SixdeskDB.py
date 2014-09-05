@@ -537,7 +537,7 @@ class SixDeskDB(object):
     if not maxtime:
       maxtime = 0
     if not maxtime10:
-      maxtime10 = 0  
+      maxtime10 = 0
     # cols = SQLTable.cols_from_fields(tables.Files.fields)
     # tab1 = SQLTable(conn,'files',cols,tables.Files.key)
     workdir = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
@@ -595,6 +595,9 @@ class SixDeskDB(object):
       rows = []
     print '\n no of fort.3 updated/found: %d/%d'%(count,file_count)
     print ' no of fort.10 updated/found: %d/%d'%(count10,file_count10)
+    sql="""CREATE VIEW IF NOT EXISTS results AS SELECT * FROM six_input INNER JOIN six_results
+           ON six_input.id==six_results.six_input_id"""
+    self.conn.cursor().execute(sql)
 
   def st_six_results(self):
     '''store fort.10 values'''
