@@ -545,7 +545,7 @@ class SixDeskDB(object):
     rows = []
     rows10 = []
     six_id = 1
-    print "Looking for fort.3.gz,fort.10.gz files in %s"%workdir
+    print "Looking for fort.3.gz, fort.10.gz files in\n %s"%workdir
     #cmd = """find %s -type f -name 'fort.3.gz'"""%(workdir)
     #a = os.popen(cmd).read().split('\n')[:-1]
     #print 'fort.3 files =',len(a)
@@ -556,41 +556,45 @@ class SixDeskDB(object):
       f10=os.path.join(dirName, 'fort.10.gz')
       #dirName,files=os.path.split(dirName.strip())
       ranges= dirName.split('/')[-3]
-      if '_' in ranges and os.path.exists(f3):
-        file_count+=1
+      if '_' in ranges:
+        fn3_exists=fn10_exists=False
+        if os.path.exists(f3):
+            file_count+=1
+            fn3_exists=True
+        if os.path.exists(f10):
+            file_count10 += 1
+            fn10_exists=True
         if file_count%100==0:
-            sys.stdout.write('.')
-            sys.stdout.flush()
-        mtime3 = os.path.getmtime(f3)
-        if mtime3>maxtime:
-            dirn = dirName.replace(workdir + '/', '')
-            dirn = re.split('/|_', dirn)
-            dirn = [six_id] + dirn
-            dirn.extend([sqlite3.Binary(open(f3).read()),mtime3])
-            rows.append(dirn)
-            dirn = []
-            if os.path.exists(f10):
-              file_count10 += 1
-              mtime10 = os.path.getmtime(f10)
-              if mtime10 > maxtime:
-                FileObj = gzip.open(f10,"r").read().split("\n")[:-1]
-                countl = 1
-                for lines in FileObj:
-                  rows10.append([six_id,count]+lines.split()+[mtime10])
-                  countl += 1
-                count10 += 1
-            six_id += 1
-            count += 1
+           sys.stdout.write('.')
+           sys.stdout.flush()
+        if fn3_exists:
+            mtime3 = os.path.getmtime(f3)
+            if mtime3>maxtime:
+                dirn = [six_id] + re.split('/|_', dirName)[-8:]
+                dirn.extend([sqlite3.Binary(open(f3).read()),mtime3])
+                if fn10_exists:
+                  mtime10 = os.path.getmtime(f10)
+                  if mtime10 > maxtime:
+                    FileObj = gzip.open(f10,"r").read().split("\n")[:-1]
+                    countl = 1
+                    for lines in FileObj:
+                      rows10.append([six_id,count]+lines.split()+[mtime10])
+                      countl += 1
+                    count10 += 1
+                    rows.append(dirn)
+                six_id += 1
+                count += 1
         if len(rows) == 6000:
           tab.insertl(rows)
           tab1.insertl(rows10)
-          rows = rows10 = []
+          rows = []
+          rows10 = []
     if rows:
       tab.insertl(rows)
       tab1.insertl(rows10)
       rows = []
     print '\n no of fort.3 updated/found: %d/%d'%(count,file_count)
-    print 'no of fort.10 updated/found: %d/%d'%(count10,file_count10)
+    print ' no of fort.10 updated/found: %d/%d'%(count10,file_count10)
 
   def st_six_results(self):
     '''store fort.10 values'''
