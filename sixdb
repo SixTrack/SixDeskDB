@@ -211,12 +211,11 @@ Usage: sixdb <dbname> da_vs_turns_comp <compdbname>
         """Open an IPython shell with a database loeaded as db
         Usage: sixdb <dbname> interactive
         """
+        print
         import IPython
         import matplotlib.pyplot as pl
         import numpy, scipy
         db=SixDeskDB(study)
-        argv=['--pylab']
-        print
         print """job_hllhc10_test10.db open as db
 Example:
 print db.get_col('sturns1',1,45)
@@ -224,7 +223,7 @@ db.plot_col('sturns1',1,45)
 db.plot_polar_col('sturns1',1)
 """
         print
-        IPython.start_ipython(user_ns={'db':db},argv=argv)
+        IPython.start_ipython(user_ns={'db':db},argv=['--pylab'])
     def set(self,study):
         """Redefine environment variables
         Usage: sixdb <dbname> set <key1> <value1> ...
