@@ -37,7 +37,7 @@ def get_min_turn_ang(s,t,a,it):
     else: 
       mta[ang_to_i(ang,angmax)]=(ang,np.amax(sang),np.amin(tang))
   return mta
-def get_da_vs_turns(data,turnstep):
+def get_da_vs_turns(seed,tune,data,turnstep):
   """returns DAout with DAwtrap,DAstrap,DAwsimp,DAssimp,DAstraperr,DAstraperrang,DAstraperramp,nturn,tlossmin.
   DAs:       simple average over radius 
              DAs = 2/pi*int_0^(2pi)[r(theta)]dtheta=<r(theta)>
@@ -45,8 +45,10 @@ def get_da_vs_turns(data,turnstep):
   DAw:       weighted average
              DAw = (int_0^(2pi)[(r(theta))^4*sin(2*theta)]dtheta)^1/4
                  = (dtheta*sum(r(theta_i)^4*sin(2*theta_i)))^1/4
-  trapezoidal and simpson rule: numerical recipes open formulas 4.1.15 and 4.1.18		 
+  trapezoidal and simpson rule: numerical recipes open formulas 4.1.15 and 4.1.18        
   """
+  mtime=0.0
+  (tunex,tuney)=tune
   s,a,t=data['sigma'],data['angle'],data['sturn']
   tmax=np.max(t[s>0])#maximum number of turns
 #  print tmax
@@ -55,10 +57,10 @@ def get_da_vs_turns(data,turnstep):
   angmax=len(a[:,0])#number of angles
   angstep=np.pi/(2*(angmax+1))#step in angle in rad
   ampstep=np.abs((s[s>0][1])-(s[s>0][0]))
-  ftype=[('DAwtrap',float),('DAstrap',float),('DAwsimp',float),('DAssimp',float),('DAstraperr',float),('DAstraperrang',float),('DAstraperramp',float),('nturn',float),('tlossmin',float)]
+  ftype=[('seed',int),('tunex',float),('tuney',float),('DAwtrap',float),('DAstrap',float),('DAwsimp',float),('DAssimp',float),('DAstraperr',float),('DAstraperrang',float),('DAstraperramp',float),('nturn',float),('tlossmin',float),('mtime',float)]
   DAout=np.ndarray(len(np.arange(turnstep,tmax,turnstep)),dtype=ftype)
-  for i in range(len(DAout)):
-    DAout[i]=np.zeros(len(DAout))
+  for nm in DAout.dtype.names:
+    DAout[nm]=np.zeros(len(DAout[nm]))
   dacount=0
   currentDAwtrap=0
   currenttlossmin=0
@@ -95,7 +97,7 @@ def get_da_vs_turns(data,turnstep):
       (DAwsimp,DAssimp)=np.zeros(2)
     tlossmin=np.min(mta['sturn'])
     if(DAwtrap!=currentDAwtrap and it-turnstep > 0 and tlossmin!=currenttlossmin):
-      DAout[dacount]=(DAwtrap,DAstrap,DAwsimp,DAssimp,DAstraperr,DAstraperrang,DAstraperramp,it-turnstep,tlossmin)
+      DAout[dacount]=(seed,tunex,tuney,DAwtrap,DAstrap,DAwsimp,DAssimp,DAstraperr,DAstraperrang,DAstraperramp,it-turnstep,tlossmin,mtime)
       dacount=dacount+1
     currentDAwtrap     =DAwtrap
     currenttlossmin=tlossmin
@@ -116,24 +118,6 @@ def reload_dasurv(path):
   angles=len(set(data['angle']))
   return data.reshape(angles,-1)
 
-def plot_surv_2d(data,seed,ampmax=14):
-  """survival plot, blue=all particles, red=stable particles"""
-  pl.close('all')
-  pl.figure(figsize=(6,6))
-  s,a,t=data['sigma'],data['angle'],data['sturn']
-  s,a,t=s[s>0],a[s>0],t[s>0]#delete 0 values
-  tmax=np.max(t)
-  sx=s*np.cos(a*np.pi/180) 
-  sy=s*np.sin(a*np.pi/180) 
-  sxstab=s[t==tmax]*np.cos(a[t==tmax]*np.pi/180) 
-  systab=s[t==tmax]*np.sin(a[t==tmax]*np.pi/180) 
-  pl.scatter(sx,sy,20*t/tmax,marker='o',color='b',edgecolor='none')
-  pl.scatter(sxstab,systab,4,marker='o',color='r',edgecolor='none')
-  pl.title('seed '+seed,fontsize=12)
-  pl.xlim([0,ampmax])
-  pl.ylim([0,ampmax])
-  pl.xlabel(r'Horizontal amplitude [$\sigma$]',labelpad=10,fontsize=12)
-  pl.ylabel(r'Vertical amplitude [$\sigma$]',labelpad=10,fontsize=12)
 def plot_da_vs_turns(data,seed,ampmin=2,ampmax=14,tmax=1.e6,slog=False):
   """dynamic aperture vs number of turns, blue=simple average, red=weighted average"""
   pl.close('all')
@@ -176,13 +160,69 @@ def plot_da_vs_turns_comp(data,lbldata,datacomp,lbldatacomp,seed,ampmin=2,ampmax
     pl.gca().ticklabel_format(style='sci',axis='y',scilimits=(0,0))
 
 # main analysis - putting the pieces together
-def RunDaVsTurns(db,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst,plotlog=False,comp=False,compdirname='',lblname='',complblname=''):
+def RunDaVsTurns(db,force,outfile,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst,plotlog):
   '''Da vs turns analysis for study dbname'''
-# create directory structure and delete old files if createdaout=true
+# create directory structure and delete old files if force=true
   count=0
   for seed in db.get_db_seeds():
     for tune in db.get_tunes():
-      if(createdaout):
+      if(force):
+        # create directory
+        pp=db.mk_analysis_dir(seed,tune)
+    #delete old plots and files
+        for filename in 'DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png':
+          ppf=os.path.join(pp,filename)
+          if(os.path.exists(ppf)):
+            os.remove(ppf)
+            if(count==0):
+              print('remove old DA.out, DAsurv.out ... files in '+db.LHCDescrip)
+              count=count+1
+# start analysis
+  if(not db.check_seeds()):
+    print('!!! Seeds are missing in database !!!')
+  for seed in db.get_db_seeds():
+    seed=int(seed)
+    print('analyzing seed {0} ...').format(str(seed))
+    for tune in db.get_tunes():
+      print('analyzing tune {0} ...').format(str(tune))
+      dirname=db.mk_analysis_dir(seed,tune)
+      print('... get survival plot data')
+      DAsurv=db.get_surv(seed,tune)
+      # case: create data
+      if(force):
+        #load and save the data
+        print('... calculate da vs turns')
+        DAout=get_da_vs_turns(seed,tune,DAsurv,turnstep)
+        print('.... save data in database')
+        db.st_da_vst(DAout)
+      # case: reload data
+      else:
+        print('... get da vs turns data')
+        DAout = reload_daout(dirname)
+      if(outfile):# create DAsurv.out and DA.out files
+        print('... save outputfiles DA.out (da vs turns) and DAsurv.out (survival plots)')
+        save_dasurv(DAsurv,dirname)
+        save_daout(DAout,dirname)
+      print('- create the plots')
+      pl.close('all')
+      db.plot_surv_2d(seed,tune,ampmaxsurv)
+      pl.savefig(dirname+'/DAsurv.png')
+      print('... creating plot DAsurv.png')
+      plot_da_vs_turns(DAout,str(seed),ampmindavst,ampmaxdavst,tmax,plotlog)
+      if(plotlog==True):
+        pl.savefig(dirname+'/DA_log.png')
+        print('... creating plot DA_log.png')
+      else:
+        pl.savefig(dirname+'/DAsurv.png')
+        print('... creating plot DAsurv.png')
+
+def RunDaVsTurnsComp(db,dbcomp,ampmaxsurv,ampmindavst,ampmaxdavst,plotlog,lblname,complblname):
+  '''Da vs turns analysis for study dbname'''
+# create directory structure and delete old files if force=true
+  count=0
+  for seed in db.get_db_seeds():
+    for tune in db.get_tunes():
+      if(force):
         pp=db.mk_analysis_dir(seed,tune)
         for filename in 'DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png':
           ppf=os.path.join(pp,filename)
@@ -193,24 +233,24 @@ def RunDaVsTurns(db,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst
               count=count+1
 # start analysis
   if(not db.check_seeds()):
-    print('Seeds are missing in database! Missing seeds are:')
+    print('Seeds are missing in database!')
   for seed in db.get_db_seeds():
     for tune in db.get_tunes():
       seed=int(seed)
       print('analyzing seed {0} ...').format(str(seed))
       dirname=db.mk_analysis_dir(seed,tune)
       # case: create DA.out and DAsurv.out file
-      if(createdaout):
+      if(force):
         #load and save the data
         print('- load and save the data')
         print('... creating file DAsurv.out')
         DAsurv=db.get_surv(seed)
         # create DAsurv.out file used for survival plots in old scripts
-	save_dasurv(DAsurv,dirname)
+        save_dasurv(DAsurv,dirname)
         print('... creating file DA.out')
         DAout=get_da_vs_turns(DAsurv,turnstep)
         # create DA.out file used for DA vs turns plots in old scripts
-	save_daout(DAout,dirname)
+        save_daout(DAout,dirname)
       # case: reload DA.out files
       else:
         try:
@@ -225,7 +265,8 @@ def RunDaVsTurns(db,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst
           sys.exit(0)
         print('- reload the data')
       print('- create the plots')
-      plot_surv_2d(DAsurv,str(seed),ampmaxsurv)
+      pl.close('all')
+      db.plot_surv_2d(DAsurv,str(seed),ampmaxsurv)
       pl.savefig(dirname+'/DA.png')
       print('... creating plot DA.png')
       plot_da_vs_turns(DAout,str(seed),ampmindavst,ampmaxdavst,tmax,plotlog)
@@ -250,3 +291,15 @@ def RunDaVsTurns(db,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst
         pl.savefig(dirname+'/DAsurv_comp.png')
         print('... creating plot DAsurv_comp.png')
 
+#      # case: reload data
+#      else:
+#        try:
+#          DAout = reload_daout(dirname)
+#        except IndexError:
+#          print('Error in RunDaVsTurns - DA.out file not found for seed {0}!').format(str(seed))
+#          sys.exit(0)
+#        try:
+#          DAsurv= reload_dasurv(dirname)
+#        except IndexError:
+#          print('Error in RunDaVsTurns - DAsurv.out file not found for seed {0}!').format(str(seed))
+#          sys.exit(0)
