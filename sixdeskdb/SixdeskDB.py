@@ -211,7 +211,7 @@ class SixDeskDB(object):
     db.st_mad6t_results()
     db.st_six_beta()
     db.st_six_input()
-    db.st_six_results()
+    # db.st_six_results()
     return db
 
   def update_sixdeskenv(self,studyDir):
@@ -341,7 +341,7 @@ class SixDeskDB(object):
     a = tab.selectl('distinct run_id')
     if a:
       a = [str(i[0]) for i in a]
-    print "Looking for fort.2, fort.8, fort.16 in\n %s"%workdir
+    print "Looking for fort.2, fort.8, fort.16 in %s"%workdir
     for dirName, _, fileList in os.walk(workdir):
       if 'mad.dorun' in dirName and not (dirName.split('/')[-1] in a):
         print 'found new mad run',dirName.split('/')[-1]
@@ -527,22 +527,30 @@ class SixDeskDB(object):
     env_var = self.env_var
     cols = SQLTable.cols_from_fields(tables.Six_In.fields)
     tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
+    cols1 = SQLTable.cols_from_fields(tables.Six_Res.fields)
+    tab1 = SQLTable(conn,'six_results',cols1,tables.Six_Res.key)
     #tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
     maxtime = tab.selectl("max(mtime)")[0][0]
+    maxtime10 = tab1.selectl("max(mtime)")[0][0]
     count = 0
+    count10 = 0
     if not maxtime:
       maxtime = 0
-    cols = SQLTable.cols_from_fields(tables.Files.fields)
-    tab1 = SQLTable(conn,'files',cols,tables.Files.key)
+    if not maxtime10:
+      maxtime10 = 0  
+    # cols = SQLTable.cols_from_fields(tables.Files.fields)
+    # tab1 = SQLTable(conn,'files',cols,tables.Files.key)
     workdir = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
     extra_files = []
     rows = []
+    rows10 = []
     six_id = 1
-    print "Looking for fort.3.gz files in\n %s"%workdir
+    print "Looking for fort.3.gz,fort.10.gz files in %s"%workdir
     #cmd = """find %s -type f -name 'fort.3.gz'"""%(workdir)
     #a = os.popen(cmd).read().split('\n')[:-1]
     #print 'fort.3 files =',len(a)
     file_count=0
+    file_count10 = 0
     for dirName in glob.iglob(os.path.join(workdir,'*','*','*','*','*','*')):
       f3=os.path.join(dirName, 'fort.3.gz')
       f10=os.path.join(dirName, 'fort.10.gz')
@@ -561,12 +569,28 @@ class SixDeskDB(object):
             dirn.extend([sqlite3.Binary(open(f3).read()),mtime3])
             rows.append(dirn)
             dirn = []
+            if os.path.exists(f10):
+              file_count10 += 1
+              mtime10 = os.path.getmtime(f10)
+              if mtime10 > maxtime:
+                FileObj = gzip.open(f10,"r").read().split("\n")[:-1]
+                countl = 1
+                for lines in FileObj:
+                  rows10.append([six_id,count]+lines.split()+[mtime10])
+                  countl += 1
+                count10 += 1
             six_id += 1
             count += 1
+        if len(rows) == 6000:
+          tab.insertl(rows)
+          tab1.insertl(rows10)
+          rows = rows10 = []
     if rows:
       tab.insertl(rows)
+      tab1.insertl(rows10)
       rows = []
     print '\n no of fort.3 updated/found: %d/%d'%(count,file_count)
+    print 'no of fort.10 updated/found: %d/%d'%(count10,file_count10)
 
   def st_six_results(self):
     '''store fort.10 values'''
@@ -1441,7 +1465,7 @@ class SixDeskDB(object):
              ('distp','float'),('dist','float'),
              ('sturns1' ,'int'),('sturns2','int'),('turn_max','int'),
              ('amp1','float'),('amp2','float'),('angle','float'),
-             ('six_results.mtime','int')]
+             ('six_results.mtime','float')]
     names=','.join(zip(*rectype)[0])
     turnse=self.env_var['turnse']
     tunex=float(self.env_var['tunex'])
