@@ -180,7 +180,7 @@ def RunDaVsTurns(db,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst
   '''Da vs turns analysis for study dbname'''
 # create directory structure and delete old files if createdaout=true
   count=0
-  for seed in db.get_seeds():
+  for seed in db.get_db_seeds():
     for tune in db.get_tunes():
       if(createdaout):
         pp=db.mk_analysis_dir(seed,tune)
@@ -192,7 +192,9 @@ def RunDaVsTurns(db,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst
               print('remove old DA.out, DAsurv.out ... files in '+db.LHCDescrip)
               count=count+1
 # start analysis
-  for seed in db.get_seeds():
+  if(not db.check_seeds()):
+    print('Seeds are missing in database! Missing seeds are:')
+  for seed in db.get_db_seeds():
     for tune in db.get_tunes():
       seed=int(seed)
       print('analyzing seed {0} ...').format(str(seed))

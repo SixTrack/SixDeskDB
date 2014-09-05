@@ -1092,13 +1092,14 @@ class SixDeskDB(object):
     ''' get seeds from DB'''
     out=zip(*self.execute('SELECT DISTINCT seed FROM six_input'))[0]
     return out
+
   def check_seeds(self):
     """check if seeds defined in the environment are presently available in the database"""
-    return len(set(db.get_seeds())-set(db.get_db_seeds()))>0
+    return len(set(self.get_db_seeds())-set(self.get_seeds()))>0
 
   def check_angles(self):
     """check if angles defined in the environment are presently available in the database"""
-    return len(set(db.get_angles())-set(db.get_db_angles()))>0
+    return len(set(self.get_db_angles())-set(self.get_angles()))>0
 
   def get_angles(self):
     ''' get angles from env variables'''
