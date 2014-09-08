@@ -166,6 +166,23 @@ class Files(object):
   ('mtime','float','file modification time')]
   key=['path']
 
+class Da_Vst(object):
+  fields=[
+  ('seed', 'int', 'seed value'),
+  ('tunex', 'float', 'tunex value'),
+  ('tuney' ,'float', 'tuney value'),
+  ('DAstrap', 'float', 'DAs trap. integ.'),
+  ('DAwtrap', 'float', 'DAw trap. integ.'),
+  ('DAssimp', 'float', 'DAs simp. integ.'),
+  ('DAwsimp', 'float', 'DAw simp. integ.'),
+  ('DAstraperr', 'float', 'error DAs trap. integ.'),
+  ('DAstraperrang', 'float', 'angular error DAs trap. integ.'),
+  ('DAstraperramp', 'float', 'amplitude error DAs trap. integ.'),
+  ('nturn', 'float', 'lost turn number [turnstep,2*turnstep,...]'),
+  ('tlossmin', 'float', 'minimum lost turn number over all angles'),
+  ('mtime','float','last modification time')]
+  key=['seed','tunex','tuney','nturn']
+
 acc_var = ['BNL','COLUMNS','CORR_TEST','G_FILENAME_ENCODING','LHCDesHome',
     'LHCDesName','LHCDescrip','LINES','MADX','MADX_PATH','SIXTRACKBNLEXE',
     'SIXTRACKDAEXE','SIXTRACKEXE','basedir','beam','boincdir','bunch_charge',

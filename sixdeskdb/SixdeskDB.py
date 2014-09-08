@@ -98,6 +98,18 @@ def dict_to_list(dict):
         break
   return lst
 
+def ndarray_to_list(dict):
+  '''convert dictionary to list for DB insert'''
+  lst = []
+  for i in sorted(dict.keys()):
+    for j in dict[i]:
+      if isinstance(j, list):
+        lst.append(j)
+      else:
+        lst.append(dict[i])
+        break
+  return lst
+
 def store_dict(cur, colName, table, data):
   cur.execute("select max(%s) from %s" % (colName, table))
   temp = cur.fetchone()[0]
@@ -1112,6 +1124,11 @@ class SixDeskDB(object):
     ''' get results count from DB '''
     return self.execute('SELECT count(*) FROM six_results')[0][0]/30
 
+  def get_turnsl(self):
+    ''' get turnsl = maximum number of turns for long queue from env table'''
+    env_var = self.env_var
+    return int(env_var['turnsl'])
+
   def get_seeds(self):
     ''' get seeds from env table'''
     env_var = self.env_var
@@ -1123,13 +1140,14 @@ class SixDeskDB(object):
     ''' get seeds from DB'''
     out=zip(*self.execute('SELECT DISTINCT seed FROM six_input'))[0]
     return out
+
   def check_seeds(self):
     """check if seeds defined in the environment are presently available in the database"""
-    return len(set(db.get_seeds())-set(db.get_db_seeds()))>0
+    return len(set(self.get_db_seeds())-set(self.get_seeds()))>0
 
   def check_angles(self):
     """check if angles defined in the environment are presently available in the database"""
-    return len(set(db.get_angles())-set(db.get_db_angles()))>0
+    return len(set(self.get_db_angles())-set(self.get_angles()))>0
 
   def get_angles(self):
     ''' get angles from env variables'''
@@ -1216,22 +1234,6 @@ class SixDeskDB(object):
     p['sixdeskpairs']=max(data['row'])+1
     p['LHCDescrip']=str(data['study'][0])
     return p
-
-  def get_surv(self,seed):
-    '''get survival turns from DB calculated from emitI and emitII'''
-    #change for new db version
-    emit=float(self.env_var['emit'])
-    gamma=float(self.env_var['gamma'])
-    cmd="""SELECT angle,emitx+emity,
-         CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
-         FROM six_results,six_input WHERE seed=%s and id=six_input_id
-         ORDER BY angle,emitx+emity"""
-    cur=self.conn.cursor().execute(cmd%seed)
-    ftype=[('angle',float),('sigma',float),('sturn',float)]
-    data=np.fromiter(cur,dtype=ftype)
-    data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
-    angles=len(set(data['angle']))
-    return data.reshape(angles,-1)
 
   def get_polar_col(self,col,seed,smooth=None):
     a,s,t=self.get_2d_col(col,seed)
@@ -1670,6 +1672,80 @@ class SixDeskDB(object):
         name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
         fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
     fhplot.close()
+
+# -------------------------------- da_vs_turns -----------------------------------------------------------
+  def st_da_vst(self,data):
+    ''' store da vs turns data '''
+    cols  = SQLTable.cols_from_dtype(data.dtype)
+    tab   = SQLTable(self.conn,'da_vsturn',cols,tables.Da_Vst.key)
+    tab.insert(data)
+  def get_da_vst(self,seed,tune):
+    '''get da vs turns data from DB'''
+    #change for new db version
+    (tunex,tuney)=tune
+    cmd="""SELECT *
+         FROM da_vsturn WHERE seed=%s and tunex=%s and tuney=%s
+         ORDER BY nturn"""
+    cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
+    ftype=[('seed',int),('tunex',float),('tuney',float),('DAwtrap',float),('DAstrap',float),('DAwsimp',float),('DAssimp',float),('DAstraperr',float),('DAstraperrang',float),('DAstraperramp',float),('nturn',float),('tlossmin',float),('mtime',float)]
+    data=np.fromiter(cur,dtype=ftype)
+    return data
+  def get_surv(self,seed,tune):
+    '''get survival turns from DB calculated from emitI and emitII'''
+    #change for new db version
+    (tunex,tuney)=tune
+    emit=float(self.env_var['emit'])
+    gamma=float(self.env_var['gamma'])
+    cmd="""SELECT angle,emitx+emity,
+         CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
+         FROM six_results,six_input WHERE seed=%s AND id=six_input_id
+         ORDER BY angle,emitx+emity"""
+    cur=self.conn.cursor().execute(cmd%(seed))
+    ftype=[('angle',float),('sigma',float),('sturn',float)]
+    data=np.fromiter(cur,dtype=ftype)
+    data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
+    angles=len(set(data['angle']))
+    return data.reshape(angles,-1)
+
+  def plot_da_vst(self,seed,tune,ampmin,ampmax,tmax,slog):
+    """dynamic aperture vs number of turns, blue=simple average, red=weighted average"""
+    data=self.get_da_vst(seed,tune)
+    pl.close('all')
+    pl.figure(figsize=(6,6))
+    pl.errorbar(data['DAstrap'],data['tlossmin'],xerr=data['DAstraperr'],fmt='bo',markersize=2,label='simple average')
+    pl.plot(data['DAwtrap'],data['tlossmin'],'ro',markersize=3,label='weighted average')
+    pl.title('seed '+str(seed))
+    pl.xlim([ampmin,ampmax])
+    pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)
+    pl.ylabel(r'Number of turns',labelpad=15,fontsize=12)
+    plleg=pl.gca().legend(loc='best')
+    for label in plleg.get_texts():
+        label.set_fontsize(12)
+    if(slog):
+      pl.ylim([5.e3,float(tmax)])
+      pl.yscale('log')
+    else:
+      pl.ylim([0,float(tmax)])
+      pl.gca().ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+  def plot_surv_2d(self,seed,tune,ampmax=14):
+    '''survival plot, blue=all particles, red=stable particles'''
+    data=self.get_surv(seed,tune)
+    s,a,t=data['sigma'],data['angle'],data['sturn']
+    s,a,t=s[s>0],a[s>0],t[s>0]#delete 0 values
+    tmax=np.max(t)
+    sx=s*np.cos(a*np.pi/180)
+    sy=s*np.sin(a*np.pi/180)
+    sxstab=s[t==tmax]*np.cos(a[t==tmax]*np.pi/180)
+    systab=s[t==tmax]*np.sin(a[t==tmax]*np.pi/180)
+    pl.figure(figsize=(6,6))
+    pl.scatter(sx,sy,20*t/tmax,marker='o',color='b',edgecolor='none')
+    pl.scatter(sxstab,systab,4,marker='o',color='r',edgecolor='none')
+    pl.title('seed '+str(seed),fontsize=12)
+    pl.xlim([0,ampmax])
+    pl.ylim([0,ampmax])
+    pl.xlabel(r'Horizontal amplitude [$\sigma$]',labelpad=10,fontsize=12)
+    pl.ylabel(r'Vertical amplitude [$\sigma$]',labelpad=10,fontsize=12)
+
 
 if __name__ == '__main__':
   SixDeskDB.from_dir('./')
