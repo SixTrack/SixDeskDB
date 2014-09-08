@@ -10,15 +10,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-
-
-
-# PART TO BE EDITED ========================================================================
-Elhc=2.5                    #normalized emittance as in "general input"
-Einj=7460.5                 #gamma as in "general input"
-#workarea='/afs/cern.ch/user/d/dbanfi/SixTrack_NEW'  #where input db is, and where output will be written
-# DO NOT EDIT BEYOND HERE IF YOU'RE NOT REALLY SURE  =======================================    
-
 rectype=[('seed','int'),('qx','float'),('qy','float'),('betx','float'),('bety','float'),('sigx1','float'),('sigy1','float'),('deltap','float'),('emitx','float'),('emity','float'),
         ('sigxminnld', 'float'),('sigxavgnld' ,'float') ,('sigxmaxnld', 'float'),('sigyminnld', 'float'),('sigyavgnld' ,'float'),
         ('sigymaxnld', 'float'),('betx2','float'),('bety2','float'),('distp','float'),('dist','float'),('qx_det','float'),('qy_det','float'),('sturns1' ,'int'),
@@ -33,16 +24,10 @@ def main2(studyName):
     else:
         print "ERROR: file  %s does not exists!" %(database)
         sys.exit()
-    f2 = open('DA_%s.txt'%studyName, 'w')
-    LHCDesName=sd.env_var['LHCDesName']
-    turnse=sd.env_var['turnse']
-    sixdesktunes='%s_%s'%(sd.env_var['tunex'], sd.env_var['tuney'])
-    ns1l=sd.env_var['ns1l']
-    ns2l=sd.env_var['ns2l']
 
     tmp = np.array(sd.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
     Elhc,Einj = sd.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
-    anumber = 1
+
     
     ment=1000
     epsilon = 1e-38
@@ -53,7 +38,6 @@ def main2(studyName):
     iend = -999
 
     for angle in np.unique(tmp['angle']):      
-        f = open('DAres_%s.%s.%s.%d'%(LHCDesName,sixdesktunes,turnse,anumber), 'w')
         for seed in np.unique(tmp['seed']):
                     
             tl = np.zeros(ntlmax*ntlint+1)
@@ -145,6 +129,7 @@ def main2(studyName):
                     rad1=np.sqrt(1+rad1*rad1)/sigma
             else:
                 rad1 = 1
+
             ich1 = 0
             ich2 = 0
             ich3 = 0 
@@ -203,15 +188,6 @@ def main2(studyName):
           
             alost3 = min(alost3, min(inp['sturns1']),min(inp['sturns2']))
            
-
-            name2 = 'DAres.%s.%s.%s'%(studyName,sixdesktunes,turnse)
-            name1 = '%s%ss%s%s-%s%s.%d'%(LHCDesName,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
-            
-            if(seed<10):
-                name1+=" "
-            if(anumber<10):
-                name1+=" " 
-
             if achaos== 0:
                 achaos=amin
             else:
@@ -224,13 +200,13 @@ def main2(studyName):
                 ilost=1
 
             f11 = open('fort.11','w')
-            f11.write('%s %f\n'%(achaos,1e-1))
+            f11.write('%s %s\n'%(achaos,1e-1))
             f11.write('%s %s\n'%(achaos,inp['turn_max'][0]*fac))
             f11.close()
 
             f26 = open('fort.26','w')
-            f26.write('%s %f\n'%(achaos,1e-1))
-            f26.write('%s %f\n'%((alost2,1e-1) if alost2 > epsilon else (amax, 1e-1)))
+            f26.write('%s %s\n'%(achaos,1e-1))
+            f26.write('%s %s\n'%((alost2,1e-1) if alost2 > epsilon else (amax, 1e-1)))
             f26.close()
 
             f27 = open('fort.27','w')
@@ -253,31 +229,31 @@ def main2(studyName):
 
             for i in range(0, iel+1):
 
-                f12.write('%s %f\n'%(rad*inp['sigx1'][i], inp['distp'][i]))
+                f12.write('%s %s\n'%(rad*inp['sigx1'][i], inp['distp'][i]))
                 
-                f13.write('%s %f\n'%(rad*inp['sigx1'][i], inp['dist'][i]))
+                f13.write('%s %s\n'%(rad*inp['sigx1'][i], inp['dist'][i]))
                 
-                f15.write('%s %f\n'%(rad*inp['sigx1'][i], inp['sturns1'][i]))
-                f15.write('%s %f\n'%(rad*inp['sigx1'][i], inp['sturns2'][i]))
+                f15.write('%s %s\n'%(rad*inp['sigx1'][i], inp['sturns1'][i]))
+                f15.write('%s %s\n'%(rad*inp['sigx1'][i], inp['sturns2'][i]))
                 
                 if ilost ==1 or rad*inp['sigx1'][i] < alost2:
                     if inp['distp'][i] < fac1 and inp['dist'][i] < fac2:
                         iel2=(iel+1)/2
-                        f16.write('%s %f\n' %(inp['deltap'][i],inp['qx'][i]-inp['qx'][iel2]))
-                        f17.write('%s %f\n' %(inp['deltap'][i],inp['qy'][i]-inp['qy'][iel2]) )
-                        f20.write('%s %f\n' %(rad*inp['sigx1'][i],inp['qx_det'][i]))
-                        f21.write('%s %f\n' %(rad*inp['sigx1'][i],inp['qy_det'][i]))
-                        f25.write('%s %f %d %f %f\n' %(inp['qx_det'][i]+inp['qx'][i], inp['qy_det'][i]+inp['qy'][i],i+1,inp['qx_det'][i],inp['qy_det'][i]))
+                        f16.write('%s %s\n' %(inp['deltap'][i],inp['qx'][i]-inp['qx'][iel2]))
+                        f17.write('%s %s\n' %(inp['deltap'][i],inp['qy'][i]-inp['qy'][iel2]) )
+                        f20.write('%s %s\n' %(rad*inp['sigx1'][i],inp['qx_det'][i]))
+                        f21.write('%s %s\n' %(rad*inp['sigx1'][i],inp['qy_det'][i]))
+                        f25.write('%s %s %d %s %s\n' %(inp['qx_det'][i]+inp['qx'][i], inp['qy_det'][i]+inp['qy'][i],i+1,inp['qx_det'][i],inp['qy_det'][i]))
 
-                    f18.write('%s %f\n'%(rad*inp['sigx1'][i], inp['smearx'][i]))
+                    f18.write('%s %s\n'%(rad*inp['sigx1'][i], inp['smearx'][i]))
 
-                    f19.write('%s %f\n'%(rad*inp['sigx1'][i], inp['smeary'][i]))
+                    f19.write('%s %s\n'%(rad*inp['sigx1'][i], inp['smeary'][i]))
 
-                    f22.write('%s %f\n'%(rad*inp['sigx1'][i], rad1*inp['sigxminnld'][i]))
+                    f22.write('%s %s\n'%(rad*inp['sigx1'][i], rad1*inp['sigxminnld'][i]))
 
-                    f23.write('%s %f\n'%(rad*inp['sigx1'][i], rad1*inp['sigxavgnld'][i]))
+                    f23.write('%s %s\n'%(rad*inp['sigx1'][i], rad1*inp['sigxavgnld'][i]))
 
-                    f24.write('%s %f  %f\n'%(rad*inp['sigx1'][i], rad1*inp['sigxmaxnld'][i],inp['sigxmaxnld'][i]))
+                    f24.write('%s %s  %s\n'%(rad*inp['sigx1'][i], rad1*inp['sigxmaxnld'][i],inp['sigxmaxnld'][i]))
 
             f12.close()
             f13.close()
@@ -295,37 +271,6 @@ def main2(studyName):
             f25.close()
             f26.close()
             f27.close()
-
-            f.write(' %s         %6f    %6f    %6f    %6f    %6f   %6f\n'%( name1,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
-            f2.write('%s %s %s %s %s %s %s %s %s \n'%( name2, seed,angle,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
-        anumber+=1
-        f.close()
-    f2.close()
-    
-    
-    
-    
-
-    f = open('DA_%s.txt'%studyName, 'r')
-    final=np.genfromtxt(f,dtype=outtype)
-    f.close()
-
-    f1 = open('DA_%s_summary.txt'%studyName, 'w')
-    i=0
-    for angle in np.unique(final['angle']):
-        i+=1
-        study=final['study'][0]
-        mini = np.min(np.abs(final['alost1'][(final['angle']==angle)]))
-        mean =np.mean(np.abs(final['alost1'][(final['angle']==angle)&(final['alost1']!=0)]))
-        maxi = np.max(np.abs(final['alost1'][(final['angle']==angle)]))
-        nega = len(final['alost1'][(final['angle']==angle)&(final['alost1']<0)])
-        Amin = np.min(final['Amin'][final['angle']==angle])
-        Amax = np.max(final['Amax'][final['angle']==angle])
-        print study, angle, mini , mean, maxi,nega ,  Amin, Amax
-        f1.write('%s %d %.2f %.2f %.2f %.0f %.2f %.2f\n'%(name2, i, mini , mean, maxi,nega ,  Amin, Amax))
-
-    f1.close() 
-    return al,amax
 
 
 if __name__ == "__main__":
@@ -345,4 +290,4 @@ if __name__ == "__main__":
     if len(args)>1 :
         print "too many options: please provide only <study_name>"
         sys.exit()
-    al,amax=main2(sys.argv[1])
+    main2(sys.argv[1])
