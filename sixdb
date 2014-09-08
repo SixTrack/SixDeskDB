@@ -42,18 +42,22 @@ class SixDB(object):
         else:
             study=self.args[0]
             cmd=self.args[1]
-            try:
-              getattr(self,cmd)(study)
-            except Exception, e:
-              print
-              print "Error in `%s' command."%cmd
-              import traceback
-              print
-              exc_type, exc_value, exc_tb = sys.exc_info()
-              traceback.print_exception(exc_type, exc_value, exc_tb)
-              #print "%s: %s"%(e.__class__.__name__,e.message)
-              print
-              self.help(cmd)
+            if not hasattr(self,cmd):
+                print "Error: command `%s' illegal"%cmd
+                print self.help(cmd)
+            else:
+              try:
+                getattr(self,cmd)(study)
+              except Exception, e:
+                print
+                print "Error in `%s' command."%cmd
+                import traceback
+                print
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                traceback.print_exception(exc_type, exc_value, exc_tb)
+                #print "%s: %s"%(e.__class__.__name__,e.message)
+                print
+                self.help(cmd)
     def help(self,cmd=None):
         """Obtain help on commands
 Usage: sixdb <cmd> <help>
