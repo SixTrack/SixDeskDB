@@ -19,7 +19,7 @@ if sys.version_info < (2, 6):
   print "SixDeskDB requires Python version >=2.6"
   sys.exit(1)
 
-from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns
+from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns,PlotDaVsTurns,PlotCompDaVsTurns
 #from dbtocentral,config
 
 def str2bool(st):
@@ -54,13 +54,11 @@ class SixDB(object):
               #print "%s: %s"%(e.__class__.__name__,e.message)
               print
               self.help(cmd)
-    def quiet(self):
-        pass
     def help(self,cmd=None):
         """Obtain help on commands
 Usage: sixdb <cmd> <help>
         """
-        cmds="load_dir info da  da_vs_turns mad interactive".split()
+        cmds="load_dir info da  da_vs_turns plot_da_vs_turns plot_comp_da_vs_turns mad interactive".split()
         msg="""sixdb: command line interface of SixDeskDB
 Usage: sixdb <study> <cmd> <options> or sixdb <cmd> help
         """
@@ -77,6 +75,7 @@ Usage: sixdb <study> <cmd> <options> or sixdb <cmd> help
             print getattr(self,cmd).__doc__
         else:
             print "Command not found"
+            print "To get all command options type: sixdb help"
     def info(self,study):
        """Print basic infomation on the database.
 
@@ -101,106 +100,118 @@ files, e.g. ~/w1/sixjobs or ~/w1/sixjobs/studies/job_tracking."""
        SixDeskDB.from_dir(study)
     def mad(self,study):
         """Analyse the output of mad6t (HL-LHC specific)
-            Usage: sixdb <dbname> mad"""
+
+Usage: sixdb <dbname> mad"""
     def da_vs_turns(self,study):
-       """Plot DA vs turns.
+       """Create database DA vs turns.
+
+Usage: sixdb <dbname> da_vs_turns
     Options:
-    -createdaout   : create the DA.out files for the da vs turns
-                     analysis (default: True)
+    -force         : force to recalculate the da vs turns
     -turnstep      : steps in the number of turns (default: 100)
-    -tmax          : maximum number of turn (default: 1.e6)s
+    -tmax          : maximum number of turns 
+                     (default: max. number of turns tracked) 
+    -outfile       : survival data is saved in DAsurv.out
+                     and the da_vs_turns in DA.out"""
+       args=self.args
+       try:
+         db=SixDeskDB(study)
+       except ValueError: 
+         print('Error in da_vs_turns: database not found!')
+         sys.exit(0)
+       # define default values
+       force=False
+       turnstep=100
+       outfile=False
+       if '-force' in args: force=True
+       if '-outfile' in args: outfile=True
+       if '-turnstep' in args: turnstep=args[args.index('-turnstep')+1]
+       RunDaVsTurns(db,force,outfile,turnstep)
+
+    def plot_da_vs_turns(self,study):
+       """Create survival and da vs turns plots.
+
+Usage: sixdb <dbname> plot_da_vs_turns
+    Options:
     -ampmaxsurv    : maximum amplitude for survival plot 
                      (default: max. amp tracked)
     -amprangedavst : minimum maximum amplitude for da vs turns
                      plots (default: min. and max. amplitude tracked)
-    -plotlog       : if True plot da vs turns in logscale 
-                     (default: False)
-    -comp <compdirname> <lblname> <complblname>: flag to compare 
-                     two studies (default: False)
-        <compdirname> : analysis directory of study to compare with
-        <lblname>     : labelname to be used for <database> for plots
-        <complblname> : labelname to be used for <compdatabase> for 
-                        plots"""
+    -tmax          : maximum number of turns 
+                     (default: max. number of turns tracked) 
+    -plotlog       : plot da vs turns in logscale (default: False)"""
        args=self.args
        try:
-         createdaout=str2bool(args[args.index('-createdaout')+1])
-       except ValueError:
-         createdaout=True
-       try:
-         turnstep=args[args.index('-turnstep')+1]
-       except ValueError:
-         turnstep=100
-       try:
-         tmax=args[args.index('-tmax')+1]
-       except ValueError:
-         tmax=int(1.e6)
-       db=SixDeskDB(study)
-       try:
-         ampmaxsurv=args[args.index('-ampmaxsurv')+1]
-       except ValueError:
-         ampmaxsurv=max(max(db.get_amplitudes()))
-       try:
+         db=SixDeskDB(study)
+       except ValueError: 
+         print('Error in da_vs_turns: database not found!')
+         sys.exit(0)
+       # define default values
+       ampmaxsurv=max(max(db.get_amplitudes()))
+       ampmaxdavst=max(max(db.get_amplitudes()))
+       ampmindavst=min(min(db.get_amplitudes()))
+       tmax=db.get_turnsl()
+       plotlog=False
+       if '-ampmaxsurv' in args: ampmaxsurv=args[args.index('-ampmaxsurv')+1]
+       if '-amprangedavst' in args:
          ampmindavst=args[args.index('-amprangedavst')+1]
          ampmaxdavst=args[args.index('-amprangedavst')+2]
-       except ValueError:
-         ampmaxdavst=max(max(db.get_amplitudes()))
-         ampmindavst=min(min(db.get_amplitudes()))
+       if '-tmax' in args: tmax=args[args.index('-tmax')+1]
+       if '-plotlog' in args: plotlog=True
+       PlotDaVsTurns(db,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog)
+    def plot_comp_da_vs_turns(self,study):
+       """Comparison of survival and da vs turns plots.
+
+Usage: sixdb <dbname> plot_comp_da_vs_turns <compdbname>
+    Options:
+    -lblname       : labelname to be used for <dbname>
+    -complblname   : labelname to be used for <compdbname>
+    -ampmaxsurv    : maximum amplitude for survival plot 
+                     (default: max. amp tracked)
+    -amprangedavst : minimum maximum amplitude for da vs turns
+                     plots (default: min. and max. amplitude tracked)
+    -tmax          : maximum number of turns 
+                     (default: max. number of turns tracked) 
+    -plotlog       : plot da vs turns in logscale (default: False)"""
+       args=self.args
        try:
-         plotlog=str2bool(args[args.index('-plotlog')+1])
+         db=SixDeskDB(study)
        except ValueError:
-         plotlog=False
+         print('Error in plot_comp_da_vs_turns: database not found!')
+         sys.exit(0)
        try:
-         comp=str2bool(args[args.index('-comp')+1])
+         dbcomp=SixDeskDB(args[2])
        except ValueError:
-         comp=False
-         compdirname=''
-         lblname=''
-         complblname=''
-       # now handle exceptions if values are not well defined
-       try:
-         turnstep=int(float(turnstep))
-       except ValueError:
-         print('Error in command `da_vs_turns` - integer value expected for option `turnstep`')
-         sys,exit(0)
-       try:
-         tmax=int(float(tmax))
-       except ValueError:
-         print('Error in command `da_vs_turns` - integer value expected for option `tmax`')
-         sys,exit(0)
-       try:
-         ampmaxsurv=float(ampmaxsurv)
-       except ValueError:
-         print('Error in command `da_vs_turns` - float value expected for option `ampmaxsurv`')
-         sys,exit(0)
-       try:
-         ampmindavst=float(ampmindavst)
-       except ValueError:
-         print('Error in command `da_vs_turns` - float values expected for option `amprangedavst`')
-         sys,exit(0)
-       try:
-         ampmaxdavst=float(ampmaxdavst)
-       except ValueError:
-         print('Error in command `da_vs_turns` - float values expected for option `amprangedavst`')
-         sys,exit(0)
-       if(comp):
-         try:
-           compdirname=args[args.index('-compdirname')+1]
-           lblname=args[args.index('-lblname')+1]
-           complblname=args[args.index('-complblname')+1]
-         except ValueError:
-           print "Error for option -comp=True: If comp=True you have to specify the directory name of the comparison study (-compdirname) and the labelnames for plotting (-lblname,-complblname)"
-           sys.exit(0)
-       RunDaVsTurns(db,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst,plotlog,comp,compdirname,lblname,complblname)
+         print('Error in plot_comp_da_vs_turns: database of comparison study not found!')
+         sys.exit(0)
+       # define default values
+       lblname=db.LHCDescrip
+       complblname=dbcomp.LHCDescrip
+       amp=db.get_amplitudes()+dbcomp.get_amplitudes()
+       ampmaxsurv=max(max(amp))
+       ampmaxdavst=max(max(amp))
+       ampmindavst=min(min(amp))
+       tmax=max(db.get_turnsl(),dbcomp.get_turnsl())
+       plotlog=False
+       if '-lblname' in args: lblname=args[args.index('-lblname')+1]
+       if '-complblname' in args: complblname=args[args.index('-complblname')+1]
+       if '-ampmaxsurv' in args: ampmaxsurv=args[args.index('-ampmaxsurv')+1]
+       if '-amprangedavst' in args:
+         ampmindavst=args[args.index('-amprangedavst')+1]
+         ampmaxdavst=args[args.index('-amprangedavst')+2]
+       if '-tmax' in args: tmax=args[args.index('-tmax')+1]
+       if '-plotlog' in args: plotlog=True
+       PlotCompDaVsTurns(db,dbcomp,lblname,complblname,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog)
+
     def interactive(self,study):
         """Open an IPython shell with a database loeaded as db
         Usage: sixdb <dbname> interactive
         """
+        print
         import IPython
         import matplotlib.pyplot as pl
         import numpy, scipy
         db=SixDeskDB(study)
-        argv=sys.argv[:1]+['quiet','--pylab']
-        print
         print """job_hllhc10_test10.db open as db
 Example:
 print db.get_col('sturns1',1,45)
@@ -208,7 +219,7 @@ db.plot_col('sturns1',1,45)
 db.plot_polar_col('sturns1',1)
 """
         print
-        IPython.start_ipython(user_ns={'db':db},argv=argv)
+        IPython.start_ipython(user_ns={'db':db},argv=['--pylab'])
     def set(self,study):
         """Redefine environment variables
         Usage: sixdb <dbname> set <key1> <value1> ...

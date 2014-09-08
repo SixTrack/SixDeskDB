@@ -98,6 +98,18 @@ def dict_to_list(dict):
         break
   return lst
 
+def ndarray_to_list(dict):
+  '''convert dictionary to list for DB insert'''
+  lst = []
+  for i in sorted(dict.keys()):
+    for j in dict[i]:
+      if isinstance(j, list):
+        lst.append(j)
+      else:
+        lst.append(dict[i])
+        break
+  return lst
+
 def store_dict(cur, colName, table, data):
   cur.execute("select max(%s) from %s" % (colName, table))
   temp = cur.fetchone()[0]
@@ -211,7 +223,7 @@ class SixDeskDB(object):
     db.st_mad6t_results()
     db.st_six_beta()
     db.st_six_input()
-    db.st_six_results()
+    # db.st_six_results()
     return db
 
   def update_sixdeskenv(self,studyDir):
@@ -341,7 +353,7 @@ class SixDeskDB(object):
     a = tab.selectl('distinct run_id')
     if a:
       a = [str(i[0]) for i in a]
-    print "Looking for fort.2, fort.8, fort.16 in\n %s"%workdir
+    print "Looking for fort.2, fort.8, fort.16 in %s"%workdir
     for dirName, _, fileList in os.walk(workdir):
       if 'mad.dorun' in dirName and not (dirName.split('/')[-1] in a):
         print 'found new mad run',dirName.split('/')[-1]
@@ -527,46 +539,77 @@ class SixDeskDB(object):
     env_var = self.env_var
     cols = SQLTable.cols_from_fields(tables.Six_In.fields)
     tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
+    cols1 = SQLTable.cols_from_fields(tables.Six_Res.fields)
+    tab1 = SQLTable(conn,'six_results',cols1,tables.Six_Res.key)
     #tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
     maxtime = tab.selectl("max(mtime)")[0][0]
+    maxtime10 = tab1.selectl("max(mtime)")[0][0]
     count = 0
+    count10 = 0
     if not maxtime:
       maxtime = 0
-    cols = SQLTable.cols_from_fields(tables.Files.fields)
-    tab1 = SQLTable(conn,'files',cols,tables.Files.key)
+    if not maxtime10:
+      maxtime10 = 0
+    # cols = SQLTable.cols_from_fields(tables.Files.fields)
+    # tab1 = SQLTable(conn,'files',cols,tables.Files.key)
     workdir = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
     extra_files = []
     rows = []
+    rows10 = []
     six_id = 1
-    print "Looking for fort.3.gz files in\n %s"%workdir
+    print "Looking for fort.3.gz, fort.10.gz files in\n %s"%workdir
     #cmd = """find %s -type f -name 'fort.3.gz'"""%(workdir)
     #a = os.popen(cmd).read().split('\n')[:-1]
     #print 'fort.3 files =',len(a)
     file_count=0
+    file_count10 = 0
     for dirName in glob.iglob(os.path.join(workdir,'*','*','*','*','*','*')):
       f3=os.path.join(dirName, 'fort.3.gz')
       f10=os.path.join(dirName, 'fort.10.gz')
       #dirName,files=os.path.split(dirName.strip())
       ranges= dirName.split('/')[-3]
-      if '_' in ranges and os.path.exists(f3):
-        file_count+=1
+      if '_' in ranges:
+        fn3_exists=fn10_exists=False
+        if os.path.exists(f3):
+            file_count+=1
+            fn3_exists=True
+        if os.path.exists(f10):
+            file_count10 += 1
+            fn10_exists=True
         if file_count%100==0:
-            sys.stdout.write('.')
-            sys.stdout.flush()
-        mtime3 = os.path.getmtime(f3)
-        if mtime3>maxtime:
-            dirn = dirName.replace(workdir + '/', '')
-            dirn = re.split('/|_', dirn)
-            dirn = [six_id] + dirn
-            dirn.extend([sqlite3.Binary(open(f3).read()),mtime3])
-            rows.append(dirn)
-            dirn = []
-            six_id += 1
-            count += 1
+           sys.stdout.write('.')
+           sys.stdout.flush()
+        if fn3_exists:
+            mtime3 = os.path.getmtime(f3)
+            if mtime3>maxtime:
+                dirn = [six_id] + re.split('/|_', dirName)[-8:]
+                dirn.extend([sqlite3.Binary(open(f3).read()),mtime3])
+                if fn10_exists:
+                  mtime10 = os.path.getmtime(f10)
+                  if mtime10 > maxtime:
+                    FileObj = gzip.open(f10,"r").read().split("\n")[:-1]
+                    countl = 1
+                    for lines in FileObj:
+                      rows10.append([six_id,countl]+lines.split()+[mtime10])
+                      countl += 1
+                    count10 += 1
+                    rows.append(dirn)
+                six_id += 1
+                count += 1
+        if len(rows) == 6000:
+          tab.insertl(rows)
+          tab1.insertl(rows10)
+          rows = []
+          rows10 = []
     if rows:
       tab.insertl(rows)
+      tab1.insertl(rows10)
       rows = []
     print '\n no of fort.3 updated/found: %d/%d'%(count,file_count)
+    print ' no of fort.10 updated/found: %d/%d'%(count10,file_count10)
+    sql="""CREATE VIEW IF NOT EXISTS results AS SELECT * FROM six_input INNER JOIN six_results
+           ON six_input.id==six_results.six_input_id"""
+    self.conn.cursor().execute(sql)
 
   def st_six_results(self):
     '''store fort.10 values'''
@@ -1081,6 +1124,11 @@ class SixDeskDB(object):
     ''' get results count from DB '''
     return self.execute('SELECT count(*) FROM six_results')[0][0]/30
 
+  def get_turnsl(self):
+    ''' get turnsl = maximum number of turns for long queue from env table'''
+    env_var = self.env_var
+    return int(env_var['turnsl'])
+
   def get_seeds(self):
     ''' get seeds from env table'''
     env_var = self.env_var
@@ -1186,22 +1234,6 @@ class SixDeskDB(object):
     p['sixdeskpairs']=max(data['row'])+1
     p['LHCDescrip']=str(data['study'][0])
     return p
-
-  def get_surv(self,seed):
-    '''get survival turns from DB calculated from emitI and emitII'''
-    #change for new db version
-    emit=float(self.env_var['emit'])
-    gamma=float(self.env_var['gamma'])
-    cmd="""SELECT angle,emitx+emity,
-         CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
-         FROM six_results,six_input WHERE seed=%s and id=six_input_id
-         ORDER BY angle,emitx+emity"""
-    cur=self.conn.cursor().execute(cmd%seed)
-    ftype=[('angle',float),('sigma',float),('sturn',float)]
-    data=np.fromiter(cur,dtype=ftype)
-    data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
-    angles=len(set(data['angle']))
-    return data.reshape(angles,-1)
 
   def get_polar_col(self,col,seed,smooth=None):
     a,s,t=self.get_2d_col(col,seed)
@@ -1442,7 +1474,7 @@ class SixDeskDB(object):
              ('distp','float'),('dist','float'),
              ('sturns1' ,'int'),('sturns2','int'),('turn_max','int'),
              ('amp1','float'),('amp2','float'),('angle','float'),
-             ('six_results.mtime','int')]
+             ('six_results.mtime','float')]
     names=','.join(zip(*rectype)[0])
     turnse=self.env_var['turnse']
     tunex=float(self.env_var['tunex'])
@@ -1640,6 +1672,80 @@ class SixDeskDB(object):
         name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
         fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
     fhplot.close()
+
+# -------------------------------- da_vs_turns -----------------------------------------------------------
+  def st_da_vst(self,data):
+    ''' store da vs turns data '''
+    cols  = SQLTable.cols_from_dtype(data.dtype)
+    tab   = SQLTable(self.conn,'da_vsturn',cols,tables.Da_Vst.key)
+    tab.insert(data)
+  def get_da_vst(self,seed,tune):
+    '''get da vs turns data from DB'''
+    #change for new db version
+    (tunex,tuney)=tune
+    cmd="""SELECT *
+         FROM da_vsturn WHERE seed=%s and tunex=%s and tuney=%s
+         ORDER BY nturn"""
+    cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
+    ftype=[('seed',int),('tunex',float),('tuney',float),('DAwtrap',float),('DAstrap',float),('DAwsimp',float),('DAssimp',float),('DAstraperr',float),('DAstraperrang',float),('DAstraperramp',float),('nturn',float),('tlossmin',float),('mtime',float)]
+    data=np.fromiter(cur,dtype=ftype)
+    return data
+  def get_surv(self,seed,tune):
+    '''get survival turns from DB calculated from emitI and emitII'''
+    #change for new db version
+    (tunex,tuney)=tune
+    emit=float(self.env_var['emit'])
+    gamma=float(self.env_var['gamma'])
+    cmd="""SELECT angle,emitx+emity,
+         CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
+         FROM six_results,six_input WHERE seed=%s and tunex=%s and tuney=%s and id=six_input_id
+         ORDER BY angle,emitx+emity"""
+    cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
+    ftype=[('angle',float),('sigma',float),('sturn',float)]
+    data=np.fromiter(cur,dtype=ftype)
+    data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
+    angles=len(set(data['angle']))
+    return data.reshape(angles,-1)
+
+  def plot_da_vst(self,seed,tune,ampmin,ampmax,tmax,slog):
+    """dynamic aperture vs number of turns, blue=simple average, red=weighted average"""
+    data=self.get_da_vst(seed,tune)
+    pl.close('all')
+    pl.figure(figsize=(6,6))
+    pl.errorbar(data['DAstrap'],data['tlossmin'],xerr=data['DAstraperr'],fmt='bo',markersize=2,label='simple average')
+    pl.plot(data['DAwtrap'],data['tlossmin'],'ro',markersize=3,label='weighted average')
+    pl.title('seed '+str(seed))
+    pl.xlim([ampmin,ampmax])
+    pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)
+    pl.ylabel(r'Number of turns',labelpad=15,fontsize=12)
+    plleg=pl.gca().legend(loc='best')
+    for label in plleg.get_texts():
+        label.set_fontsize(12)
+    if(slog):
+      pl.ylim([5.e3,tmax])
+      pl.yscale('log')
+    else:
+      pl.ylim([0,tmax])
+      pl.gca().ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+  def plot_surv_2d(self,seed,tune,ampmax=14):
+    '''survival plot, blue=all particles, red=stable particles'''
+    data=self.get_surv(seed,tune)
+    s,a,t=data['sigma'],data['angle'],data['sturn']
+    s,a,t=s[s>0],a[s>0],t[s>0]#delete 0 values
+    tmax=np.max(t)
+    sx=s*np.cos(a*np.pi/180)
+    sy=s*np.sin(a*np.pi/180)
+    sxstab=s[t==tmax]*np.cos(a[t==tmax]*np.pi/180)
+    systab=s[t==tmax]*np.sin(a[t==tmax]*np.pi/180)
+    pl.figure(figsize=(6,6))
+    pl.scatter(sx,sy,20*t/tmax,marker='o',color='b',edgecolor='none')
+    pl.scatter(sxstab,systab,4,marker='o',color='r',edgecolor='none')
+    pl.title('seed '+str(seed),fontsize=12)
+    pl.xlim([0,ampmax])
+    pl.ylim([0,ampmax])
+    pl.xlabel(r'Horizontal amplitude [$\sigma$]',labelpad=10,fontsize=12)
+    pl.ylabel(r'Vertical amplitude [$\sigma$]',labelpad=10,fontsize=12)
+
 
 if __name__ == '__main__':
   SixDeskDB.from_dir('./')

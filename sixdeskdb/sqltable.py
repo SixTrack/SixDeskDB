@@ -77,6 +77,7 @@ class SQLTable(object):
     self.cols=cols
     self.keys=keys
   def insert(self,data,replace=True):
+    '''insert structured array into databse table'''
     db=self.db;table=self.name
     if replace:
       sql="REPLACE INTO %s(%s) VALUES (%s)"
