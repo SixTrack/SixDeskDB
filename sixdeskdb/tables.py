@@ -2,7 +2,7 @@ class Env(object):
   fields=[
   ('keyname','str','key'),
   ('value','str','value'),
-  ('mtime','double','last modification time')]
+  ('mtime','float','last modification time')]
   key=['keyname']
 
 class Mad_Run(object):
@@ -13,7 +13,7 @@ class Mad_Run(object):
   ('mad_out','blob','mad_out file'),
   ('mad_lsf','blob','mad_lsf file'),
   ('mad_log','blob','mad_log file'),
-  ('mad_out_mtime','double','last modification time')]
+  ('mad_out_mtime','float','last modification time')]
   key=['run_id','seed']
 
 class Da_Res(object):
@@ -31,35 +31,35 @@ class Mad_Res(object):
   ('fort2','blob','fort2 file'),
   ('fort8','blob','fort8 file'),
   ('fort16','blob','fort16 file'),
-  ('fort_mtime','double','last modification time')]
+  ('fort_mtime','float','last modification time')]
   key=['seed']
 
 class Six_Be(object):
   fields=[
   ('seed', 'int', 'seed value'),
-  ('tunex', 'double', 'tunex value'),
-  ('tuney' ,'double', 'tuney value'),
-  ('beta11', 'double', 'beta11 value'),
-  ('beta12', 'double', 'beta12 value'),
-  ('beta22', 'double', 'beta12 value'),
-  ('beta21', 'double', 'beta12 value'),
-  ('qx', 'double', 'qx value'),
-  ('qy', 'double', 'qy value'),
-  ('dqx', 'double', 'dqx value'),
-  ('dqy', 'double', 'dqy value'),
-  ('x', 'double', 'x value'),
-  ('xp', 'double', 'xp value'),
-  ('y', 'double', 'y value'),
-  ('yp', 'double', 'yp value'),
-  ('sigma', 'double', 'sigma value'),
-  ('delta', 'double', 'delta value'),
-  ('emitn', 'double', 'emitn value'),
-  ('gamma', 'double', 'gamma value'),
-  ('deltap', 'double', 'deltap value'),
-  ('qx1', 'double', 'qx1 value'),
-  ('qy1', 'double', 'qy1 value'),
-  ('qx2', 'double', 'qx2 value'),
-  ('qy2', 'double','qy2 value')]
+  ('tunex', 'float', 'tunex value'),
+  ('tuney' ,'float', 'tuney value'),
+  ('beta11', 'float', 'beta11 value'),
+  ('beta12', 'float', 'beta12 value'),
+  ('beta22', 'float', 'beta12 value'),
+  ('beta21', 'float', 'beta12 value'),
+  ('qx', 'float', 'qx value'),
+  ('qy', 'float', 'qy value'),
+  ('dqx', 'float', 'dqx value'),
+  ('dqy', 'float', 'dqy value'),
+  ('x', 'float', 'x value'),
+  ('xp', 'float', 'xp value'),
+  ('y', 'float', 'y value'),
+  ('yp', 'float', 'yp value'),
+  ('sigma', 'float', 'sigma value'),
+  ('delta', 'float', 'delta value'),
+  ('emitn', 'float', 'emitn value'),
+  ('gamma', 'float', 'gamma value'),
+  ('deltap', 'float', 'deltap value'),
+  ('qx1', 'float', 'qx1 value'),
+  ('qy1', 'float', 'qy1 value'),
+  ('qx2', 'float', 'qx2 value'),
+  ('qy2', 'float','qy2 value')]
   key=['seed','tunex','tuney']
 
 class Six_In(object):
@@ -67,14 +67,14 @@ class Six_In(object):
   ('id', 'int', 'unique id'),
   ('seed', 'int', 'seed value'),
   ('simul', 'string', 'simul'),
-  ('tunex', 'double', 'tunex value'),
-  ('tuney' ,'double', 'tuney value'),
-  ('amp1', 'double', 'amp1 value'),
-  ('amp2', 'double', 'amp2 value'),
+  ('tunex', 'float', 'tunex value'),
+  ('tuney' ,'float', 'tuney value'),
+  ('amp1', 'float', 'amp1 value'),
+  ('amp2', 'float', 'amp2 value'),
   ('turns', 'string', 'turns value'),
-  ('angle', 'double', 'angle value'),
+  ('angle', 'float', 'angle value'),
   ('fort3','blob','fort3 file'),
-  ('mtime','double','last modification time')]
+  ('mtime','float','last modification time')]
   key=['seed','simul','tunex','tuney','amp1','amp2','turns','angle']
 
 class Six_Res(object):
@@ -144,10 +144,26 @@ class Six_Res(object):
   ('mtime','float','last modification time')]
   key=['six_input_id','row_num']
 
+
+class Da_Post(object):
+  fields=[('name', 'str',''),
+         ('tunex','float',''),
+         ('tuney','float',''),
+         ('seed','int',''),
+         ('angle','float',''),
+         ('achaos','float',''),
+         ('achaos1','float',''),
+         ('alost1','float',''),
+         ('alost2','float',''),
+         ('Amin','float',''),
+         ('Amax','float',''),
+         ('mtime','float','')]
+
 class Files(object):
   fields=[
   ('path','str','file path'),
-  ('content','blob','file content')]
+  ('content','blob','file content'),
+  ('mtime','float','file modification time')]
   key=['path']
 
 acc_var = ['BNL','COLUMNS','CORR_TEST','G_FILENAME_ENCODING','LHCDesHome',

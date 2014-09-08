@@ -152,9 +152,8 @@ def plot_da_vs_turns_comp(data,lbldata,datacomp,lbldatacomp,seed,ampmin=2,ampmax
     pl.gca().ticklabel_format(style='sci',axis='y',scilimits=(0,0))
 
 # main analysis - putting the pieces together
-def RunDaVsTurns(dbname,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst,plotlog=False,comp=False,compdirname='',lblname='',complblname=''):
+def RunDaVsTurns(db,createdaout,turnstep,tmax,ampmaxsurv,ampmindavst,ampmaxdavst,plotlog=False,comp=False,compdirname='',lblname='',complblname=''):
   '''Da vs turns analysis for study dbname'''
-  db=SixDeskDB(dbname)
 # create directory structure and delete old files if createdaout=true
   count=0
   for seed in db.get_seeds():
