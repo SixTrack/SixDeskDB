@@ -17,6 +17,9 @@ import copy
 
 try:
   import numpy as np
+  import matplotlib
+  if 'DISPLAY' not in os.environ:
+      matplotlib.use('Agg')
   import matplotlib.pyplot as pl
   import scipy.signal
 except ImportError:
@@ -1488,9 +1491,7 @@ class SixDeskDB(object):
     angles=np.unique(tmp['angle'])
     seeds=np.unique(tmp['seed'])
     mtime=tmp['six_results.mtime'].max()
-    outtype=SQLTable.dtype_from_fields(tables.Da_Post.fields)
-    final=np.zeros(len(seeds)*len(angles),dtype=outtype)
-    irec=0
+    final=[]
     for angle in angles:
         fndot='DAres.%s.%s.%s.%d'%(self.LHCDescrip,sixdesktunes,turnse,anumber)
         fndot=os.path.join(dirname,fndot)
@@ -1596,20 +1597,18 @@ class SixDeskDB(object):
                 name1+=" "
             fmt=' %-39s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
             fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
-            final[irec]=(name2, tunex, tuney, seed,
+            final.append([name2, tunex, tuney, seed,
                            angle,achaos,achaos1,alost1,alost2,
-                           rad*inp['sigx1'][0],rad*inp['sigx1'][iel],mtime)
-            irec+=1
+                           rad*inp['sigx1'][0],rad*inp['sigx1'][iel],mtime])
         anumber+=1
         fhdot.close()
         print fndot
-    cols=SQLTable.cols_from_dtype(final.dtype)
+    cols=SQLTable.cols_from_fields(tables.Da_Post.fields)
     datab=SQLTable(self.conn,'da_post',cols)
-    datab.insert(final)
+    datab.insertl(final)
 
   def mk_da(self,force=False):
     dirname=self.mk_analysis_dir()
-    outtype=SQLTable.dtype_from_fields(tables.Da_Post.fields)
     cols=SQLTable.cols_from_fields(tables.Da_Post.fields)
     datab=SQLTable(self.conn,'da_post',cols)
     final=datab.select(orderby='angle,seed')
@@ -1654,7 +1653,8 @@ class SixDeskDB(object):
         Amax = np.max(final['Amax'][idxangle])
 
         for k in eqaper:
-          print "Seed #:  %d Dynamic Aperture below:  %.2f Sigma" %( k, final['Amin'][k])
+          msg="Angle %d, Seed %d: Dynamic Aperture below:  %.2f Sigma"
+          print msg %( final['angle'][k],final['seed'][k], final['Amin'][k])
 
         if i == 0:
           mini  = -Amax
