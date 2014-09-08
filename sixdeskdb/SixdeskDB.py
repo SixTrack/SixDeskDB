@@ -1675,12 +1675,12 @@ class SixDeskDB(object):
 
 # -------------------------------- da_vs_turns -----------------------------------------------------------
   def st_da_vst(self,data):
-    ''' store sixdesktunes, betavalues '''
+    ''' store da vs turns data '''
     cols  = SQLTable.cols_from_dtype(data.dtype)
     tab   = SQLTable(self.conn,'da_vsturn',cols,tables.Da_Vst.key)
     tab.insert(data)
   def get_da_vst(self,seed,tune):
-    '''get survival turns from DB calculated from emitI and emitII'''
+    '''get da vs turns data from DB'''
     #change for new db version
     (tunex,tuney)=tune
     cmd="""SELECT *
@@ -1706,6 +1706,27 @@ class SixDeskDB(object):
     data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
     angles=len(set(data['angle']))
     return data.reshape(angles,-1)
+
+  def plot_da_vst(self,seed,tune,ampmin,ampmax,tmax,slog):
+    """dynamic aperture vs number of turns, blue=simple average, red=weighted average"""
+    data=self.get_da_vst(seed,tune)
+    pl.close('all')
+    pl.figure(figsize=(6,6))
+    pl.errorbar(data['DAstrap'],data['tlossmin'],xerr=data['DAstraperr'],fmt='bo',markersize=2,label='simple average')
+    pl.plot(data['DAwtrap'],data['tlossmin'],'ro',markersize=3,label='weighted average')
+    pl.title('seed '+str(seed))
+    pl.xlim([ampmin,ampmax])
+    pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)
+    pl.ylabel(r'Number of turns',labelpad=15,fontsize=12)
+    plleg=pl.gca().legend(loc='best')
+    for label in plleg.get_texts():
+        label.set_fontsize(12)
+    if(slog):
+      pl.ylim([5.e3,tmax])
+      pl.yscale('log')
+    else:
+      pl.ylim([0,tmax])
+      pl.gca().ticklabel_format(style='sci', axis='y', scilimits=(0,0))
   def plot_surv_2d(self,seed,tune,ampmax=14):
     '''survival plot, blue=all particles, red=stable particles'''
     data=self.get_surv(seed,tune)
