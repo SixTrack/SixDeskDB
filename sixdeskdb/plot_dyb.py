@@ -10,12 +10,28 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+
+
+
+# PART TO BE EDITED ========================================================================
+Elhc=2.5                    #normalized emittance as in "general input"
+Einj=7460.5                 #gamma as in "general input"
+#workarea='/afs/cern.ch/user/d/dbanfi/SixTrack_NEW'  #where input db is, and where output will be written
+# DO NOT EDIT BEYOND HERE IF YOU'RE NOT REALLY SURE  =======================================    
+
 rectype=[('seed','int'),('qx','float'),('qy','float'),('betx','float'),('bety','float'),('sigx1','float'),('sigy1','float'),('deltap','float'),('emitx','float'),('emity','float'),
         ('sigxminnld', 'float'),('sigxavgnld' ,'float') ,('sigxmaxnld', 'float'),('sigyminnld', 'float'),('sigyavgnld' ,'float'),
         ('sigymaxnld', 'float'),('betx2','float'),('bety2','float'),('distp','float'),('dist','float'),('qx_det','float'),('qy_det','float'),('sturns1' ,'int'),
         ('sturns2','int'),('turn_max','int'),('amp1','float'),('amp2','float'),('angle','float'),('smearx','float'),('smeary','float')]
 names='seed,qx,qy,betx,bety,sigx1,sigy1,deltap,emitx,emity,sigxminnld,sigxavgnld,sigxmaxnld,sigyminnld,sigyavgnld,sigxmaxnld,betx2,bety2,distp,dist,qx_det,qy_det,sturns1,sturns2,turn_max,amp1,amp2,angle,smearx,smeary'
 outtype=[('study','S100'),('seed','int'),('angle','float'),('achaos','float'),('achaos1','float'),('alost1','float'),('alost2','float'),('Amin','float'),('Amax','float')]
+
+def plot_averem():
+
+    fhtxt = open('fort.22', 'r')
+    f22=np.genfromtxt(fhtxt,dtype=[('a','float'),('b','float')])
+    fhtxt.close()
+
 
 def main2(studyName):
     database='%s.db'%(studyName)
@@ -24,10 +40,16 @@ def main2(studyName):
     else:
         print "ERROR: file  %s does not exists!" %(database)
         sys.exit()
+    f2 = open('DA_%s.txt'%studyName, 'w')
+    LHCDesName=sd.env_var['LHCDesName']
+    turnse=sd.env_var['turnse']
+    sixdesktunes='%s_%s'%(sd.env_var['tunex'], sd.env_var['tuney'])
+    ns1l=sd.env_var['ns1l']
+    ns2l=sd.env_var['ns2l']
 
     tmp = np.array(sd.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
     Elhc,Einj = sd.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
-
+    anumber = 1
     
     ment=1000
     epsilon = 1e-38
@@ -38,6 +60,7 @@ def main2(studyName):
     iend = -999
 
     for angle in np.unique(tmp['angle']):      
+        f = open('DAres_%s.%s.%s.%d'%(LHCDesName,sixdesktunes,turnse,anumber), 'w')
         for seed in np.unique(tmp['seed']):
                     
             tl = np.zeros(ntlmax*ntlint+1)
@@ -129,7 +152,6 @@ def main2(studyName):
                     rad1=np.sqrt(1+rad1*rad1)/sigma
             else:
                 rad1 = 1
-
             ich1 = 0
             ich2 = 0
             ich3 = 0 
@@ -188,6 +210,15 @@ def main2(studyName):
           
             alost3 = min(alost3, min(inp['sturns1']),min(inp['sturns2']))
            
+
+            name2 = 'DAres.%s.%s.%s'%(studyName,sixdesktunes,turnse)
+            name1 = '%s%ss%s%s-%s%s.%d'%(LHCDesName,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
+            
+            if(seed<10):
+                name1+=" "
+            if(anumber<10):
+                name1+=" " 
+
             if achaos== 0:
                 achaos=amin
             else:
@@ -272,6 +303,57 @@ def main2(studyName):
             f26.close()
             f27.close()
 
+            f.write(' %s         %6f    %6f    %6f    %6f    %6f   %6f\n'%( name1,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
+            f2.write('%s %s %s %s %s %s %s %s %s \n'%( name2, seed,angle,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
+        anumber+=1
+        f.close()
+    f2.close()
+    
+    
+    fhtxt = open('DA_%s.txt'%studyName, 'r')
+    final=np.genfromtxt(fhtxt,dtype=outtype)
+    fhtxt.close()
+
+    fnplot='DAres.%s.%s.%s.plot'%(LHCDesName,sixdesktunes,turnse)
+    fhplot = open(fnplot, 'w')
+    fn=0
+
+    for angle in np.unique(final['angle']):
+        fn+=1
+        study= final['study'][0]
+        idxangle=final['angle']==angle
+        idx     =idxangle&(final['alost1']!=0)
+        idxneg  =idxangle&(final['alost1']<0)
+        mini, smini = np.min(np.abs(final['alost1'][idx])), np.argmin(np.abs(final['alost1'][idx]))
+        maxi, smaxi = np.max(np.abs(final['alost1'][idx])), np.argmax(np.abs(final['alost1'][idx]))
+        toAvg = np.abs(final['alost1'][idx])
+        i = len(toAvg)
+        mean = np.mean(toAvg)
+        idxneg = (final['angle']==angle)&(final['alost1']<0)
+        eqaper = np.where(final['alost2'] == final['Amin'])[0]
+        nega = len(final['alost1'][idxneg])
+        Amin = np.min(final['Amin'][idxangle])
+        Amax = np.max(final['Amax'][idxangle])
+
+        for k in eqaper:
+          print "Seed #:  %d Dynamic Aperture below:  %.2f Sigma\n" %( k, final['Amin'][k])
+
+        if i == 0:
+          mini  = -Amax
+          maxi  = -Amax
+          mean  = -Amax
+        else:
+          if i < int(sd.env_var['iend']):
+            maxi = -Amax
+          elif len(eqaper)>0:
+            mini = -Amin
+          print "Minimum:  %.2f  Sigma at Seed #: %d\n" %(mini, smini)
+          print "Maximum:  %.2f  Sigma at Seed #: %d\n" %(maxi, smaxi)
+          print "Average: %.2f Sigma\n " %(mean)
+        
+        print "# of (Aav-A0)/A0 >10%%:  %d\n"  %nega        
+        fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
+    fhplot.close()
 
 if __name__ == "__main__":
     try:
@@ -291,3 +373,4 @@ if __name__ == "__main__":
         print "too many options: please provide only <study_name>"
         sys.exit()
     main2(sys.argv[1])
+    plot_averem()
