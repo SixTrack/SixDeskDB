@@ -8,8 +8,8 @@ from SixdeskDB import SixDeskDB,tune_dir
 
 # basic functions
 def ang_to_i(ang,angmax):
-  """converts angle [degrees] to index (sixtrack)"""
-  return int(ang/(90./(angmax+1))-1)
+  """converts angle [degrees] to index (sixtrackindex-1, e.g. for 59 angles [0,...,58])"""
+  return int(round(ang/(90./(angmax+1))-1))
 
 # functions necessary for the analysis
 def get_min_turn_ang(s,t,a,it):
@@ -52,7 +52,6 @@ def mk_da_vst(data,seed,tune,turnstep):
   (tunex,tuney)=tune
   s,a,t=data['sigma'],data['angle'],data['sturn']
   tmax=np.max(t[s>0])#maximum number of turns
-#  print tmax
   #set the 0 in t to tmax*100 in order to check if turnnumber<it (any(tang[tang<it])<it in get_min_turn_ang)
   t[s==0]=tmax*100
   angmax=len(a[:,0])#number of angles

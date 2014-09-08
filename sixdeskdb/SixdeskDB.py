@@ -98,18 +98,6 @@ def dict_to_list(dict):
         break
   return lst
 
-def ndarray_to_list(dict):
-  '''convert dictionary to list for DB insert'''
-  lst = []
-  for i in sorted(dict.keys()):
-    for j in dict[i]:
-      if isinstance(j, list):
-        lst.append(j)
-      else:
-        lst.append(dict[i])
-        break
-  return lst
-
 def store_dict(cur, colName, table, data):
   cur.execute("select max(%s) from %s" % (colName, table))
   temp = cur.fetchone()[0]
@@ -1698,9 +1686,9 @@ class SixDeskDB(object):
     gamma=float(self.env_var['gamma'])
     cmd="""SELECT angle,emitx+emity,
          CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
-         FROM six_results,six_input WHERE seed=%s and tunex=%s and tuney=%s and id=six_input_id
+         FROM six_results,six_input WHERE seed=%s AND id=six_input_id
          ORDER BY angle,emitx+emity"""
-    cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
+    cur=self.conn.cursor().execute(cmd%(seed))
     ftype=[('angle',float),('sigma',float),('sturn',float)]
     data=np.fromiter(cur,dtype=ftype)
     data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
@@ -1722,10 +1710,10 @@ class SixDeskDB(object):
     for label in plleg.get_texts():
         label.set_fontsize(12)
     if(slog):
-      pl.ylim([5.e3,tmax])
+      pl.ylim([5.e3,float(tmax)])
       pl.yscale('log')
     else:
-      pl.ylim([0,tmax])
+      pl.ylim([0,float(tmax)])
       pl.gca().ticklabel_format(style='sci', axis='y', scilimits=(0,0))
   def plot_surv_2d(self,seed,tune,ampmax=14):
     '''survival plot, blue=all particles, red=stable particles'''

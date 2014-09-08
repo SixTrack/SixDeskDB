@@ -202,7 +202,6 @@ Usage: sixdb <dbname> plot_comp_da_vs_turns <compdbname>
        if '-tmax' in args: tmax=args[args.index('-tmax')+1]
        if '-plotlog' in args: plotlog=True
        PlotCompDaVsTurns(db,dbcomp,lblname,complblname,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog)
-
     def interactive(self,study):
         """Open an IPython shell with a database loeaded as db
         Usage: sixdb <dbname> interactive
