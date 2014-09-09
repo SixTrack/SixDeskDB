@@ -2,7 +2,8 @@ rm -r job_hllhc10_test8.db job_hllhc10_test8
 
 if [ ! -f sixdeskenv ];
 then
-  tar xvfz simple.tgz;
+  echo "expanding data in simple.tgz"
+  tar xfz simple.tgz;
 fi
 
 #../../sixdb load_dir .

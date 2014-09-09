@@ -1647,14 +1647,14 @@ class SixDeskDB(object):
         i = len(toAvg)
         mean = np.mean(toAvg)
         idxneg = (final['angle']==angle)&(final['alost1']<0)
-        eqaper = np.where(final['alost2'] == final['Amin'])[0]
+        eqaper = np.where((final['alost2'] == final['Amin']))[0]
         nega = len(final['alost1'][idxneg])
         Amin = np.min(final['Amin'][idxangle])
         Amax = np.max(final['Amax'][idxangle])
 
-        for k in eqaper:
-          msg="Angle %d, Seed %d: Dynamic Aperture below:  %.2f Sigma"
-          print msg %( final['angle'][k],final['seed'][k], final['Amin'][k])
+        #for k in eqaper:
+        #  msg="Angle %d, Seed %d: Dynamic Aperture below:  %.2f Sigma"
+        #  print msg %( final['angle'][k],final['seed'][k], final['Amin'][k])
 
         if i == 0:
           mini  = -Amax
