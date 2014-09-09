@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# python re-implementation of readplotb.f  
+# python re-implementation of readplotb.f + read10b.f
 # NOTA: please use python version >=2.6   
 
 import sys
@@ -26,11 +26,25 @@ rectype=[('seed','int'),('qx','float'),('qy','float'),('betx','float'),('bety','
 names='seed,qx,qy,betx,bety,sigx1,sigy1,deltap,emitx,emity,sigxminnld,sigxavgnld,sigxmaxnld,sigyminnld,sigyavgnld,sigxmaxnld,betx2,bety2,distp,dist,qx_det,qy_det,sturns1,sturns2,turn_max,amp1,amp2,angle,smearx,smeary'
 outtype=[('study','S100'),('seed','int'),('angle','float'),('achaos','float'),('achaos1','float'),('alost1','float'),('alost2','float'),('Amin','float'),('Amax','float')]
 
-def plot_averem():
+def plot_averem(path, nturns):
 
-    fhtxt = open('fort.22', 'r')
-    f22=np.genfromtxt(fhtxt,dtype=[('a','float'),('b','float')])
-    fhtxt.close()
+    f22=np.loadtxt('fort.22')
+    f23=np.loadtxt('fort.23')
+    f24=np.loadtxt('fort.24')
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    fig.subplots_adjust(top=0.85)
+    ax.set_title('%s Averaged Amplitude(6d), %s' %(path,nturns))
+
+    ax.set_xlabel('Initial Amplitude [sigma]')
+    ax.set_ylabel('Averaged Amplitude [Sigma]')
+    
+    ax.plot(f22[:,0], f22[:,1], marker='+', label = "Minimum")
+    ax.plot(f23[:,0], f23[:,1], marker='x', label = "Mean")
+    ax.plot(f24[:,0], f24[:,1], marker='*', label = "Maximum")
+    ax.legend(loc="upper left")
+    plt.show()
 
 
 def main2(studyName):
@@ -372,5 +386,7 @@ if __name__ == "__main__":
     if len(args)>1 :
         print "too many options: please provide only <study_name>"
         sys.exit()
-    main2(sys.argv[1])
-    plot_averem()
+    #main2(sys.argv[1])
+    path='job_tracking/1/simul/62.31_60.32/6-14/e5/.19'
+    nturns=100000
+    plot_averem( '%s/fort10.tgz'%path, nturns)
