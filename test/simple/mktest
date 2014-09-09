@@ -1,8 +1,8 @@
 rm -r job_hllhc10_test8.db job_hllhc10_test8
 
-if [ ! -f test/simple/sixdeskenv ];
+if [ ! -f sixdeskenv ];
 then
-  (cd test; tar xvfz simple.tgz;)
+  tar xvfz simple.tgz;
 fi
 
 #../../sixdb load_dir .
@@ -12,4 +12,4 @@ fi
 ../../sixdb job_hllhc10_test8.db info
 ../../sixdb job_hllhc10_test8.db da
 
-diff job_hllhc10_test8/*.plot  job_hllhc10_test8_last/*.plot
+diff job_hllhc10_test8/*.plot  job_hllhc10_test8_reference/*.plot
