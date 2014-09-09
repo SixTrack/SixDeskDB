@@ -53,13 +53,14 @@ class Six_Be(object):
   ('yp', 'float', 'yp value'),
   ('sigma', 'float', 'sigma value'),
   ('delta', 'float', 'delta value'),
-  ('emitn', 'float', 'emitn value'),
-  ('gamma', 'float', 'gamma value'),
   ('deltap', 'float', 'deltap value'),
   ('qx1', 'float', 'qx1 value'),
   ('qy1', 'float', 'qy1 value'),
   ('qx2', 'float', 'qx2 value'),
-  ('qy2', 'float','qy2 value')]
+  ('qy2', 'float','qy2 value'),
+  ('emitn', 'float', 'emitn value'),
+  ('gamma', 'float', 'gamma value'),
+  ('mtime', 'float', 'modification time'),]
   key=['seed','tunex','tuney']
 
 class Six_In(object):
@@ -165,6 +166,23 @@ class Files(object):
   ('content','blob','file content'),
   ('mtime','float','file modification time')]
   key=['path']
+
+class Da_Vst(object):
+  fields=[
+  ('seed', 'int', 'seed value'),
+  ('tunex', 'float', 'tunex value'),
+  ('tuney' ,'float', 'tuney value'),
+  ('DAstrap', 'float', 'DAs trap. integ.'),
+  ('DAwtrap', 'float', 'DAw trap. integ.'),
+  ('DAssimp', 'float', 'DAs simp. integ.'),
+  ('DAwsimp', 'float', 'DAw simp. integ.'),
+  ('DAstraperr', 'float', 'error DAs trap. integ.'),
+  ('DAstraperrang', 'float', 'angular error DAs trap. integ.'),
+  ('DAstraperramp', 'float', 'amplitude error DAs trap. integ.'),
+  ('nturn', 'float', 'lost turn number [turnstep,2*turnstep,...]'),
+  ('tlossmin', 'float', 'minimum lost turn number over all angles'),
+  ('mtime','float','last modification time')]
+  key=['seed','tunex','tuney','nturn']
 
 acc_var = ['BNL','COLUMNS','CORR_TEST','G_FILENAME_ENCODING','LHCDesHome',
     'LHCDesName','LHCDescrip','LINES','MADX','MADX_PATH','SIXTRACKBNLEXE',

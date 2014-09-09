@@ -1,0 +1,20 @@
+rm -r job_hllhc10_test8.db job_hllhc10_test8
+
+if [ ! -f sixdeskenv ];
+then
+  echo "expanding data in simple.tgz"
+  tar xfz simple.tgz;
+fi
+
+#../../sixdb load_dir .
+#../../sixdb info job_hllhc10_test8.db
+#../../sixdb da job_hllhc10_test8.db
+../../sixdb . load_dir || exit 1
+../../sixdb job_hllhc10_test8.db info || exit 1
+../../sixdb job_hllhc10_test8.db da || exit 1
+
+for i in job_hllhc10_test8/*;
+do
+  #echo $i job_hllhc10_test8_reference/${i#*/}
+  diff $i job_hllhc10_test8_reference/${i#*/}
+done
