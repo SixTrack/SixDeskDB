@@ -1597,7 +1597,7 @@ class SixDeskDB(object):
                 name1+=" "
             fmt=' %-39s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
             fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
-            final.append([name2, tunex, tuney, seed,
+            final.append([name2, tunex, tuney, int(seed),
                            angle,achaos,achaos1,alost1,alost2,
                            rad*inp['sigx1'][0],rad*inp['sigx1'][iel],mtime])
         anumber+=1
