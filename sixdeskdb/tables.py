@@ -59,7 +59,8 @@ class Six_Be(object):
   ('qx1', 'float', 'qx1 value'),
   ('qy1', 'float', 'qy1 value'),
   ('qx2', 'float', 'qx2 value'),
-  ('qy2', 'float','qy2 value')]
+  ('qy2', 'float','qy2 value'),
+  ('mtime', 'float', 'modification time'),]
   key=['seed','tunex','tuney']
 
 class Six_In(object):

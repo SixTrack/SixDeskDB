@@ -349,7 +349,6 @@ class SixDeskDB(object):
     env_var = self.env_var
     cols = SQLTable.cols_from_fields(tables.Mad_Run.fields)
     tab = SQLTable(conn,'mad6t_run',cols,tables.Mad_Run.key)
-    rows = {}
     extra_files = []
     a = []
     workdir = env_var['sixtrack_input']
@@ -357,6 +356,7 @@ class SixDeskDB(object):
     if a:
       a = [str(i[0]) for i in a]
     print "Looking for fort.2, fort.8, fort.16 in %s"%workdir
+    data=[]
     for dirName, _, fileList in os.walk(workdir):
       if 'mad.dorun' in dirName and not (dirName.split('/')[-1] in a):
         print 'found new mad run',dirName.split('/')[-1]
@@ -376,19 +376,13 @@ class SixDeskDB(object):
             mad_lsf = sqlite3.Binary(compressBuf(lsf_file))
             mad_log = sqlite3.Binary(compressBuf(log_file))
             time = os.path.getmtime( log_file)
-            rows[seed] = []
-            rows[seed].append(
-              [run_id, seed, mad_in, mad_out, mad_lsf, 
-              mad_log, time]
-              )
+            data.append([run_id, seed, mad_in, mad_out, mad_lsf,mad_log,time])
           if files.endswith('.mask'):
             path = os.path.join(dirName, files)
             key = path.replace(env_var['scratchdir']+'/','')
             extra_files.append([key,path])
-      if rows:
-        lst = dict_to_list(rows)
-        tab.insertl(lst)
-        rows = {}
+      if len(data)>0:
+        tab.insertl(data)
     if extra_files:
       self.add_files(extra_files)
 
@@ -492,9 +486,7 @@ class SixDeskDB(object):
     cols = SQLTable.cols_from_fields(tables.Six_Be.fields)
     tab = SQLTable(conn,'six_beta',cols,tables.Six_Be.key)
     workdir = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
-    rows = {}
-    extra_files = []
-    beta = six = gen = []
+    data=[]
     print "Looking for sixdesktunes, betavalues in\n %s"%workdir
     gen_input=os.path.join(workdir,'general_input')
     if not os.path.exists(gen_input):
@@ -503,37 +495,25 @@ class SixDeskDB(object):
     else:
       content = sqlite3.Binary(compressBuf(gen_input))
       gen=[float(i) for i in open(gen_input).read().split()]
-    a=glob.glob('%s/*/simul/*/betavalues'%workdir)
-    a+=glob.glob('%s/*/simul/*/sixdesktunes'%workdir)
-    a+=glob.glob('%s/*/simul/*/mychrom'%workdir)
-    print "no of files found: %d"%len(a)
-    if not a:
-      print 'Warning betavalues and sixdesktunes files missing'
-    for dirName in a:
-      files = dirName.split('/')[-1]
-      dirName = dirName.replace('/'+files,'')
-      dirn = dirName.replace(workdir+'/','').split('/')
-      seed = int(dirn[0])
-      tunex, tuney = dirn[2].split('_')
-      if not (seed in rows.keys()):
-        rows[seed] = []
-      temp = [seed, tunex, tuney]
-      if 'betavalues' in files:
-        f = open(os.path.join(dirName, files), 'r')
-        beta = [float(i) for i in f.read().split()]
-      if 'sixdesktunes' in files:
-        f = open(os.path.join(dirName, files), 'r')
-        six = [float(i) for i in f.read().split()]
-      if 'mychrom' in files:
-        f = open(os.path.join(dirName, files), 'r')
-        chrom = [float(i) for i in f.read().split()]
-      f.close()
-      if beta and temp and six:
-        rows[seed].append(temp + beta + gen + six)
-        beta = temp = six = []
-    if rows:
-      lst = dict_to_list(rows)
-      tab.insertl(lst)
+    for dirName in glob.glob('%s/*/simul/*'%workdir):
+      dirn = dirName.split('/')
+      seed = int(dirn[-3])
+      tunex, tuney = dirn[-1].split('_')
+      vals=[seed,tunex,tuney]
+      lastmtime=0
+      try:
+        for fn in ['betavalues','mychrom','sixdesktunes']:
+          fullname=os.path.join(dirName,fn)
+          mtime=os.path.getmtime(fullname)
+          if mtime >lastmtime:
+              lastmtime=mtime
+          vals+=[float(i) for i in open(fullname).read().split()]
+        vals.append(mtime)
+        data.append(vals)
+      except ValueError:
+        print "Error in %s"%fullname
+    print " no of sixdesktunes, betavalues, mychrom inserted: %d"%len(data)
+    tab.insertl(data)
 
   def st_six_input(self):
     ''' store input values (seed,tunes,amps,etc) along with fort.3 file'''
