@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# clean directory
+rm -r job_tracking_bb_2_test_sixdesk_reference job_tracking_bb_2_test_sixdesk job_tracking_bb_2_test_sixdesk.db sixdeskenv sysenv track sixtrack_input 
