@@ -1048,11 +1048,11 @@ class SixDeskDB(object):
 
   def check_seeds(self):
     """check if seeds defined in the environment are presently available in the database"""
-    return len(set(self.get_db_seeds())-set(self.get_seeds()))>0
+    return not len(set(self.get_seeds())-set(self.get_db_seeds()))>0
 
   def check_angles(self):
     """check if angles defined in the environment are presently available in the database"""
-    return len(set(self.get_db_angles())-set(self.get_angles()))>0
+    return not len(set(self.get_angles())-set(self.get_db_angles()))>0
 
   def get_angles(self):
     ''' get angles from env variables'''
