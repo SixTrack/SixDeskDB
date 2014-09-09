@@ -13,4 +13,7 @@ fi
 ../../sixdb job_hllhc10_test8.db info
 ../../sixdb job_hllhc10_test8.db da
 
-diff job_hllhc10_test8/*.plot  job_hllhc10_test8_reference/*.plot
+for i in job_hllhc10_test8/*;
+do
+  diff $i job_hllhc10_test8_reference/${i#*/}
+done
