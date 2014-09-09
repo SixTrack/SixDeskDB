@@ -1,4 +1,10 @@
 rm -r job_hllhc10_test8.db job_hllhc10_test8
+
+if [ ! -f test/simple/sixdeskenv ];
+then
+  (cd test; tar xvfz simple.tgz;)
+fi
+
 #../../sixdb load_dir .
 #../../sixdb info job_hllhc10_test8.db
 #../../sixdb da job_hllhc10_test8.db
