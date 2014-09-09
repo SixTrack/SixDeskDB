@@ -53,13 +53,13 @@ class Six_Be(object):
   ('yp', 'float', 'yp value'),
   ('sigma', 'float', 'sigma value'),
   ('delta', 'float', 'delta value'),
-  ('emitn', 'float', 'emitn value'),
-  ('gamma', 'float', 'gamma value'),
   ('deltap', 'float', 'deltap value'),
   ('qx1', 'float', 'qx1 value'),
   ('qy1', 'float', 'qy1 value'),
   ('qx2', 'float', 'qx2 value'),
   ('qy2', 'float','qy2 value'),
+  ('emitn', 'float', 'emitn value'),
+  ('gamma', 'float', 'gamma value'),
   ('mtime', 'float', 'modification time'),]
   key=['seed','tunex','tuney']
 

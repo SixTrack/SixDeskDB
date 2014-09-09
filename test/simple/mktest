@@ -15,6 +15,6 @@ fi
 
 for i in job_hllhc10_test8/*;
 do
-  echo $i job_hllhc10_test8_reference/${i#*/}
+  #echo $i job_hllhc10_test8_reference/${i#*/}
   diff $i job_hllhc10_test8_reference/${i#*/}
 done
