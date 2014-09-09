@@ -101,18 +101,6 @@ def dict_to_list(dict):
         break
   return lst
 
-def ndarray_to_list(dict):
-  '''convert dictionary to list for DB insert'''
-  lst = []
-  for i in sorted(dict.keys()):
-    for j in dict[i]:
-      if isinstance(j, list):
-        lst.append(j)
-      else:
-        lst.append(dict[i])
-        break
-  return lst
-
 def store_dict(cur, colName, table, data):
   cur.execute("select max(%s) from %s" % (colName, table))
   temp = cur.fetchone()[0]
