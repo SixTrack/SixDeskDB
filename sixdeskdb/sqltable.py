@@ -102,16 +102,16 @@ class SQLTable(object):
       cur.execute("begin IMMEDIATE transaction")
     if len(data) == 0:
       return
-    if not isinstance(data[0], list):
-      vals=','.join([artype] * len(data))
-      sql_cmd=sql%(table,vals)
-      cur.execute(sql_cmd, data)
-    else:
-      vals=','.join([artype] * len(data[0]))
-      # print vals
-      sql_cmd=sql%(table,vals)
-      cur.executemany(sql_cmd, data)
-      count = cur.rowcount
+    #if not isinstance(data[0], list):
+    #  vals=','.join([artype] * len(data))
+    #  sql_cmd=sql%(table,vals)
+    #  cur.execute(sql_cmd, data)
+    #else:
+    vals=','.join([artype] * len(data[0]))
+    # print vals
+    sql_cmd=sql%(table,vals)
+    cur.executemany(sql_cmd, data)
+    count = cur.rowcount
     # print sql_cmd
     db.commit()
   def delete(self,where):
