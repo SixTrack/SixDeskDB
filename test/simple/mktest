@@ -1,0 +1,9 @@
+rm -r job_hllhc10_test8.db job_hllhc10_test8
+#../../sixdb load_dir .
+#../../sixdb info job_hllhc10_test8.db
+#../../sixdb da job_hllhc10_test8.db
+../../sixdb . load_dir
+../../sixdb job_hllhc10_test8.db info
+../../sixdb job_hllhc10_test8.db da
+
+diff job_hllhc10_test8/*.plot  job_hllhc10_test8_last/*.plot
