@@ -1477,7 +1477,7 @@ class SixDeskDB(object):
              ('distp','float'),('dist','float'),
              ('sturns1' ,'int'),('sturns2','int'),('turn_max','int'),
              ('amp1','float'),('amp2','float'),('angle','float'),
-             ('six_results.mtime','float')]
+             ('mtime','float')]
     names=','.join(zip(*rectype)[0])
     turnse=self.env_var['turnse']
     tunex=float(self.env_var['tunex'])
@@ -1485,12 +1485,13 @@ class SixDeskDB(object):
     sixdesktunes="%g_%g"%(tunex,tuney)
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
-    tmp=np.array(self.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
+    #tmp=np.array(self.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
+    tmp=np.array(self.execute('SELECT %s FROM results'%names),dtype=rectype)
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     anumber=1
     angles=np.unique(tmp['angle'])
     seeds=np.unique(tmp['seed'])
-    mtime=tmp['six_results.mtime'].max()
+    mtime=tmp['mtime'].max()
     final=[]
     for angle in angles:
         fndot='DAres.%s.%s.%s.%d'%(self.LHCDescrip,sixdesktunes,turnse,anumber)
