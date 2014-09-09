@@ -349,7 +349,6 @@ class SixDeskDB(object):
     env_var = self.env_var
     cols = SQLTable.cols_from_fields(tables.Mad_Run.fields)
     tab = SQLTable(conn,'mad6t_run',cols,tables.Mad_Run.key)
-    rows = {}
     extra_files = []
     a = []
     workdir = env_var['sixtrack_input']
@@ -357,6 +356,7 @@ class SixDeskDB(object):
     if a:
       a = [str(i[0]) for i in a]
     print "Looking for fort.2, fort.8, fort.16 in %s"%workdir
+    data=[]
     for dirName, _, fileList in os.walk(workdir):
       if 'mad.dorun' in dirName and not (dirName.split('/')[-1] in a):
         print 'found new mad run',dirName.split('/')[-1]
@@ -376,19 +376,13 @@ class SixDeskDB(object):
             mad_lsf = sqlite3.Binary(compressBuf(lsf_file))
             mad_log = sqlite3.Binary(compressBuf(log_file))
             time = os.path.getmtime( log_file)
-            rows[seed] = []
-            rows[seed].append(
-              [run_id, seed, mad_in, mad_out, mad_lsf, 
-              mad_log, time]
-              )
+            data.append([run_id, seed, mad_in, mad_out, mad_lsf,mad_log,time])
           if files.endswith('.mask'):
             path = os.path.join(dirName, files)
             key = path.replace(env_var['scratchdir']+'/','')
             extra_files.append([key,path])
-      if rows:
-        lst = dict_to_list(rows)
-        tab.insertl(lst)
-        rows = {}
+      if len(data)>0:
+        tab.insertl(data)
     if extra_files:
       self.add_files(extra_files)
 
@@ -492,9 +486,7 @@ class SixDeskDB(object):
     cols = SQLTable.cols_from_fields(tables.Six_Be.fields)
     tab = SQLTable(conn,'six_beta',cols,tables.Six_Be.key)
     workdir = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
-    rows = {}
-    extra_files = []
-    beta = six = gen = []
+    data=[]
     print "Looking for sixdesktunes, betavalues in\n %s"%workdir
     gen_input=os.path.join(workdir,'general_input')
     if not os.path.exists(gen_input):
@@ -503,37 +495,26 @@ class SixDeskDB(object):
     else:
       content = sqlite3.Binary(compressBuf(gen_input))
       gen=[float(i) for i in open(gen_input).read().split()]
-    a=glob.glob('%s/*/simul/*/betavalues'%workdir)
-    a+=glob.glob('%s/*/simul/*/sixdesktunes'%workdir)
-    a+=glob.glob('%s/*/simul/*/mychrom'%workdir)
-    print "no of files found: %d"%len(a)
-    if not a:
-      print 'Warning betavalues and sixdesktunes files missing'
-    for dirName in a:
-      files = dirName.split('/')[-1]
-      dirName = dirName.replace('/'+files,'')
-      dirn = dirName.replace(workdir+'/','').split('/')
-      seed = int(dirn[0])
-      tunex, tuney = dirn[2].split('_')
-      if not (seed in rows.keys()):
-        rows[seed] = []
-      temp = [seed, tunex, tuney]
-      if 'betavalues' in files:
-        f = open(os.path.join(dirName, files), 'r')
-        beta = [float(i) for i in f.read().split()]
-      if 'sixdesktunes' in files:
-        f = open(os.path.join(dirName, files), 'r')
-        six = [float(i) for i in f.read().split()]
-      if 'mychrom' in files:
-        f = open(os.path.join(dirName, files), 'r')
-        chrom = [float(i) for i in f.read().split()]
-      f.close()
-      if beta and temp and six:
-        rows[seed].append(temp + beta + gen + six)
-        beta = temp = six = []
-    if rows:
-      lst = dict_to_list(rows)
-      tab.insertl(lst)
+    for dirName in glob.glob('%s/*/simul/*'%workdir):
+      dirn = dirName.split('/')
+      seed = int(dirn[-3])
+      tunex, tuney = dirn[-1].split('_')
+      vals=[seed,tunex,tuney]
+      lastmtime=0
+      try:
+        for fn in ['betavalues','sixdesktunes']:
+          fullname=os.path.join(dirName,fn)
+          mtime=os.path.getmtime(fullname)
+          if mtime >lastmtime:
+              lastmtime=mtime
+          vals+=[float(i) for i in open(fullname).read().split()]
+        vals.extend(gen)
+        vals.append(mtime)
+        data.append(vals)
+      except ValueError:
+        print "Error in %s"%fullname
+    print " no of sixdesktunes, betavalues, mychrom inserted: %d"%len(data)
+    tab.insertl(data)
 
   def st_six_input(self):
     ''' store input values (seed,tunes,amps,etc) along with fort.3 file'''
@@ -610,73 +591,8 @@ class SixDeskDB(object):
       rows = []
     print '\n no of fort.3 updated/found: %d/%d'%(count,file_count)
     print ' no of fort.10 updated/found: %d/%d'%(count10,file_count10)
-    sql="""CREATE VIEW IF NOT EXISTS results AS SELECT * FROM six_input INNER JOIN six_results
-           ON six_input.id==six_results.six_input_id"""
-    self.conn.cursor().execute(sql)
-
-  def st_six_results(self):
-    '''store fort.10 values'''
-    conn = self.conn
-    env_var = self.env_var
-    cols = SQLTable.cols_from_fields(tables.Six_In.fields)
-    aff_count = 0
-    tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
-    workdir = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
-    rows = []
-    inp = tab.selectl("""distinct id,seed,simul,tunex,tuney,amp1,amp2,turns,
-        angle""")
-    inp = [[str(i) for i in j] for j in inp]
-    cols = SQLTable.cols_from_fields(tables.Six_Res.fields)
-    tab = SQLTable(conn,'six_results',cols,tables.Six_Res.key)
-    maxtime = tab.selectl("max(mtime)")[0][0]
-    if not maxtime:
-      maxtime = 0
-    print "Looking for fort.10.gz files in\n %s"%workdir
-    cmd = "find %s -type f -name 'fort.10.gz'"%(workdir)
-    #a = [i for i in os.popen(cmd).read().split('\n')[:-1] if not '-' in i]
-    #fort10=[i for i in os.popen(cmd)]
-    #print 'fort.10 files =',len(fort10)
-    file_count=0
-    for dirName in os.popen(cmd):
-      dirName,files=os.path.split(dirName.strip())
-      ranges=dirName.split('/')[-3]
-      if '_' in ranges:
-        file_count+=1
-        if file_count%100==0:
-            sys.stdout.write('.')
-            sys.stdout.flush()
-        if os.path.getmtime(dirName) > maxtime:
-            mtime = os.path.getmtime(dirName)
-            # print dirn
-            dirn = dirName.replace(workdir+'/','')
-            dirn = re.split('/|_',dirn)
-            for i in [2,3,4,5,7]:
-              if not ('.' in str(dirn[i])):
-                dirn[i] += '.0'
-            for i in xrange(len(inp)+1):
-              if i == len(inp):
-                print 'fort.3 file missing for',
-                print dirName.replace(env_var['sixdesktrack']+'/','')
-                print 'create file and run again'
-                print dirn
-                exit(0)
-              if dirn == inp[i][1:]:
-                six_id = inp[i][0]
-                break
-            FileObj = gzip.open(
-              os.path.join(dirName,files),"r").read().split("\n")[:-1]
-            count = 1
-            for lines in FileObj:
-              rows.append([six_id,count]+lines.split()+[mtime])
-              count += 1
-              aff_count += 1
-            if len(rows) > 180000:
-              tab.insertl(rows)
-              rows = []
-    if rows:
-      tab.insertl(rows)
-    print "\n no of fort.10 updated/found: %d/%d"%(aff_count/30,file_count)
-    sql="""CREATE VIEW IF NOT EXISTS results AS SELECT * FROM six_input INNER JOIN six_results
+    sql="""CREATE VIEW IF NOT EXISTS results
+           AS SELECT * FROM six_input INNER JOIN six_results
            ON six_input.id==six_results.six_input_id"""
     self.conn.cursor().execute(sql)
 
@@ -1112,10 +1028,8 @@ class SixDeskDB(object):
 
   def iter_job_params(self):
     ''' get jobparams from DB '''
-    names="""b.value,a.seed,a.tunex,a.tuney,a.amp1,a.amp2,a.turns,a.angle,
-        c.row_num"""
-    sql="""SELECT DISTINCT %s FROM six_input as a,env as b,six_results as c
-        where a.id=c.six_input_id and b.keyname='LHCDescrip'"""%names
+    sql="""SELECT seed,tunex,tuney,amp1,amp2,turns,angle,row_num
+           FROM results"""
     return self.conn.cursor().execute(sql)
 
   def iter_job_params_comp(self):
@@ -1213,7 +1127,7 @@ class SixDeskDB(object):
 
   def inspect_jobparams(self):
     data=list(self.iter_job_params())
-    names='study,seed,tunex,tuney,amp1,amp2,turns,angle,row'.split(',')
+    names='seed,tunex,tuney,amp1,amp2,turns,angle,row'.split(',')
     data=dict(zip(names,zip(*data)))
   #    for name in names:
   #      print name, guess_range(data[name])
@@ -1235,7 +1149,6 @@ class SixDeskDB(object):
     p['ns1l'],p['ns2l'],p['nsincl']=guess_range(data['amp1']+data['amp2'])
     p['turnsl']=max(data['turns'])
     p['sixdeskpairs']=max(data['row'])+1
-    p['LHCDescrip']=str(data['study'][0])
     return p
 
   def get_polar_col(self,col,seed,smooth=None):
@@ -1477,7 +1390,7 @@ class SixDeskDB(object):
              ('distp','float'),('dist','float'),
              ('sturns1' ,'int'),('sturns2','int'),('turn_max','int'),
              ('amp1','float'),('amp2','float'),('angle','float'),
-             ('six_results.mtime','float')]
+             ('mtime','float')]
     names=','.join(zip(*rectype)[0])
     turnse=self.env_var['turnse']
     tunex=float(self.env_var['tunex'])
@@ -1485,12 +1398,13 @@ class SixDeskDB(object):
     sixdesktunes="%g_%g"%(tunex,tuney)
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
-    tmp=np.array(self.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
+    #tmp=np.array(self.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
+    tmp=np.array(self.execute('SELECT %s FROM results'%names),dtype=rectype)
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     anumber=1
     angles=np.unique(tmp['angle'])
     seeds=np.unique(tmp['seed'])
-    mtime=tmp['six_results.mtime'].max()
+    mtime=tmp['mtime'].max()
     final=[]
     for angle in angles:
         fndot='DAres.%s.%s.%s.%d'%(self.LHCDescrip,sixdesktunes,turnse,anumber)
@@ -1597,7 +1511,7 @@ class SixDeskDB(object):
                 name1+=" "
             fmt=' %-39s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
             fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
-            final.append([name2, tunex, tuney, seed,
+            final.append([name2, tunex, tuney, int(seed),
                            angle,achaos,achaos1,alost1,alost2,
                            rad*inp['sigx1'][0],rad*inp['sigx1'][iel],mtime])
         anumber+=1
@@ -1647,14 +1561,14 @@ class SixDeskDB(object):
         i = len(toAvg)
         mean = np.mean(toAvg)
         idxneg = (final['angle']==angle)&(final['alost1']<0)
-        eqaper = np.where(final['alost2'] == final['Amin'])[0]
+        eqaper = np.where((final['alost2'] == final['Amin']))[0]
         nega = len(final['alost1'][idxneg])
         Amin = np.min(final['Amin'][idxangle])
         Amax = np.max(final['Amax'][idxangle])
 
-        for k in eqaper:
-          msg="Angle %d, Seed %d: Dynamic Aperture below:  %.2f Sigma"
-          print msg %( final['angle'][k],final['seed'][k], final['Amin'][k])
+        #for k in eqaper:
+        #  msg="Angle %d, Seed %d: Dynamic Aperture below:  %.2f Sigma"
+        #  print msg %( final['angle'][k],final['seed'][k], final['Amin'][k])
 
         if i == 0:
           mini  = -Amax
@@ -1698,7 +1612,7 @@ class SixDeskDB(object):
     gamma=float(self.env_var['gamma'])
     cmd="""SELECT angle,emitx+emity,
          CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
-         FROM six_results,six_input WHERE seed=%s AND id=six_input_id
+         FROM results WHERE seed=%s
          ORDER BY angle,emitx+emity"""
     cur=self.conn.cursor().execute(cmd%(seed))
     ftype=[('angle',float),('sigma',float),('sturn',float)]
