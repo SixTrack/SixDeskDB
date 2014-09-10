@@ -1,32 +1,5 @@
 echo '-- clean directory --'
 cleantest
 
-echo '-- start test job_tracking_bb_2_test_sixdesk --'
-if [ ! -f sixdeskenv ];
-then
-  echo "expanding data in job_tracking_bb_2_test_sixdesk.tgz"
-  tar xfz job_tracking_bb_2_test_sixdesk.tgz;
-fi
-
-#../../sixdb load_dir .
-#../../sixdb info job_tracking_bb_2_test_sixdesk.db
-#../../sixdb da job_tracking_bb_2_test_sixdesk.db
-../../sixdb . load_dir || exit 1
-../../sixdb job_tracking_bb_2_test_sixdesk.db info || exit 1
-../../sixdb job_tracking_bb_2_test_sixdesk.db da || exit 1
-
-for i in job_tracking_bb_2_test_sixdesk/*;
-do
-  #echo $i job_tracking_bb_2_test_sixdesk_reference/${i#*/}
-  diff $i job_tracking_bb_2_test_sixdesk_reference/${i#*/}
-done
-
-echo '-----------------da_vs_turns---------------------------';
-echo '-- test da_vs_turns --'
-../../sixdb job_tracking_bb_2_test_sixdesk.db da_vs_turns -force -outfile
-echo '-- test plot_da_vs_turns --'
-../../sixdb job_tracking_bb_2_test_sixdesk.db plot_da_vs_turns
-../../sixdb job_tracking_bb_2_test_sixdesk.db plot_da_vs_turns -plotlog
-echo '-- test plot_comp_da_vs_tursn --'
-../../sixdb job_tracking_bb_2_test_sixdesk.db plot_comp_da_vs_turns job_tracking_bb_2_test_sixdesk.db -lblname job1 -complblname job2
-
+mkteststd job_tracking_bb_2_test_sixdesk
+mkteststd job_tracking_bb_np_nt_dq-4_600Hz_2_test_sixdesk
