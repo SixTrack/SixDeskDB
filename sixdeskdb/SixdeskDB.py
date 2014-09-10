@@ -28,7 +28,8 @@ except ImportError:
 
 import tables
 from sqltable import SQLTable
-
+for t in (np.int8, np.int16, np.int32, np.int64,np.uint8, np.uint16, np.uint32, np.uint64):
+  sqlite3.register_adapter(t, long)
 
 def parse_env(studydir):
   tmp="sh -c '. %s/sixdeskenv;. %s/sysenv; python -c %s'"
