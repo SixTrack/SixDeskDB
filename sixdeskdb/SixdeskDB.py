@@ -508,10 +508,8 @@ class SixDeskDB(object):
           if mtime >lastmtime:
               lastmtime=mtime
           vals+=[float(i) for i in open(fullname).read().split()]
-          print vals
         vals.extend(gen)
         vals.append(mtime)
-        print zip(vals,cols)
         data.append(vals)
       except ValueError:
         print "Error in %s"%fullname
