@@ -1,0 +1,8 @@
+echo '-- clean directory --'
+cleantest
+
+mkteststd job_tracking_bb_2_test_sixdesk
+mkteststd job_tracking_bb_np_nt_dq-4_600Hz_2_test_sixdesk
+
+echo 'test plot_comp_da_vs_turns'
+../../sixdb job_tracking_bb_2_test_sixdesk.db plot_comp_da_vs_turns job_tracking_bb_np_nt_dq-4_600Hz_2_test_sixdesk.db -lblname 'bb' -complblname 'bb 600Hz' -amprangedavst 4 14

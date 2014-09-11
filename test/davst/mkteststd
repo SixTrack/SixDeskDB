@@ -1,0 +1,39 @@
+study=$1
+
+echo '-- start test '${study}' --'
+if [ ! -f sixdeskenv ];
+then
+  echo 'expanding data in '${study}'.tgz'
+  tar xfz ${study}.tgz;
+fi
+
+#../../sixdb load_dir .
+#../../sixdb info ${study}.db
+#../../sixdb da ${study}.db
+../../sixdb . load_dir || exit 1
+../../sixdb ${study}.db info || exit 1
+../../sixdb ${study}.db da || exit 1
+echo 'comparing outputfiles DAres*'
+for i in ${study}/*;
+do
+  #echo $i ${study}_reference/${i#*/}
+  diff $i ${study}_reference/${i#*/}
+done
+
+echo '--- da_vs_turns --';
+echo '... test da_vs_turns'
+../../sixdb ${study}.db da_vs_turns -force -outfile
+echo '... test plot_da_vs_turns'
+../../sixdb ${study}.db plot_da_vs_turns
+../../sixdb ${study}.db plot_da_vs_turns -plotlog
+echo '... test plot_comp_da_vs_tursn'
+../../sixdb ${study}.db plot_comp_da_vs_turns ${study}.db -lblname job1 -complblname job2
+echo '... comparing output files DA.out'
+for i in ${study}/*/*/DA.out;
+do
+  #echo $i ${study}_reference/${i#*/}
+  diff $i ${study}_reference/${i#*/}
+done
+echo '... clean up study '${study}
+cleanstd ${study}
+

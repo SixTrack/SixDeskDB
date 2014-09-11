@@ -1,0 +1,4 @@
+#!/bin/bash
+study=$1
+# clean study files except database
+rm -rf ${study}_reference sixdeskenv sysenv track sixtrack_input 

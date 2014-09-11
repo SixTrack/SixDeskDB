@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# clean directory
+study=job_hllhc10_test8
+rm -rf ${study} ${study}.db sixdeskenv sysenv track sixtrack_input
+ 

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# clean directory
+study1=job_tracking_bb_2_test_sixdesk
+study2=job_tracking_bb_np_nt_dq-4_600Hz_2_test_sixdesk
+for study in $study1 $study2; do 
+  rm -rf ${study}_reference ${study} ${study}.db sixdeskenv sysenv track sixtrack_input
+done
+ 

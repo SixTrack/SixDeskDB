@@ -28,7 +28,8 @@ except ImportError:
 
 import tables
 from sqltable import SQLTable
-
+for t in (np.int8, np.int16, np.int32, np.int64,np.uint8, np.uint16, np.uint32, np.uint64):
+  sqlite3.register_adapter(t, long)
 
 def parse_env(studydir):
   tmp="sh -c '. %s/sixdeskenv;. %s/sysenv; python -c %s'"
@@ -90,18 +91,6 @@ def mk_dir(dirname):
    return dirname
 
 def dict_to_list(dict):
-  '''convert dictionary to list for DB insert'''
-  lst = []
-  for i in sorted(dict.keys()):
-    for j in dict[i]:
-      if isinstance(j, list):
-        lst.append(j)
-      else:
-        lst.append(dict[i])
-        break
-  return lst
-
-def ndarray_to_list(dict):
   '''convert dictionary to list for DB insert'''
   lst = []
   for i in sorted(dict.keys()):
@@ -1060,11 +1049,11 @@ class SixDeskDB(object):
 
   def check_seeds(self):
     """check if seeds defined in the environment are presently available in the database"""
-    return len(set(self.get_db_seeds())-set(self.get_seeds()))>0
+    return not len(set(self.get_seeds())-set(self.get_db_seeds()))>0
 
   def check_angles(self):
     """check if angles defined in the environment are presently available in the database"""
-    return len(set(self.get_db_angles())-set(self.get_angles()))>0
+    return not len(set(self.get_angles())-set(self.get_db_angles()))>0
 
   def get_angles(self):
     ''' get angles from env variables'''
@@ -1560,6 +1549,7 @@ class SixDeskDB(object):
         toAvg = np.abs(final['alost1'][idx])
         i = len(toAvg)
         mean = np.mean(toAvg)
+        std = np.sqrt(np.mean(toAvg*toAvg)-mean**2)
         idxneg = (final['angle']==angle)&(final['alost1']<0)
         eqaper = np.where((final['alost2'] == final['Amin']))[0]
         nega = len(final['alost1'][idxneg])
@@ -1584,7 +1574,7 @@ class SixDeskDB(object):
           print "Average: %.2f Sigma" %(mean)
         print "# of (Aav-A0)/A0 >10%%:  %d"  %nega
         name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
-        fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
+        fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax, std))
     fhplot.close()
 
 # -------------------------------- da_vs_turns -----------------------------------------------------------
