@@ -400,11 +400,10 @@ class SixDeskDB(object):
     if not maxtime:
       maxtime = 0
     rows = []
-    cmd = "find %s -type f -name 'fort.%s*.gz'"
-    rows = []
-    a = os.popen(cmd%(env_var['sixtrack_input'],'2')).read().split('\n')[:-1]
-    b = os.popen(cmd%(env_var['sixtrack_input'],'8')).read().split('\n')[:-1]
-    c = os.popen(cmd%(env_var['sixtrack_input'],'16')).read().split('\n')[:-1]
+    workdir = env_var['sixtrack_input']
+    a = glob.glob(os.path.join(workdir,'fort.2_*.gz'))
+    b = glob.glob(os.path.join(workdir,'fort.8_*.gz'))
+    c = glob.glob(os.path.join(workdir,'fort.16_*.gz'))
     f_a=len(a);f_b=len(b);f_c=len(c);
     up_a = up_b = up_c = 0
     for i in a:
@@ -415,7 +414,7 @@ class SixDeskDB(object):
         mtime = os.path.getmtime(i)
         if f8 in b:
           row.extend([sqlite3.Binary(open(f8, 'r').read())])
-          del b[b.index(f8)]
+          b.remove(f8)
           up_b += 1
         else:
           row.extend([""])
@@ -423,7 +422,7 @@ class SixDeskDB(object):
         f16 = i.replace("fort.2","fort.16")
         if f16 in c:
           row.extend([sqlite3.Binary(open(f16, 'r').read())])
-          del c[c.index(f16)]
+          c.remove(f16)
           up_c += 1
         else:
           row.extend([""])
@@ -441,7 +440,7 @@ class SixDeskDB(object):
         f16 = i.replace('fort.8','fort.16')
         if f16 in c:
           row.extend([sqlite3.Binary(open(f16, 'r').read())])
-          del c[c.index(f16)]
+          c.remove(f16)
           up_c += 1
         else:
           row.extend([""])
