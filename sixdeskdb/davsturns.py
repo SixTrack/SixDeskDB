@@ -4,7 +4,7 @@ import sys as sys
 import numpy as np
 import matplotlib.pyplot as pl
 import glob as glob
-from SixdeskDB import SixDeskDB,tune_dir
+from deskdb import SixDeskDB,tune_dir
 
 # basic functions
 def ang_to_i(ang,angmax):
