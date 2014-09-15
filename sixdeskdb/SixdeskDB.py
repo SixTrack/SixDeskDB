@@ -1388,7 +1388,8 @@ class SixDeskDB(object):
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
     #tmp=np.array(self.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
-    tmp=np.array(self.execute('SELECT %s FROM results'%names),dtype=rectype)
+    sql='SELECT %s FROM results ORDER BY tunex,tuney,seed,amp1,amp2,angle'%names
+    tmp=np.array(self.execute(sql),dtype=rectype)
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     anumber=1
     angles=np.unique(tmp['angle'])
@@ -1510,7 +1511,7 @@ class SixDeskDB(object):
     datab=SQLTable(self.conn,'da_post',cols)
     datab.insertl(final)
 
-  def mk_da(self,force=False):
+  def mk_da(self,force=False,nostd=False):
     dirname=self.mk_analysis_dir()
     cols=SQLTable.cols_from_fields(tables.Da_Post.fields)
     datab=SQLTable(self.conn,'da_post',cols)
@@ -1574,7 +1575,10 @@ class SixDeskDB(object):
           print "Average: %.2f Sigma" %(mean)
         print "# of (Aav-A0)/A0 >10%%:  %d"  %nega
         name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
-        fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax, std))
+        if nostd:
+          fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
+        else:
+          fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax, std))
     fhplot.close()
 
 # -------------------------------- da_vs_turns -----------------------------------------------------------
@@ -1649,10 +1653,4 @@ class SixDeskDB(object):
     pl.ylim([0,ampmax])
     pl.xlabel(r'Horizontal amplitude [$\sigma$]',labelpad=10,fontsize=12)
     pl.ylabel(r'Vertical amplitude [$\sigma$]',labelpad=10,fontsize=12)
-
-
-if __name__ == '__main__':
-  SixDeskDB.from_dir('./')
-
-
 
