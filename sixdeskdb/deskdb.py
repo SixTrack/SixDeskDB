@@ -401,71 +401,30 @@ class SixDeskDB(object):
       maxtime = 0
     rows = []
     workdir = env_var['sixtrack_input']
-    a = glob.glob(os.path.join(workdir,'fort.2_*.gz'))
-    b = glob.glob(os.path.join(workdir,'fort.8_*.gz'))
-    c = glob.glob(os.path.join(workdir,'fort.16_*.gz'))
-    f_a=len(a);f_b=len(b);f_c=len(c);
-    up_a = up_b = up_c = 0
-    for i in a:
-      if os.path.getmtime(i) > maxtime:
-        seed = i.split('/')[-1].split('_')[1].replace(".gz","")
-        row = [seed,sqlite3.Binary(open(i, 'r').read())]
-        f8 = i.replace("fort.2","fort.8")
-        mtime = os.path.getmtime(i)
-        if f8 in b:
-          row.extend([sqlite3.Binary(open(f8, 'r').read())])
-          b.remove(f8)
-          up_b += 1
-        else:
-          row.extend([""])
-          print 'missing file',f8,'inserting null instead'
-        f16 = i.replace("fort.2","fort.16")
-        if f16 in c:
-          row.extend([sqlite3.Binary(open(f16, 'r').read())])
-          c.remove(f16)
-          up_c += 1
-        else:
-          row.extend([""])
-          print 'missing file',f16,'inserting null instead'
-        row.extend([mtime])
+    f2s = glob.glob(os.path.join(workdir,'fort.2_*.gz'))
+    f8s = glob.glob(os.path.join(workdir,'fort.8_*.gz'))
+    f16s = glob.glob(os.path.join(workdir,'fort.16_*.gz'))
+    seeds=sorted(set([i.split('_')[-1].split('.')[0] for i in f2s+f8s+f16s]))
+    update={2:0,8:0,16:0}
+    for seed in seeds:
+        row=[seed]
+        for fn in [2,8,16]:
+            ffn=os.path.join(workdir,'fort.%d_%s.gz'%(fn,seed))
+            if os.path.exists(ffn):
+                mtime=os.path.getmtime(ffn)
+                if mtime > maxtime:
+                  row.append(sqlite3.Binary(open(ffn, 'r').read()))
+                  update[fn]+=1
+            else:
+              print "%s missing inserted null"%ffn
+        row.append(mtime)
         rows.append(row)
-        up_a += 1
-    for i in b:
-      if os.path.getmtime(i) > maxtime:
-        seed = i.split('/')[-1].split('_')[1].replace(".gz","")
-        print 'missing file',
-        print '%s inserting null instead'%(i.replace('fort.8','fort.2'))
-        row = [seed,"",sqlite3.Binary(open(i, 'r').read())]
-        mtime = os.path.getmtime(i)
-        f16 = i.replace('fort.8','fort.16')
-        if f16 in c:
-          row.extend([sqlite3.Binary(open(f16, 'r').read())])
-          c.remove(f16)
-          up_c += 1
-        else:
-          row.extend([""])
-          print 'missing file',f16,'inserting null instead'
-        row.extend([mtime])
-        rows.append(row)
-        up_b += 1
-    for i in c:
-      if os.path.getmtime(i) > maxtime:
-        seed = i.split('/')[-1].split('_')[1].replace(".gz","")
-        print 'missing file',
-        print '%s inserting null instead'%(i.replace('fort.16','fort.2'))
-        print 'missing file',
-        print '%s inserting null instead'%(i.replace('fort.16','fort.8'))
-        row = [seed,"","",sqlite3.Binary(open(i, 'r').read())]
-        mtime = os.path.getmtime(i)
-        row.extend([mtime])
-        rows.append(row)
-        up_c += 1
     if rows:
       tab.insertl(rows)
       rows = {}
-    print ' no of fort.2 updated/found: %d/%d'%(up_a,f_a)
-    print ' no of fort.8 updated/found: %d/%d'%(up_b,f_b)
-    print ' no of fort.16 updated/found: %d/%d'%(up_c,f_c)
+    print ' no of fort.2 updated/found: %d/%d'%(update[2],len(f2s))
+    print ' no of fort.8 updated/found: %d/%d'%(update[8],len(f8s))
+    print ' no of fort.16 updated/found: %d/%d'%(update[16],len(f16s))
 
   def st_six_beta(self):
     ''' store sixdesktunes, betavalues '''
