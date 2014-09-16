@@ -1,4 +1,4 @@
-##CONTROLLER:
+##DS_CONTROLLER:
 main file, the user has to inser in it all the data requested in the USER INPUT block.
 The data can be retrieved from the sixdeskenv file
 
