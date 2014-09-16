@@ -28,12 +28,12 @@ def get_min_turn_ang(s,t,a,it):
     sang = s[iang]
     iturn = tang<it # select lost turn number < it
     if(any(tang[iturn])):
-      sangit=np.amin(sang[iturn])
-      argminit=np.amin(np.where(sang==sangit)[0])#get index of smallest amplitude with sturn<it - amplitudes are ordered ascending
+      sangit=sang[iturn].min()
+      argminit=np.where(sang==sangit)[0].min() # get index of smallest amplitude with sturn<it - amplitudes are ordered ascending
 #      print(argminit)
       mta[ang_to_i(ang,angles)]=(ang,sang[argminit-1],tang[argminit-1])#last stable amplitude -> index argminit-1
-    else: 
-      mta[ang_to_i(ang,angles)]=(ang,np.amax(sang),np.amin(tang))
+    else:
+      mta[ang_to_i(ang,angles)]=(ang,sang.max(),tang.min())
   return mta
 def mk_da_vst(data,seed,tune,turnstep):
   """returns DAout with DAwtrap,DAstrap,DAwsimp,DAssimp,DAstraperr,DAstraperrang,DAstraperramp,nturn,tlossmin.
