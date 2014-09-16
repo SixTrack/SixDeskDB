@@ -30,22 +30,21 @@ relative momentum spread, particles number'''
 # USER INPUT BLOCK
 # --------------------------------------------------------------------------------------------------------------
 
-studio='4tev_long_withbb' 			# study name
-tunes='62.31_60.32' 				    # tunes 											                      []
-exp_turns=5 						        # order of magnitude of the number of turns tracked []
-seedinit=1. 						        # initial seed for madx 							              []
-seedend=10. 						        # end seed for madx 								                []
-emit=2.5 							          # normalised emittance 								              [mm-rad]
-bunch=7.5 							        # bunch length 										                  [cm]
-gamma_rel=4263.156 					    # relative gamma factor 							              []
-nsi=4. 								          # initial amplitude in units of sigma 				      []
-nsf=12. 							          # end amplitude in units of sigma 					        []
-nstep=1 							          # amplitude interval 								                []
-ki=1. 								          # initial angle 									                  [deg]
-kmax=5. 							          # end angle 										                    [deg]
-kend=5. 							          # angles number 									                  []
-delta0=0.0001 						      # relative momentum deviation amplitude 			      []
-np=30 								          # particles number 									                []
+studio= LHCDescrip 			# study name
+tunes=  'tunex_tuney' 				    # tunes 											                      []
+exp_turns= turnsle  						        # order of magnitude of the number of turns tracked []
+seedinit=  istamad			        # initial seed for madx 							              []
+seedend=  iendmad 						        # end seed for madx 								                []
+emit= emit 							          # normalised emittance 								              [mm-rad]
+gamma_rel= gamma 					    # relative gamma factor 							              []
+nsi= ns1l 								          # initial amplitude in units of sigma 				      []
+nsf= ns2l 							          # end amplitude in units of sigma 					        []
+nstep= nsincl 							          # amplitude interval 								                []
+ki= kini; 								          # initial angle 									                  [deg]
+kmax= kmaxl 							          # end angle 										                    [deg]
+kend= kendl 							          # angles number 									                  []
+delta0= dpini 						      # relative momentum deviation amplitude 			      []
+np= sixdeskpairs								          # particles number 									                []
 
 # --------------------------------------------------------------------------------------------------------------
 # END OF USER INPUT BLOCK
