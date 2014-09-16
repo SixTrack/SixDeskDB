@@ -12,6 +12,7 @@ def ang_to_i(ang,angmax):
   return int(round(ang/(90./(angmax+1))-1))
 
 # functions necessary for the analysis
+@profile
 def get_min_turn_ang(s,t,a,it):
   """returns array with (angle,minimum sigma,sturn) of particles with lost turn number < it.
 
@@ -19,11 +20,12 @@ def get_min_turn_ang(s,t,a,it):
   if true: lost turn number and amplitude of the last stable particle is saved = particle "before" the particle with the smallest amplitude with nturns<it
   if false: the smallest lost turn number and the largest amplitude is saved 
   """
+  # s,t,a are ordered by angle,amplitude
   angles,sigmas=t.shape# angles = number of angles, sigmas = number of amplitudes
   ftype=[('angle',float),('sigma',float),('sturn',float)]
   mta=np.zeros(angles,dtype=ftype)
-  for ang in set(a[:,0]):
-    iang = a==ang # select angle
+  # enumerate(a[:,0]) returns (0, a[0]), (1, a[1]), (2, a[2]), ... = iang, ang where iang = index of the array (0,1,2,...) for ang = angle (e.g. [1.5, ... , 1.5] , [3.0, ... ,3.0])
+  for iang,ang in enumerate(a[:,0]):
     tang = t[iang]
     sang = s[iang]
     iturn = tang<it # select lost turn number < it
@@ -31,10 +33,11 @@ def get_min_turn_ang(s,t,a,it):
       sangit=sang[iturn].min()
       argminit=np.where(sang==sangit)[0].min() # get index of smallest amplitude with sturn<it - amplitudes are ordered ascending
 #      print(argminit)
-      mta[ang_to_i(ang,angles)]=(ang,sang[argminit-1],tang[argminit-1])#last stable amplitude -> index argminit-1
+      mta[iang]=(ang,sang[argminit-1],tang[argminit-1])#last stable amplitude -> index argminit-1
     else:
-      mta[ang_to_i(ang,angles)]=(ang,sang.max(),tang.min())
+      mta[iang]=(ang,sang.max(),tang.min())
   return mta
+#@profile
 def mk_da_vst(data,seed,tune,turnstep):
   """returns DAout with DAwtrap,DAstrap,DAwsimp,DAssimp,DAstraperr,DAstraperrang,DAstraperramp,nturn,tlossmin.
   the DA is in steps of turnstep
