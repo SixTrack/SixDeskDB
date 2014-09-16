@@ -122,7 +122,7 @@ Usage: sixdb <dbname> da_vs_turns
          db=SixDeskDB(study)
        except ValueError: 
          print('Error in da_vs_turns: database not found!')
-         sys.exit(0)
+         sys.exit(1)
        # define default values
        force=False
        turnstep=100
@@ -149,7 +149,7 @@ Usage: sixdb <dbname> plot_da_vs_turns
          db=SixDeskDB(study)
        except ValueError: 
          print('Error in da_vs_turns: database not found!')
-         sys.exit(0)
+         sys.exit(1)
        # define default values
        ampmaxsurv=max(max(db.get_amplitudes()))
        ampmaxdavst=max(max(db.get_amplitudes()))
@@ -182,12 +182,12 @@ Usage: sixdb <dbname> plot_comp_da_vs_turns <compdbname>
          db=SixDeskDB(study)
        except ValueError:
          print('Error in plot_comp_da_vs_turns: database not found!')
-         sys.exit(0)
+         sys.exit(1)
        try:
          dbcomp=SixDeskDB(args[2])
        except ValueError:
          print('Error in plot_comp_da_vs_turns: database of comparison study not found!')
-         sys.exit(0)
+         sys.exit(1)
        # define default values
        lblname=db.LHCDescrip
        complblname=dbcomp.LHCDescrip
