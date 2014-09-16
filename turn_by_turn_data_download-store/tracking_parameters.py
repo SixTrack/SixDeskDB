@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------------------------------------------
-# TRACKING PARAMETERS DOWNLOADER
+# TRACKING PARAMETERS CALCULATOR
 # GIOVANNA CAMPOGIANI
 # LAST MODFIIED: 16/09/2014
 # This script returns some vectors containing information relative to the parameters set for a specific
