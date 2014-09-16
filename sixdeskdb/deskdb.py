@@ -1347,15 +1347,14 @@ class SixDeskDB(object):
     sixdesktunes="%g_%g"%(tunex,tuney)
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
-    #tmp=np.array(self.execute('SELECT DISTINCT %s FROM six_results,six_input where id=six_input_id'%names),dtype=rectype)
     sql='SELECT %s FROM results ORDER BY tunex,tuney,seed,amp1,amp2,angle'%names
-    tmp=np.array(self.execute(sql),dtype=rectype)
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     anumber=1
-    angles=np.unique(tmp['angle'])
-    seeds=np.unique(tmp['seed'])
-    mtime=tmp['mtime'].max()
+    angles=self.get_angles()#np.unique(tmp['angle'])
+    seeds=self.get_seeds()#np.unique(tmp['seed'])
+    mtime=self.execute('SELECT max(mtime) from results')[0][0]
     final=[]
+    sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 '%names
     for angle in angles:
         fndot='DAres.%s.%s.%s.%d'%(self.LHCDescrip,sixdesktunes,turnse,anumber)
         fndot=os.path.join(dirname,fndot)
@@ -1365,15 +1364,14 @@ class SixDeskDB(object):
             ich2 = 0
             ich3 = 0
             icount = 1.
-            itest = 0
             iin  = -999
             iend = -999
             alost1 = 0.
             alost2 = 0.
             achaos = 0
             achaos1 = 0
-            mask=[(tmp['betx']>0) & (tmp['emitx']>0) & (tmp['bety']>0) & (tmp['emity']>0) & (tmp['angle']==angle) & (tmp['seed']==seed)]
-            inp=tmp[mask]
+            sql=sql1+'AND seed=%g AND angle=%g ORDER BY amp1'%(seed,angle)
+            inp=np.array(self.execute(sql),dtype=rectype)
             betx=inp['betx']
             betx2=inp['betx2']
             bety=inp['bety']
@@ -1388,18 +1386,17 @@ class SixDeskDB(object):
             sigyavgnld=inp['sigyavgnld']
             sturns1=inp['sturns1']
             sturns2=inp['sturns2']
+            turn_max=inp['turn_max'].max()
 
             if inp.size<2 :
                 print 'not enought data for angle = %s' %angle
                 break
 
             zero = 1e-10
-            for itest in range(0,inp.size):
-                #print sigx1[itest],np.sqrt(betx[itest]*emitx[itest])
-                if betx[itest]>zero and emitx[itest]>zero : sigx1[itest] =  np.sqrt(betx[itest]*emitx[itest])
-                if bety[itest]>zero and emity[itest]>zero : sigy1[itest] =  np.sqrt(bety[itest]*emity[itest])
-                if betx[itest]>zero and emitx[itest]>zero and bety[itest]>zero and emity[itest]>zero: itest+=1
-
+            xidx=(betx>zero) & (emitx>zero)
+            yidx=(bety>zero) & (emity>zero)
+            sigx1[xidx]=np.sqrt(betx[xidx]*emitx[xidx])
+            sigy1[yidx]=np.sqrt(bety[yidx]*emity[yidx])
             iel=inp.size-1
             rat=0
 
@@ -1428,10 +1425,8 @@ class SixDeskDB(object):
             sigma=np.sqrt(betx[0]*Elhc/Einj)
             if abs(emity[0])>0 and abs(sigx1[0])>0:
                 if abs(emitx[0])<zero :
-                    #rad=np.sqrt(1+(pow(sigy1[0],2)*betx[0])/(pow(sigx1[0],2)*bety[0]))/sigma
                     rad=np.sqrt(1+(sigy1[0]**2*betx[0])/(sigx1[0]**2*bety[0]))/sigma
                 else:
-                    #rad=np.sqrt((abs(emitx[0])+abs(emity[0]))/abs(emitx[0]))/sigma
                     rad=np.sqrt((emitx[0]+emity[0])/emitx[0])/sigma
             else:
                 rad=1
@@ -1443,18 +1438,22 @@ class SixDeskDB(object):
                     rad1=np.sqrt(1+rad1*rad1)/sigma
             else:
                 rad1 = 1
-            for i in range(0,iel+1):
-                if ich1 == 0 and (distp[i] > 2. or distp[i]<=0.5):
-                    ich1 = 1
-                    achaos=rad*sigx1[i]
-                    iin=i
-                if ich3 == 0 and dist[i] > 1e-2 :
-                    ich3=1
-                    iend=i
-                    achaos1=rad*sigx1[i]
-                if ich2 == 0 and  (sturns1[i]<inp['turn_max'][i] or sturns2[i]<inp['turn_max'][i]):
-                    ich2 = 1
-                    alost2 = rad*sigx1[i]
+            chaostest=np.where((distp>2.)|(distp<=0.5))[0]
+            if len(chaostest)>0:
+                iin=chaostest[0]
+                achaos=rad*sigx1[iin]
+            else:
+                iin=len(iel)
+            chaos1test=np.where(dist > 1e-2)[0]
+            if len(chaos1test)>0:
+                iend=chaos1test[0]
+                achaos1=rad*sigx1[iend]
+            else:
+                iend=len(iel)
+            alost2test=np.where( (sturns1<turn_max) | (sturns2<turn_max))[0]
+            if len(alost2test)>0:
+                ialost2=alost2test[0]
+                alost2=rad*sigx1[ialost2]
             icount=1.
             if iin != -999 and iend == -999 : iend=iel
             if iin != -999 and iend > iin :
