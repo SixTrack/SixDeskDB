@@ -23,7 +23,7 @@ rectype=[('seed','int'),('qx','float'),('qy','float'),('betx','float'),('bety','
         ('sigxminnld', 'float'),('sigxavgnld' ,'float') ,('sigxmaxnld', 'float'),('sigyminnld', 'float'),('sigyavgnld' ,'float'),
         ('sigymaxnld', 'float'),('betx2','float'),('bety2','float'),('distp','float'),('dist','float'),('qx_det','float'),('qy_det','float'),('sturns1' ,'int'),
         ('sturns2','int'),('turn_max','int'),('amp1','float'),('amp2','float'),('angle','float'),('smearx','float'),('smeary','float')]
-names='seed,qx,qy,betx,bety,sigx1,sigy1,deltap,emitx,emity,sigxminnld,sigxavgnld,sigxmaxnld,sigyminnld,sigyavgnld,sigxmaxnld,betx2,bety2,distp,dist,qx_det,qy_det,sturns1,sturns2,turn_max,amp1,amp2,angle,smearx,smeary'
+names='seed,qx,qy,betx,bety,sigx1,sigy1,deltap,emitx,emity,sigxminnld,sigxavgnld,sigxmaxnld,sigyminnld,sigyavgnld,sigymaxnld,betx2,bety2,distp,dist,qx_det,qy_det,sturns1,sturns2,turn_max,amp1,amp2,angle,smearx,smeary'
 outtype=[('study','S100'),('seed','int'),('angle','float'),('achaos','float'),('achaos1','float'),('alost1','float'),('alost2','float'),('Amin','float'),('Amax','float')]
 
 def plot_averem(path, nturns, a0, a1):
@@ -130,6 +130,10 @@ def main2(studyName):
     else:
         print "ERROR: file  %s does not exists!" %(database)
         sys.exit()
+
+    nSeed = 1
+    nPlotSeeds = sd.env_var["iend"]
+
     f2 = open('DA_%s.txt'%studyName, 'w')
     LHCDesName=sd.env_var['LHCDesName']
     turnse=sd.env_var['turnse']
@@ -149,6 +153,9 @@ def main2(studyName):
     iin  = -999
     iend = -999
 
+    print len(np.unique(tmp['angle']))
+    print len(np.unique(tmp['seed']))
+    sys.stdout.flush()
     for angle in np.unique(tmp['angle']):      
         f = open('DAres_%s.%s.%s.%d'%(LHCDesName,sixdesktunes,turnse,anumber), 'w')
         for seed in np.unique(tmp['seed']):
@@ -310,94 +317,95 @@ def main2(studyName):
             if achaos== 0:
                 achaos=amin
             else:
-                f14 = open('fort.14','w')
+                f14 = open('fort.14.%d.%d' %(nSeed,anumber),'w')
                 f14.write('%s %s\n'%(achaos,alost3/fac))
                 f14.write('%s %s\n'%(achaos,inp['turn_max'][0]*fac))
                 f14.close()
             if abs(alost1) < epsilon:
                 alost1=amax
                 ilost=1
+            if nSeed != (nPlotSeeds +1):
+                f11 = open('fort.11.%d.%d' %(nSeed,anumber),'w')
+                f11.write('%s %s\n'%(achaos,1e-1))
+                f11.write('%s %s\n'%(achaos,inp['turn_max'][0]*fac))
+                f11.close()
 
-            f11 = open('fort.11','w')
-            f11.write('%s %s\n'%(achaos,1e-1))
-            f11.write('%s %s\n'%(achaos,inp['turn_max'][0]*fac))
-            f11.close()
+                f26 = open('fort.26.%d.%d' %(nSeed,anumber),'w')
+                f26.write('%s %s\n'%(achaos,1e-1))
+                f26.write('%s %s\n'%((alost2,1e-1) if alost2 > epsilon else (amax, 1e-1)))
+                f26.close()
 
-            f26 = open('fort.26','w')
-            f26.write('%s %s\n'%(achaos,1e-1))
-            f26.write('%s %s\n'%((alost2,1e-1) if alost2 > epsilon else (amax, 1e-1)))
-            f26.close()
+                f27 = open('fort.27.%d.%d' %(nSeed,anumber),'w')
+                al.tofile(f27, sep="\t", format="%s")
+                f27.close()
 
-            f27 = open('fort.27','w')
-            al.tofile(f27, sep="\t", format="%s")
-            f27.close()
+                f12 = open('fort.12.%d.%d' %(nSeed,anumber),'w')
+                f13 = open('fort.13.%d.%d' %(nSeed,anumber),'w')
+                f15 = open('fort.15.%d.%d' %(nSeed,anumber),'w')
+                f16 = open('fort.16.%d.%d' %(nSeed,anumber),'w')
+                f17 = open('fort.17.%d.%d' %(nSeed,anumber),'w')
+                f18 = open('fort.18.%d.%d' %(nSeed,anumber),'w')
+                f19 = open('fort.19.%d.%d' %(nSeed,anumber),'w')
+                f20 = open('fort.20.%d.%d' %(nSeed,anumber),'w')
+                f21 = open('fort.21.%d.%d' %(nSeed,anumber),'w')
+                f22 = open('fort.22.%d.%d' %(nSeed,anumber),'w')
+                f23 = open('fort.23.%d.%d' %(nSeed,anumber),'w')
+                f24 = open('fort.24.%d.%d' %(nSeed,anumber),'w')
+                f25 = open('fort.25.%d.%d' %(nSeed,anumber),'w')
 
-            f12 = open('fort.12','w')
-            f13 = open('fort.13','w')
-            f15 = open('fort.15','w')
-            f16 = open('fort.16','w')
-            f17 = open('fort.17','w')
-            f18 = open('fort.18','w')
-            f19 = open('fort.19','w')
-            f20 = open('fort.20','w')
-            f21 = open('fort.21','w')
-            f22 = open('fort.22','w')
-            f23 = open('fort.23','w')
-            f24 = open('fort.24','w')
-            f25 = open('fort.25','w')
+                for i in range(0, iel+1):
 
-            for i in range(0, iel+1):
+                    f12.write('%s %s\n'%(rad*inp['sigx1'][i], inp['distp'][i]))
+                    
+                    f13.write('%s %s\n'%(rad*inp['sigx1'][i], inp['dist'][i]))
+                    
+                    f15.write('%s %s\n'%(rad*inp['sigx1'][i], inp['sturns1'][i]))
+                    f15.write('%s %s\n'%(rad*inp['sigx1'][i], inp['sturns2'][i]))
+                    
+                    if ilost ==1 or rad*inp['sigx1'][i] < alost2:
+                        if inp['distp'][i] < fac1 and inp['dist'][i] < fac2:
+                            iel2=(iel+1)/2
+                            f16.write('%s %s\n' %(inp['deltap'][i],inp['qx'][i]-inp['qx'][iel2]))
+                            f17.write('%s %s\n' %(inp['deltap'][i],inp['qy'][i]-inp['qy'][iel2]) )
+                            f20.write('%s %s\n' %(rad*inp['sigx1'][i],inp['qx_det'][i]))
+                            f21.write('%s %s\n' %(rad*inp['sigx1'][i],inp['qy_det'][i]))
+                            f25.write('%s %s %d %s %s\n' %(inp['qx_det'][i]+inp['qx'][i], inp['qy_det'][i]+inp['qy'][i],i+1,inp['qx_det'][i],inp['qy_det'][i]))
 
-                f12.write('%s %s\n'%(rad*inp['sigx1'][i], inp['distp'][i]))
-                
-                f13.write('%s %s\n'%(rad*inp['sigx1'][i], inp['dist'][i]))
-                
-                f15.write('%s %s\n'%(rad*inp['sigx1'][i], inp['sturns1'][i]))
-                f15.write('%s %s\n'%(rad*inp['sigx1'][i], inp['sturns2'][i]))
-                
-                if ilost ==1 or rad*inp['sigx1'][i] < alost2:
-                    if inp['distp'][i] < fac1 and inp['dist'][i] < fac2:
-                        iel2=(iel+1)/2
-                        f16.write('%s %s\n' %(inp['deltap'][i],inp['qx'][i]-inp['qx'][iel2]))
-                        f17.write('%s %s\n' %(inp['deltap'][i],inp['qy'][i]-inp['qy'][iel2]) )
-                        f20.write('%s %s\n' %(rad*inp['sigx1'][i],inp['qx_det'][i]))
-                        f21.write('%s %s\n' %(rad*inp['sigx1'][i],inp['qy_det'][i]))
-                        f25.write('%s %s %d %s %s\n' %(inp['qx_det'][i]+inp['qx'][i], inp['qy_det'][i]+inp['qy'][i],i+1,inp['qx_det'][i],inp['qy_det'][i]))
+                        f18.write('%s %s\n'%(rad*inp['sigx1'][i], inp['smearx'][i]))
 
-                    f18.write('%s %s\n'%(rad*inp['sigx1'][i], inp['smearx'][i]))
+                        f19.write('%s %s\n'%(rad*inp['sigx1'][i], inp['smeary'][i]))
 
-                    f19.write('%s %s\n'%(rad*inp['sigx1'][i], inp['smeary'][i]))
+                        f22.write('%s %s\n'%(rad*inp['sigx1'][i], rad1*inp['sigxminnld'][i]))
 
-                    f22.write('%s %s\n'%(rad*inp['sigx1'][i], rad1*inp['sigxminnld'][i]))
+                        f23.write('%s %s\n'%(rad*inp['sigx1'][i], rad1*inp['sigxavgnld'][i]))
 
-                    f23.write('%s %s\n'%(rad*inp['sigx1'][i], rad1*inp['sigxavgnld'][i]))
+                        f24.write('%s %s  %s\n'%(rad*inp['sigx1'][i], rad1*inp['sigxmaxnld'][i],inp['sigxmaxnld'][i]))
 
-                    f24.write('%s %s  %s\n'%(rad*inp['sigx1'][i], rad1*inp['sigxmaxnld'][i],inp['sigxmaxnld'][i]))
-
-            f12.close()
-            f13.close()
-            f14.close()
-            f15.close()
-            f16.close()
-            f17.close()
-            f18.close()
-            f19.close()
-            f20.close()
-            f21.close()
-            f22.close()
-            f23.close()                  
-            f24.close()
-            f25.close()
-            f26.close()
-            f27.close()
+                f12.close()
+                f13.close()
+                f14.close()
+                f15.close()
+                f16.close()
+                f17.close()
+                f18.close()
+                f19.close()
+                f20.close()
+                f21.close()
+                f22.close()
+                f23.close()                  
+                f24.close()
+                f25.close()
+                f26.close()
+                f27.close()
 
             f.write(' %s         %6f    %6f    %6f    %6f    %6f   %6f\n'%( name1,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
             f2.write('%s %s %s %s %s %s %s %s %s \n'%( name2, seed,angle,achaos,achaos1,alost1,alost2,rad*inp['sigx1'][0],rad*inp['sigx1'][iel]))
+            nSeed +=1
         anumber+=1
         f.close()
     f2.close()
-    
-    
+    #nSeed +=1
+    print nSeed
     fhtxt = open('DA_%s.txt'%studyName, 'r')
     final=np.genfromtxt(fhtxt,dtype=outtype)
     fhtxt.close()
@@ -435,11 +443,11 @@ def main2(studyName):
             maxi = -Amax
           elif len(eqaper)>0:
             mini = -Amin
-          print "Minimum:  %.2f  Sigma at Seed #: %d\n" %(mini, smini)
-          print "Maximum:  %.2f  Sigma at Seed #: %d\n" %(maxi, smaxi)
-          print "Average: %.2f Sigma\n " %(mean)
+          # print "Minimum:  %.2f  Sigma at Seed #: %d\n" %(mini, smini)
+          # print "Maximum:  %.2f  Sigma at Seed #: %d\n" %(maxi, smaxi)
+          # print "Average: %.2f Sigma\n " %(mean)
         
-        print "# of (Aav-A0)/A0 >10%%:  %d\n"  %nega        
+        #print "# of (Aav-A0)/A0 >10%%:  %d\n"  %nega        
         fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
     fhplot.close()
 
@@ -461,12 +469,12 @@ if __name__ == "__main__":
         print "too many options: please provide only <study_name>"
         sys.exit()
     main2(sys.argv[1])
-    path='job_tracking/1/simul/62.31_60.32/6-14/e5/.19'
+    path='job_tracking/1/simul/62.31_60.32/6-14/e5/.1'
     nturns=100000
     a0 = 6
     a1 = 14
-    plot_averem( '%s/fort10.tgz'%path, nturns, a0, a1)
-    plot_distance( '%s/fort10.tgz'%path, nturns, a0, a1)
+    #plot_averem( '%s/fort10.tgz'%path, nturns, a0, a1)
+    #plot_distance( '%s/fort10.tgz'%path, nturns, a0, a1)
     plot_maxslope('%s/fort10.tgz'%path, nturns, a0, a1)
-    plot_smear('%s/fort10.tgz'%path, nturns, a0, a1)
-    plot_survival('%s/fort10.tgz'%path, nturns, a0, a1)
+    #plot_smear('%s/fort10.tgz'%path, nturns, a0, a1)
+    #plot_survival('%s/fort10.tgz'%path, nturns, a0, a1)
