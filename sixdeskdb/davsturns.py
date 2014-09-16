@@ -12,7 +12,7 @@ def ang_to_i(ang,angmax):
   return int(round(ang/(90./(angmax+1))-1))
 
 # functions necessary for the analysis
-@profile
+#@profile
 def get_min_turn_ang(s,t,a,it):
   """returns array with (angle,minimum sigma,sturn) of particles with lost turn number < it.
 
@@ -31,7 +31,7 @@ def get_min_turn_ang(s,t,a,it):
     iturn = tang<it # select lost turn number < it
     if(any(tang[iturn])):
       sangit=sang[iturn].min()
-      argminit=np.where(sang==sangit)[0].min() # get index of smallest amplitude with sturn<it - amplitudes are ordered ascending
+      argminit=sang.searchsorted(sangit) # get index of smallest amplitude with sturn<it - amplitudes are ordered ascending
 #      print(argminit)
       mta[iang]=(ang,sang[argminit-1],tang[argminit-1])#last stable amplitude -> index argminit-1
     else:
