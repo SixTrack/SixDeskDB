@@ -31,21 +31,21 @@ relative momentum spread, particles number'''
 # --------------------------------------------------------------------------------------------------------------
 
 studio='4tev_long_withbb' 			# study name
-tunes='62.31_60.32' 				# tunes 											[]
-exp_turns=5 						# order of magnitude of the number of turns tracked []
-seedinit=1. 						# initial seed for madx 							[]
-seedend=10. 						# end seed for madx 								[]
-emit=2.5 							# normalised emittance 								[mm-rad]
-bunch=7.5 							# bunch length 										[cm]
-gamma_rel=4263.156 					# relative gamma factor 							[]
-nsi=4. 								# initial amplitude in units of sigma 				[]
-nsf=12. 							# end amplitude in units of sigma 					[]
-nstep=1 							# amplitude interval 								[]
-ki=1. 								# initial angle 									[deg]
-kmax=5. 							# end angle 										[deg]
-kend=5. 							# angles number 									[]
-delta0=0.0001 						# relative momentum deviation amplitude 			[]
-np=30 								# particles number 									[]
+tunes='62.31_60.32' 				    # tunes 											                      []
+exp_turns=5 						        # order of magnitude of the number of turns tracked []
+seedinit=1. 						        # initial seed for madx 							              []
+seedend=10. 						        # end seed for madx 								                []
+emit=2.5 							          # normalised emittance 								              [mm-rad]
+bunch=7.5 							        # bunch length 										                  [cm]
+gamma_rel=4263.156 					    # relative gamma factor 							              []
+nsi=4. 								          # initial amplitude in units of sigma 				      []
+nsf=12. 							          # end amplitude in units of sigma 					        []
+nstep=1 							          # amplitude interval 								                []
+ki=1. 								          # initial angle 									                  [deg]
+kmax=5. 							          # end angle 										                    [deg]
+kend=5. 							          # angles number 									                  []
+delta0=0.0001 						      # relative momentum deviation amplitude 			      []
+np=30 								          # particles number 									                []
 
 # --------------------------------------------------------------------------------------------------------------
 # END OF USER INPUT BLOCK
@@ -70,7 +70,7 @@ angles=angles_calc(ki,kmax,kend)
 tbt_data=downloader(studio, seeds, ampls, angles, tunes, exp_turns,np)
 remove_data(studio)
 
-print 'Download of the data from CASTOR completed'
+print ('Download of the data from CASTOR completed')
 
 
 # --------------------------------------------------------------------------------------------------------------
@@ -78,3 +78,4 @@ print 'Download of the data from CASTOR completed'
 # --------------------------------------------------------------------------------------------------------------
 
 dbname=create_db(tbt_data,studio,seedinit,seedend,nsi,nsf,angles)
+print ('Turn by turn tracking data successfully stored in %s.db' %dbname)
