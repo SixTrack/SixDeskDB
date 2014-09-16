@@ -12,7 +12,7 @@ def ang_to_i(ang,angmax):
   return int(round(ang/(90./(angmax+1))-1))
 
 # functions necessary for the analysis
-# @profile
+#@profile
 def get_min_turn_ang(s,t,a,it):
   """returns array with (angle,minimum sigma,sturn) of particles with lost turn number < it.
 
@@ -20,34 +20,22 @@ def get_min_turn_ang(s,t,a,it):
   if true: lost turn number and amplitude of the last stable particle is saved = particle "before" the particle with the smallest amplitude with nturns<it
   if false: the smallest lost turn number and the largest amplitude is saved 
   """
-  angmax=len(a[:,0])#number of angles
-  ftype=[('angle',float),('sigma',float),('sturn',float)]
-  mta=np.zeros(angmax,dtype=ftype)
-#  mta=np.ndarray(angmax,dtype=ftype)
-  #initialize to 0
-#  for i in range(len(mta)):
-#    mta[i]=(0,0,0)
   angles,amps=t.shape
-  for iangle in range(angles):
-    ang=a[iangle,0]
-    #print iangle,ang
-    #iangle= a==ang
-  #save in mta
-    #print t.shape
+  ftype=[('angle',float),('sigma',float),('sturn',float)]
+  mta=np.zeros(angles,dtype=ftype)
+  for iangle,ang in enumerate(a[:,0]):
     tang=t[iangle]
-    #print tang.shape
     sang=s[iangle]
     iturn= tang<it
     if(any(tang[iturn])):
-      sangit=sang[iturn].argmin()
-      argminit=np.where(sang==sangit)[0].argmin()#get index of smallest amplitude with sturn<it - amplitudes are ordered ascending
-#      print(argminit)
+      sangit=sang[iturn].min()
+      #argminit=np.where(sang==sangit)[0].min()#get index of smallest amplitude with sturn<it - amplitudes are ordered ascending
+      argminit=sang.searchsorted(sangit)
       mta[iangle]=(ang,sang[argminit-1],tang[argminit-1])#last stable amplitude -> index argminit-1
     else:
-      mta[iangle]=(ang,sang.argmax(),tang.argmin())
+      mta[iangle]=(ang,sang.max(),tang.min())
   return mta
-
-# @profile
+#@profile
 def mk_da_vst(data,seed,tune,turnstep):
   """returns DAout with DAwtrap,DAstrap,DAwsimp,DAssimp,DAstraperr,DAstraperrang,DAstraperramp,nturn,tlossmin.
   the DA is in steps of turnstep

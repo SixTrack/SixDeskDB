@@ -412,11 +412,12 @@ class SixDeskDB(object):
             ffn=os.path.join(workdir,'fort.%d_%s.gz'%(fn,seed))
             if os.path.exists(ffn):
                 mtime=os.path.getmtime(ffn)
-                if mtime > maxtime:
-                  row.append(sqlite3.Binary(open(ffn, 'r').read()))
-                  update[fn]+=1
+                #if mtime >maxtime: #bug to be checked
+                row.append(sqlite3.Binary(open(ffn, 'r').read()))
+                update[fn]+=1
             else:
               print "%s missing inserted null"%ffn
+              row.append("")
         row.append(mtime)
         rows.append(row)
     if rows:
