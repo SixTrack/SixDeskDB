@@ -23,7 +23,7 @@ def create_db(tbt_data,si,sf,ai,af,angles):
 	
 	tbt=sqlite3.connect('%s.db' %dbname)
 	cur=tbt.cursor()
-	#cur.execute('DROP TABLE tracking_data;')
+
 	cur.execute('''
 	CREATE TABLE tracking_data(
 		seed INTEGER, 
