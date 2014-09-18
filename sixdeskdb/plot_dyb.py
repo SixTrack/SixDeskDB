@@ -131,7 +131,7 @@ def main2(studyName):
         print "ERROR: file  %s does not exists!" %(database)
         sys.exit()
 
-    nSeed = 1
+    
     nPlotSeeds = sd.env_var["iend"]
 
     f2 = open('DA_%s.txt'%studyName, 'w')
@@ -153,13 +153,17 @@ def main2(studyName):
     iin  = -999
     iend = -999
 
-    print len(np.unique(tmp['angle']))
-    print len(np.unique(tmp['seed']))
-    sys.stdout.flush()
-    for angle in np.unique(tmp['angle']):      
+    angles = sd.get_angles()
+    seeds  = sd.get_seeds()
+
+    for angle in angles:      
         f = open('DAres_%s.%s.%s.%d'%(LHCDesName,sixdesktunes,turnse,anumber), 'w')
-        for seed in np.unique(tmp['seed']):
-                    
+        angleRes=[]
+
+        for seed in seeds:
+            countic=0
+            nSeed = 1
+            seedRes=[]        
             tl = np.zeros(ntlmax*ntlint+1)
             al = np.zeros(ntlmax*ntlint+1)
             ichl =np.zeros(ntlmax*ntlint+1)
@@ -317,6 +321,7 @@ def main2(studyName):
             if achaos== 0:
                 achaos=amin
             else:
+                #plot_results['f14'] = [[achaos, alost3/fac], [achaos, inp['turn_max'][0]*fac]]
                 f14 = open('fort.14.%d.%d' %(nSeed,anumber),'w')
                 f14.write('%s %s\n'%(achaos,alost3/fac))
                 f14.write('%s %s\n'%(achaos,inp['turn_max'][0]*fac))
@@ -475,6 +480,6 @@ if __name__ == "__main__":
     a1 = 14
     #plot_averem( '%s/fort10.tgz'%path, nturns, a0, a1)
     #plot_distance( '%s/fort10.tgz'%path, nturns, a0, a1)
-    plot_maxslope('%s/fort10.tgz'%path, nturns, a0, a1)
+    #plot_maxslope('%s/fort10.tgz'%path, nturns, a0, a1)
     #plot_smear('%s/fort10.tgz'%path, nturns, a0, a1)
     #plot_survival('%s/fort10.tgz'%path, nturns, a0, a1)
