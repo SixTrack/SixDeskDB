@@ -93,10 +93,10 @@ def readplotb(studyName):
             fac=2.0
             fac1=2.0
             fac2=0.1
-            fac3=0.0
+            fac3=0.01
             fac4=1.1
             fac5=0.9
-
+            
             if(np.abs(Einj)< epsilon):
                     print "ERROR: Injection energy too small"
                     sys.exit()
