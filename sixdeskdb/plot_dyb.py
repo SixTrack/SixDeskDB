@@ -63,8 +63,8 @@ def readplotb(studyName):
         fndot='DAres.%s.%s.%s.%d'%(sd.LHCDescrip,sixdesktunes,turnse,anumber)
         fndot=os.path.join(dirname,fndot)
         fhdot = open(fndot, 'w')
+        nSeed=1
         for seed in seeds:
-            nSeed=1
             ich1 = 0
             ich2 = 0
             ich3 = 0
@@ -128,6 +128,8 @@ def readplotb(studyName):
             sigxmaxnld = inp['sigxmaxnld']
             sigxavgnld = inp['sigxavgnld']
             sigxminnld = inp['sigxminnld']
+            sigymaxnld = inp['sigymaxnld']
+            sigyminnld = inp['sigyminnld']
 
             zero = 1e-10
 
@@ -151,14 +153,14 @@ def readplotb(studyName):
                 betx2=bety2
                 bety2=dummy
                 dummy=np.copy(sigxminnld)
-                sigxminnld=inp['sigyminnld']
-                inp['sigyminnld']=dummy
+                sigxminnld=np.copy(sigyminnld)
+                sigyminnld=dummy
                 dummy=np.copy(sigx1)
                 sigx1=sigy1
                 sigy1=dummy
                 dummy=np.copy(sigxmaxnld)
-                sigxmaxnld=inp['sigymaxnld']
-                inp['sigymaxnld']=dummy
+                sigxmaxnld=np.copy(sigymaxnld)
+                sigymaxnld=dummy
                 dummy=np.copy(sigxavgnld)
                 sigxavgnld=sigyavgnld
                 sigyavgnld=dummy
@@ -206,9 +208,9 @@ def readplotb(studyName):
                     ich2 = 1
                     alost2 = rad*sigx1[i]
                 for j in range(0, ntlmax*ntlint+1):
-                  if ichl[j] == 0 and  int(round(turn_max[i])) >= tl[j] and (int(round(sturns1[i])) < tl[j] or int(round(sturns2[i])) < tl[j]):
+                  if (ichl[j] == 0 and  int(round(turn_max[i])) >= tl[j]) and ((int(round(sturns1[i])) < tl[j] or int(round(sturns2[i])) < tl[j])):
                       ichl[j] = 1
-                      al[j] = rad*sigx1[i]
+                      al[j-1] = rad*sigx1[i]
 
             if iin != -999 and iend == -999 : iend=iel  
             if iin != -999 and iend > iin :    
@@ -276,59 +278,61 @@ def readplotb(studyName):
                 f12 = open('fort.12.%d.%d' %(nSeed,anumber),'w')
                 f13 = open('fort.13.%d.%d' %(nSeed,anumber),'w')
                 f15 = open('fort.15.%d.%d' %(nSeed,anumber),'w')
-                f16 = open('fort.16.%d.%d' %(nSeed,anumber),'w')
-                f17 = open('fort.17.%d.%d' %(nSeed,anumber),'w')
                 f18 = open('fort.18.%d.%d' %(nSeed,anumber),'w')
                 f19 = open('fort.19.%d.%d' %(nSeed,anumber),'w')
-                f20 = open('fort.20.%d.%d' %(nSeed,anumber),'w')
-                f21 = open('fort.21.%d.%d' %(nSeed,anumber),'w')
                 f22 = open('fort.22.%d.%d' %(nSeed,anumber),'w')
                 f23 = open('fort.23.%d.%d' %(nSeed,anumber),'w')
                 f24 = open('fort.24.%d.%d' %(nSeed,anumber),'w')
-                f25 = open('fort.25.%d.%d' %(nSeed,anumber),'w')
 
                 for i in range(0, iel+1):
 
-                    f12.write('%s %s\n'%(rad*sigx1[i], distp[i]))
+                    f12.write('%.14f %.14f\n'%(rad*sigx1[i], distp[i]))
                     
-                    f13.write('%s %s\n'%(rad*sigx1[i], dist[i]))
+                    f13.write('%.14f %.14f\n'%(rad*sigx1[i], dist[i]))
                     
-                    f15.write('%s %s\n'%(rad*sigx1[i], sturns1[i]))
-                    f15.write('%s %s\n'%(rad*sigx1[i], sturns2[i]))
-                    
-                    if ilost == 1 or rad*sigx1[i] < alost2:
+                    f15.write('%.14f %.14f\n'%(rad*sigx1[i], sturns1[i]))
+                    f15.write('%.14f %.14f\n'%(rad*sigx1[i], sturns2[i]))
+                    if ilost == 1 or (rad*sigx1[i] < alost2):
                         if distp[i] < fac1 and dist[i] < fac2:
+                            f16 = open('fort.16.%d.%d' %(nSeed,anumber),'a')
+                            f17 = open('fort.17.%d.%d' %(nSeed,anumber),'a')
+                            f20 = open('fort.20.%d.%d' %(nSeed,anumber),'a')
+                            f21 = open('fort.21.%d.%d' %(nSeed,anumber),'a')
+                            f25 = open('fort.25.%d.%d' %(nSeed,anumber),'a')
                             iel2=(iel+1)/2
-                            f16.write('%s %s\n' %(deltap[i],qx[i]-qx[iel2]))
-                            f17.write('%s %s\n' %(deltap[i],qy[i]-qy[iel2]) )
-                            f20.write('%s %s\n' %(rad*sigx1[i],qx_det[i]))
-                            f21.write('%s %s\n' %(rad*sigx1[i],qy_det[i]))
-                            f25.write('%s %s %d %s %s\n' %(qx_det[i]+qx[i], qy_det[i]+qy[i],i+1,qx_det[i],qy_det[i]))
+                            f16.write('%.14E %.14E\n' %(deltap[i],qx[i]-qx[iel2]))
+                            f17.write('%.14f %.14f\n' %(deltap[i],qy[i]-qy[iel2]) )
+                            f20.write('%.14f %.14f\n' %(rad*sigx1[i],qx_det[i]))
+                            f21.write('%.14f %.14f\n' %(rad*sigx1[i],qy_det[i]))
+                            f25.write('%.14f %.14f %d %.14f %.14f\n' %(qx_det[i]+qx[i], qy_det[i]+qy[i],i+1,qx_det[i],qy_det[i]))
+                            f16.close()
+                            f17.close()
+                            f20.close()
+                            f21.close()
+                            f25.close()
 
-                        f18.write('%s %s\n'%(rad*sigx1[i], smearx[i]))
+                        f18.write('%.14f %.14f\n'%(rad*sigx1[i], smearx[i]))
 
-                        f19.write('%s %s\n'%(rad*sigx1[i], smeary[i]))
+                        f19.write('%.14f %.14f\n'%(rad*sigx1[i], smeary[i]))
 
-                        f22.write('%s %s\n'%(rad*sigx1[i], rad1*sigxminnld[i]))
+                        f22.write('%.14f %.14f %.14f %.14f\n'%(rad*sigx1[i], rad1*sigxminnld[i], sigxminnld[i], rad1))
 
-                        f23.write('%s %s\n'%(rad*sigx1[i], rad1*sigxavgnld[i]))
+                        f23.write('%.14f %.14f\n'%(rad*sigx1[i], rad1*sigxavgnld[i]))
 
-                        f24.write('%s %s  %s\n'%(rad*sigx1[i], rad1*sigxmaxnld[i],sigxmaxnld[i]))
+                        f24.write('%.14f %.14f\n'%(rad*sigx1[i], rad1*sigxmaxnld[i]))
+
 
                 f12.close()
                 f13.close()
                 f14.close()
                 f15.close()
-                f16.close()
-                f17.close()
+               
                 f18.close()
                 f19.close()
-                f20.close()
-                f21.close()
+                
                 f22.close()
                 f23.close()                  
                 f24.close()
-                f25.close()
                 f26.close()
                 f27.close()
 
@@ -345,6 +349,7 @@ def readplotb(studyName):
     cols=SQLTable.cols_from_fields(tables.Da_Post.fields)
     datab=SQLTable(sd.conn,'da_post',cols)
     datab.insertl(final)
+    print al
 
 def mk_da(studyName,force=False,nostd=False):
     database='%s.db'%(studyName)
