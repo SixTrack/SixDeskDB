@@ -32,12 +32,11 @@ def get_min_turn_ang(s,t,a,it):
     if(any(tang[iturn])):
       sangit=sang[iturn].min()
       argminit=sang.searchsorted(sangit) # get index of smallest amplitude with sturn<it - amplitudes are ordered ascending
-#      print(argminit)
       mta[iang]=(ang,sang[argminit-1],tang[argminit-1])#last stable amplitude -> index argminit-1
     else:
       mta[iang]=(ang,sang.max(),tang.min())
   return mta
-#@profile
+@profile
 def mk_da_vst(data,seed,tune,turnstep):
   """returns DAout with DAwtrap,DAstrap,DAwsimp,DAssimp,DAstraperr,DAstraperrang,DAstraperramp,nturn,tlossmin.
   the DA is in steps of turnstep
@@ -59,22 +58,33 @@ def mk_da_vst(data,seed,tune,turnstep):
   angstep=np.pi/(2*(angmax+1))#step in angle in rad
   ampstep=np.abs((s[s>0][1])-(s[s>0][0]))
   ftype=[('seed',int),('tunex',float),('tuney',float),('DAwtrap',float),('DAstrap',float),('DAwsimp',float),('DAssimp',float),('DAstraperr',float),('DAstraperrang',float),('DAstraperramp',float),('nturn',float),('tlossmin',float),('mtime',float)]
-  DAout=np.ndarray(len(np.arange(turnstep,tmax,turnstep)),dtype=ftype)
+  l_turnstep=len(np.arange(turnstep,tmax,turnstep))
+  DAout=np.ndarray(l_turnstep,dtype=ftype)
   for nm in DAout.dtype.names:
-    DAout[nm]=np.zeros(len(DAout[nm]))
+    DAout[nm]=np.zeros(l_turnstep)
   dacount=0
   currentDAwtrap=0
   currenttlossmin=0
+  #define integration coefficients at beginning and end which are unequal to 1
+  ajtrap_s=np.array([3/2.])#Trapezoidal rule
+  ajtrap_e=np.array([3/2.])
+  ajsimp_s=np.array([55/24.,-1/6.,11/8.])#Simpson rule
+  ajsimp_e=np.array([11/8.,-1/6.,55/24.])
   for it in np.arange(turnstep,tmax,turnstep):
     mta=get_min_turn_ang(s,t,a,it)
-    mta['angle']=mta['angle']*np.pi/180#convert to rad
-    if(len(mta['angle'])>2):
-      ajtrap=(np.append(np.append(np.array([3/2.]),np.ones(len(mta['angle'])-2)),np.array([3/2.])))#define coefficients for simpson rule
+    mta_angle=mta['angle']*np.pi/180#convert to rad
+    l_mta_angle=len(mta_angle)
+    if(l_mta_angle>2):
+      # define coefficients for trapezoidal rule
+      # ajtrap =  [3/2,1,....1,3/2]
+      ajtrap=np.concatenate((ajtrap_s,np.ones(l_mta_angle-2),ajtrap_e))
     else:
       print('Error in mk_da_vst: You need at least 3 angles to calculate the DA vs turns!')
       sys.exit(0)
-    if(len(mta['angle'])>6):
-      ajsimp=(np.append(np.append(np.array([55/24.,-1/6.,11/8.]),np.ones(len(mta['angle'])-6)),np.array([11/8.,-1/6.,55/24.])))#define coefficients for simpson rule
+    if(l_mta_angle>6):
+      # define coefficients for simpson rule
+      # ajsimp =  [55/24.,-1/6.,11/8.,1,....1,11/8.,-1/6.,55/24. ]
+      ajsimp=np.concatenate((ajsimp_s,np.ones(l_mta_angle-6),ajsimp_e))
       calcsimp=True
     else:
       print('Error in mk_da_vst: You need at least 7 angles to calculate the DA vs turns with the simpson rule! DA*simp* will be set to 0.') 
