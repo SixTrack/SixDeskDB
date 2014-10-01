@@ -36,7 +36,7 @@ def get_min_turn_ang(s,t,a,it):
     else:
       mta[iang]=(ang,sang.max(),tang.min())
   return mta
-@profile
+#@profile
 def mk_da_vst(data,seed,tune,turnstep):
   """returns DAout with DAwtrap,DAstrap,DAwsimp,DAssimp,DAstraperr,DAstraperrang,DAstraperramp,nturn,tlossmin.
   the DA is in steps of turnstep
@@ -74,6 +74,7 @@ def mk_da_vst(data,seed,tune,turnstep):
     mta=get_min_turn_ang(s,t,a,it)
     mta_angle=mta['angle']*np.pi/180#convert to rad
     l_mta_angle=len(mta_angle)
+    mta_sigma=mta['sigma']
     if(l_mta_angle>2):
       # define coefficients for trapezoidal rule
       # ajtrap =  [3/2,1,....1,3/2]
@@ -91,16 +92,16 @@ def mk_da_vst(data,seed,tune,turnstep):
       calcsimp=False
     # integral trapezoidal rule
     #MF: should add factor 3/2 for first and last angle
-    DAwtrap=((mta['sigma']**4*np.sin(2*mta['angle'])).sum()*angstep)**(1/4.)
-    DAstrap=(2./np.pi)*(mta['sigma']).sum()*angstep
+    DAwtrap=(((mta_sigma**4*np.sin(2*mta_angle)).sum())*angstep)**(1/4.)
+    DAstrap=(2./np.pi)*(mta_sigma).sum()*angstep
     # error trapezoidal rule
-    DAstraperrang=(np.abs(np.diff(mta['sigma']))).sum()/(2*angmax)
+    DAstraperrang=((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
     DAstraperramp=ampstep/2
     DAstraperr=np.sqrt(DAstraperrang**2+DAstraperramp**2)
     if(calcsimp):
       # integral simpson rule
-      DAwsimpint = (ajsimp*((mta['sigma']**4)*np.sin(2*mta['angle']))).sum()*angstep
-      DAssimpint = (ajsimp*mta['sigma']).sum()*angstep
+      DAwsimpint = (ajsimp*((mta_sigma**4)*np.sin(2*mta_angle))).sum()*angstep
+      DAssimpint = (ajsimp*mta_sigma).sum()*angstep
       DAwsimp    = (DAwsimpint)**(1/4.)
       DAssimp    = (2./np.pi)*DAssimpint
       # error simpson rule
@@ -110,7 +111,7 @@ def mk_da_vst(data,seed,tune,turnstep):
     if(DAwtrap!=currentDAwtrap and it-turnstep > 0 and tlossmin!=currenttlossmin):
       DAout[dacount]=(seed,tunex,tuney,DAwtrap,DAstrap,DAwsimp,DAssimp,DAstraperr,DAstraperrang,DAstraperramp,it-turnstep,tlossmin,mtime)
       dacount=dacount+1
-    currentDAwtrap     =DAwtrap
+    currentDAwtrap =DAwtrap
     currenttlossmin=tlossmin
   return DAout[DAout['DAwtrap']>0]#delete 0 from errors
 
