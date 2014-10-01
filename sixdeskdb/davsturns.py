@@ -91,16 +91,16 @@ def mk_da_vst(data,seed,tune,turnstep):
       calcsimp=False
     # integral trapezoidal rule
     #MF: should add factor 3/2 for first and last angle
-    DAwtrap=(np.sum(mta['sigma']**4*np.sin(2*mta['angle']))*angstep)**(1/4.)
-    DAstrap=(2./np.pi)*np.sum(mta['sigma'])*angstep
+    DAwtrap=((mta['sigma']**4*np.sin(2*mta['angle'])).sum()*angstep)**(1/4.)
+    DAstrap=(2./np.pi)*(mta['sigma']).sum()*angstep
     # error trapezoidal rule
-    DAstraperrang=np.sum(np.abs(np.diff(mta['sigma'])))/(2*angmax)
+    DAstraperrang=(np.abs(np.diff(mta['sigma']))).sum()/(2*angmax)
     DAstraperramp=ampstep/2
     DAstraperr=np.sqrt(DAstraperrang**2+DAstraperramp**2)
     if(calcsimp):
       # integral simpson rule
-      DAwsimpint = np.sum(ajsimp*((mta['sigma']**4)*np.sin(2*mta['angle'])))*angstep
-      DAssimpint = np.sum(ajsimp*mta['sigma'])*angstep
+      DAwsimpint = (ajsimp*((mta['sigma']**4)*np.sin(2*mta['angle']))).sum()*angstep
+      DAssimpint = (ajsimp*mta['sigma']).sum()*angstep
       DAwsimp    = (DAwsimpint)**(1/4.)
       DAssimp    = (2./np.pi)*DAssimpint
       # error simpson rule
