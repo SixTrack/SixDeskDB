@@ -86,8 +86,12 @@ def col_count(cur, table):
 
 def mk_dir(dirname):
    if not os.path.isdir(dirname):
-     os.mkdir(dirname)
-     print "Make dir %s"%dirname
+     try:
+       os.mkdir(dirname)
+       print "Make dir %s"%dirname
+     except OSError,msg:
+       print "Error creating dir %s"%dirname
+       print "OSError:", msg
    return dirname
 
 def dict_to_list(dict):
