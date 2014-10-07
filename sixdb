@@ -89,12 +89,18 @@ Usage: sixdb <dbname> info
     def da(self,study):
        """Compute DAres files from database.
 
-Usage: sixdb <dbname> da
+Usage: sixdb <dbname> da [-force] [-nostd]
+Options:
+    -force Force recalculation of DA
+    -nostd Do not add std column in .plot for backward compatibility
        """
        force=False
+       nostd=False
        if '-force' in self.args:
           force=True
-       SixDeskDB(study).mk_da(force)
+       if '-nostd' in self.args:
+          nostd=True
+       SixDeskDB(study).mk_da(force=force,nostd=nostd)
     def load_dir(self,study):
        """Create database from a SixDesk directory dir.
 
