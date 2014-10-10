@@ -7,7 +7,6 @@ import sys
 import getopt
 from deskdb import *
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 from plots import *
 
@@ -64,6 +63,7 @@ def readplotb(studyName):
         fndot=os.path.join(dirname,fndot)
         fhdot = open(fndot, 'w')
         nSeed=1
+        k=0
         for seed in seeds:
             ich1 = 0
             ich2 = 0
@@ -126,20 +126,19 @@ def readplotb(studyName):
             sigxavgnld = inp['sigxavgnld']
             sigyavgnld = inp['sigyavgnld']
             sigxmaxnld = inp['sigxmaxnld']
-            sigxavgnld = inp['sigxavgnld']
             sigxminnld = inp['sigxminnld']
             sigymaxnld = inp['sigymaxnld']
             sigyminnld = inp['sigyminnld']
 
             zero = 1e-10
 
-            iel=itest-1
+            
             xidx=(betx>zero) & (emitx>zero)
             yidx=(bety>zero) & (emity>zero)
             sigx1[xidx]=np.sqrt(betx[xidx]*emitx[xidx])
             sigy1[yidx]=np.sqrt(bety[yidx]*emity[yidx])
-            itest = sum(betx>zero)    
-            iel=itest-1
+            itest = sum(betx>zero)
+            iel=itest-1    
             rat=0
 
             if abs(emitx[0]) < epsilon and abs(sigx1[0])>epsilon and bety > epsilon:  
@@ -192,9 +191,9 @@ def readplotb(studyName):
 
             for i in range(0,iel+1):
 
-                if abs(sigx1[i]) > epsilon and sigx1[i]:
+                if abs(sigx1[i]) > epsilon and sigx1[i]<amin:
                         amin = sigx1[i]
-                if abs(sigx1[i]) > epsilon and sigx1[i]:
+                if abs(sigx1[i]) > epsilon and sigx1[i]>amax:
                         amax=sigx1[i]
                 if ich1 == 0 and (distp[i] > fac or distp[i]< 1./fac): 
                     ich1 = 1
@@ -227,6 +226,7 @@ def readplotb(studyName):
             al = abs(alost1)* al
           
             alost1=alost1*alost2
+
             if amin == 1/epsilon:
                     amin = zero
             amin=amin*rad
@@ -243,7 +243,9 @@ def readplotb(studyName):
 
             name2 = "DAres.%s.%s.%s"%(sd.LHCDescrip,sixdesktunes,turnse)
             name1= '%s%ss%s%s-%s%s.%d'%(sd.LHCDescrip,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
+            print iel
             
+
             if(seed<10):
                 name1+=" "
             if(anumber<10):
@@ -261,10 +263,21 @@ def readplotb(studyName):
                 alost1=amax
                 ilost=1
             if nSeed != (nPlotSeeds +1):
+                f40 = open('fort.40.%d' %(nSeed),'a')
                 f11 = open('fort.11.%d.%d' %(nSeed,anumber),'w')
                 f11.write('%s %s\n'%(achaos,1e-1))
-                f11.write('%s %s\n'%(achaos,turn_max[0]*fac))
+                f11.write('%s %s\n'%(al[7*ntlint],1e-1))
+                f11.write('%s %s\n'%(al[6*ntlint],1e-1))
+                f11.write('%s %s\n'%(al[5*ntlint],1e-1))
+                f11.write('%s %s\n'%(al[4*ntlint],1e-1))
+                f11.write('%s %s\n'%(al[3*ntlint],1e-1))
+                f11.write('%s %s\n'%(amin,1e-1)) #Wrong
+                f11.write('%s %s\n'%(amax,1e-1))
+                f11.write('%s %s\n'%(achaos1,1e-1))
+                f40.write('%s %s %s %s %s %s %s %s %s %s\n'%(angle, achaos, al[7*ntlint], al[6*ntlint],al[5*ntlint],al[4*ntlint],al[3*ntlint],amin,amax,achaos1))
+              
                 f11.close()
+                f40.close()
 
                 f26 = open('fort.26.%d.%d' %(nSeed,anumber),'w')
                 f26.write('%s %s\n'%(achaos,1e-1))
@@ -275,6 +288,12 @@ def readplotb(studyName):
                 al.tofile(f27, sep="\t", format="%s")
                 f27.close()
 
+                f28 = open('fort.28.%d' %(nSeed),'a')
+                f28.write("%s\t"%angle)
+                al.tofile(f28, sep=(" "*8), format="%s")
+                f28.write("\n")
+                f28.close()
+
                 f12 = open('fort.12.%d.%d' %(nSeed,anumber),'w')
                 f13 = open('fort.13.%d.%d' %(nSeed,anumber),'w')
                 f15 = open('fort.15.%d.%d' %(nSeed,anumber),'w')
@@ -283,9 +302,10 @@ def readplotb(studyName):
                 f22 = open('fort.22.%d.%d' %(nSeed,anumber),'w')
                 f23 = open('fort.23.%d.%d' %(nSeed,anumber),'w')
                 f24 = open('fort.24.%d.%d' %(nSeed,anumber),'w')
-
+                f30 = open('fort.30.%d.%d' %(nSeed,anumber),'a')
                 for i in range(0, iel+1):
-
+                    
+                    f30.write("%s\t%f %f %f %f %f\n"%( name1[:39],rad*sigx1[i],distp[i],achaos,alost2,rad1*sigxavgnld[i]))
                     f12.write('%.14f %.14f\n'%(rad*sigx1[i], distp[i]))
                     
                     f13.write('%.14f %.14f\n'%(rad*sigx1[i], dist[i]))
@@ -324,7 +344,6 @@ def readplotb(studyName):
 
                 f12.close()
                 f13.close()
-                f14.close()
                 f15.close()
                
                 f18.close()
@@ -335,6 +354,7 @@ def readplotb(studyName):
                 f24.close()
                 f26.close()
                 f27.close()
+                f30.close()
 
             fmt=' %-39s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
             fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*sigx1[0],rad*sigx1[iel]))
@@ -349,7 +369,6 @@ def readplotb(studyName):
     cols=SQLTable.cols_from_fields(tables.Da_Post.fields)
     datab=SQLTable(sd.conn,'da_post',cols)
     datab.insertl(final)
-    print al
 
 def mk_da(studyName,force=False,nostd=False):
     database='%s.db'%(studyName)
@@ -386,6 +405,7 @@ def mk_da(studyName,force=False,nostd=False):
     fnplot= os.path.join(dirname,fnplot)
     fhplot = open(fnplot, 'w')
     fn=0
+
     for angle in np.unique(final['angle']):
         fn+=1
         study= final['name'][0]
@@ -453,8 +473,10 @@ if __name__ == "__main__":
     nturns=100000
     a0 = 6
     a1 = 14
-    #plot_averem( '%s/fort10.tgz'%path, nturns, a0, a1)
-    #plot_distance( '%s/fort10.tgz'%path, nturns, a0, a1)
-    #plot_maxslope('%s/fort10.tgz'%path, nturns, a0, a1)
-    #plot_smear('%s/fort10.tgz'%path, nturns, a0, a1)
-    #plot_survival('%s/fort10.tgz'%path, nturns, a0, a1)
+    seed=3
+    angle=19
+    # plot_averem( '%s/fort10.tgz'%path,seed,angle,nturns,a0,a1)
+    # plot_distance( '%s/fort10.tgz'%path,seed,angle,nturns,a0,a1)
+    # plot_maxslope('%s/fort10.tgz'%path,seed,angle,nturns,a0,a1)
+    # plot_smear('%s/fort10.tgz'%path,seed,angle,nturns,a0,a1)
+    # plot_survival('%s/fort10.tgz'%path,seed,angle,nturns,a0,a1)
