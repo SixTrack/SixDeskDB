@@ -228,7 +228,13 @@ db.plot_col('sturns1',1,45)
 db.plot_polar_col('sturns1',1)
 """
         print
-        IPython.start_ipython(user_ns={'db':db},argv=['--pylab'])
+        if hasattr(IPython,'start_ipython'):
+          IPython.start_ipython(user_ns={'db':db},argv=['--pylab'])
+        else:
+          from IPython.terminal.embed import InteractiveShellEmbed
+          ipshell = InteractiveShellEmbed(user_ns={db:'db'})
+          ipshell.enable_pylab()
+          ipshell()
     def set(self,study):
         """Redefine environment variables
         Usage: sixdb <dbname> set <key1> <value1> ...
