@@ -20,20 +20,21 @@ def get_min_turn_ang(s,t,a,it):
   if true: lost turn number and amplitude of the last stable particle is saved = particle "before" the particle with the smallest amplitude with nturns<it
   if false: the smallest lost turn number and the largest amplitude is saved 
   """
-  angles,amps=t.shape
+  # s,t,a are ordered by angle,amplitude
+  angles,sigmas=t.shape# angles = number of angles, sigmas = number of amplitudes
   ftype=[('angle',float),('sigma',float),('sturn',float)]
   mta=np.zeros(angles,dtype=ftype)
-  for iangle,ang in enumerate(a[:,0]):
-    tang=t[iangle]
-    sang=s[iangle]
-    iturn= tang<it
+  # enumerate(a[:,0]) returns (0, a[0]), (1, a[1]), (2, a[2]), ... = iang, ang where iang = index of the array (0,1,2,...) for ang = angle (e.g. [1.5, ... , 1.5] , [3.0, ... ,3.0])
+  for iang,ang in enumerate(a[:,0]):
+    tang = t[iang]
+    sang = s[iang]
+    iturn = tang<it # select lost turn number < it
     if(any(tang[iturn])):
       sangit=sang[iturn].min()
-      #argminit=np.where(sang==sangit)[0].min()#get index of smallest amplitude with sturn<it - amplitudes are ordered ascending
-      argminit=sang.searchsorted(sangit)
-      mta[iangle]=(ang,sang[argminit-1],tang[argminit-1])#last stable amplitude -> index argminit-1
+      argminit=sang.searchsorted(sangit) # get index of smallest amplitude with sturn<it - amplitudes are ordered ascending
+      mta[iang]=(ang,sang[argminit-1],tang[argminit-1])#last stable amplitude -> index argminit-1
     else:
-      mta[iangle]=(ang,sang.max(),tang.min())
+      mta[iang]=(ang,sang.max(),tang.min())
   return mta
 #@profile
 def mk_da_vst(data,seed,tune,turnstep):
@@ -57,21 +58,27 @@ def mk_da_vst(data,seed,tune,turnstep):
   angstep=np.pi/(2*(angmax+1))#step in angle in rad
   ampstep=np.abs((s[s>0][1])-(s[s>0][0]))
   ftype=[('seed',int),('tunex',float),('tuney',float),('DAwtrap',float),('DAstrap',float),('DAwsimp',float),('DAssimp',float),('DAstraperr',float),('DAstraperrang',float),('DAstraperramp',float),('nturn',float),('tlossmin',float),('mtime',float)]
-  DAout=np.ndarray(len(np.arange(turnstep,tmax,turnstep)),dtype=ftype)
+  l_turnstep=len(np.arange(turnstep,tmax,turnstep))
+  DAout=np.ndarray(l_turnstep,dtype=ftype)
   for nm in DAout.dtype.names:
-    DAout[nm]=np.zeros(len(DAout[nm]))
+    DAout[nm]=np.zeros(l_turnstep)
   dacount=0
   currentDAwtrap=0
   currenttlossmin=0
-  ajsimp_s=np.array([55/24.,-1/6.,11/8.])
+  #define integration coefficients at beginning and end which are unequal to 1
+  ajtrap_s=np.array([3/2.])#Trapezoidal rule
+  ajtrap_e=np.array([3/2.])
+  ajsimp_s=np.array([55/24.,-1/6.,11/8.])#Simpson rule
   ajsimp_e=np.array([11/8.,-1/6.,55/24.])
   for it in np.arange(turnstep,tmax,turnstep):
     mta=get_min_turn_ang(s,t,a,it)
-    mta_angle=mta['angle']
+    mta_angle=mta['angle']*np.pi/180#convert to rad
     l_mta_angle=len(mta_angle)
-    mta_angle*=np.pi/180#convert to rad
+    mta_sigma=mta['sigma']
     if(l_mta_angle>2):
-      ajtrap=np.concatenate(([3/2.],np.ones(l_mta_angle-2),[3/2.]))
+      # define coefficients for trapezoidal rule
+      # ajtrap =  [3/2,1,....1,3/2]
+      ajtrap=np.concatenate((ajtrap_s,np.ones(l_mta_angle-2),ajtrap_e))
     else:
       print('Error in mk_da_vst: You need at least 3 angles to calculate the DA vs turns!')
       sys.exit(0)
@@ -85,16 +92,16 @@ def mk_da_vst(data,seed,tune,turnstep):
       calcsimp=False
     # integral trapezoidal rule
     #MF: should add factor 3/2 for first and last angle
-    DAwtrap=(np.sum(mta['sigma']**4*np.sin(2*mta_angle))*angstep)**(1/4.)
-    DAstrap=(2./np.pi)*np.sum(mta['sigma'])*angstep
+    DAwtrap=(((mta_sigma**4*np.sin(2*mta_angle)).sum())*angstep)**(1/4.)
+    DAstrap=(2./np.pi)*(mta_sigma).sum()*angstep
     # error trapezoidal rule
-    DAstraperrang=np.abs(np.diff(mta['sigma'])).sum()/(2*angmax)
+    DAstraperrang=((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
     DAstraperramp=ampstep/2
     DAstraperr=np.sqrt(DAstraperrang**2+DAstraperramp**2)
     if(calcsimp):
       # integral simpson rule
-      DAwsimpint = np.sum(ajsimp*((mta['sigma']**4)*np.sin(2*mta_angle)))*angstep
-      DAssimpint = np.sum(ajsimp*mta['sigma'])*angstep
+      DAwsimpint = (ajsimp*((mta_sigma**4)*np.sin(2*mta_angle))).sum()*angstep
+      DAssimpint = (ajsimp*mta_sigma).sum()*angstep
       DAwsimp    = (DAwsimpint)**(1/4.)
       DAssimp    = (2./np.pi)*DAssimpint
       # error simpson rule
@@ -104,7 +111,7 @@ def mk_da_vst(data,seed,tune,turnstep):
     if(DAwtrap!=currentDAwtrap and it-turnstep > 0 and tlossmin!=currenttlossmin):
       DAout[dacount]=(seed,tunex,tuney,DAwtrap,DAstrap,DAwsimp,DAssimp,DAstraperr,DAstraperrang,DAstraperramp,it-turnstep,tlossmin,mtime)
       dacount=dacount+1
-    currentDAwtrap     =DAwtrap
+    currentDAwtrap =DAwtrap
     currenttlossmin=tlossmin
   return DAout[DAout['DAwtrap']>0]#delete 0 from errors
 
