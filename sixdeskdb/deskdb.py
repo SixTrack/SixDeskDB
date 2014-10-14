@@ -1267,7 +1267,7 @@ class SixDeskDB(object):
 
   def mk_analysis_dir(self,seed=None,tunes=None,angle=None):
     '''create analysis directory structure'''
-    dirname=self.LHCDescrip
+    dirname='dares_'+self.LHCDescrip
     out=[mk_dir(dirname)]
     if seed is not None:
       seed=str(seed)

@@ -13,7 +13,7 @@ fi
 ../../sixdb job_hllhc10_test8.db info || exit 1
 ../../sixdb job_hllhc10_test8.db da || exit 1
 
-for i in job_hllhc10_test8/*;
+for i in dares_job_hllhc10_test8/*;
 do
   #echo $i job_hllhc10_test8_reference/${i#*/}
   diff $i job_hllhc10_test8_reference/${i#*/}
