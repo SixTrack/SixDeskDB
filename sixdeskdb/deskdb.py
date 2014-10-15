@@ -1447,13 +1447,13 @@ class SixDeskDB(object):
                 iin=chaostest[0]
                 achaos=rad*sigx1[iin]
             else:
-                iin=len(iel)
+                iin=iel
             chaos1test=np.where(dist > 1e-2)[0]
             if len(chaos1test)>0:
                 iend=chaos1test[0]
                 achaos1=rad*sigx1[iend]
             else:
-                iend=len(iel)
+                iend=iel
             alost2test=np.where( (sturns1<turn_max) | (sturns2<turn_max))[0]
             if len(alost2test)>0:
                 ialost2=alost2test[0]
