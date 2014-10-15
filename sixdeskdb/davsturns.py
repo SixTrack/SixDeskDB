@@ -1,9 +1,7 @@
 # DA vs turns module
-import os as os
-import sys as sys
 import numpy as np
 import matplotlib.pyplot as pl
-import glob as glob
+import glob, sys, os, time
 from deskdb import SixDeskDB,tune_dir
 
 # basic functions
@@ -48,7 +46,7 @@ def mk_da_vst(data,seed,tune,turnstep):
                  = (dtheta*sum(r(theta_i)^4*sin(2*theta_i)))^1/4
   trapezoidal and simpson rule: numerical recipes open formulas 4.1.15 and 4.1.18        
   """
-  mtime=0.0
+  mtime=time.time()
   (tunex,tuney)=tune
   s,a,t=data['sigma'],data['angle'],data['sturn']
   tmax=np.max(t[s>0])#maximum number of turns
@@ -213,15 +211,24 @@ def RunDaVsTurns(db,force,outfile,turnstep):
       print('analyzing tune {0} ...').format(str(tune))
       dirname=db.mk_analysis_dir(seed,tune)#directory struct already created in clean_dir_da_vst, only get dir name (string) here
       print('... get survival data')
-      DAsurv=db.get_surv(seed,tune)
-      if(force):# case: create data
+      DAsurv= db.get_surv(seed,tune)
+      print('... get da vs turns data')
+      DAout = db.get_da_vst(seed,tune)
+      if(len(DAout)>0):#reload data, if input data has changed redo the analysis
+        print 'lendaout>0'
+        an_mtime=DAout['mtime'].min()
+        res_mtime=db.execute('SELECT max(mtime) FROM six_results')[0][0]
+        if res_mtime>an_mtime or force is True:
+          print('... input data has changed - recalculate da vs turns')
+          DAout=mk_da_vst(DAsurv,seed,tune,turnstep)
+          print('.... save data in database')
+          db.st_da_vst(DAout)
+      else:#create data
+        print 'lendaout=0'
         print('... calculate da vs turns')
         DAout=mk_da_vst(DAsurv,seed,tune,turnstep)
         print('.... save data in database')
         db.st_da_vst(DAout)
-      else:# case: reload data
-        print('... get da vs turns data')
-        DAout = db.get_da_vst(seed,tune)
       if(outfile):# create DAsurv.out and DA.out files
         save_dasurv(DAsurv,dirname)
         print('... save survival data in {0}/DAsurv.out').format(dirname)

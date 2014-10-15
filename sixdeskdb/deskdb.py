@@ -1570,12 +1570,24 @@ class SixDeskDB(object):
     '''get da vs turns data from DB'''
     #change for new db version
     (tunex,tuney)=tune
-    cmd="""SELECT *
-         FROM da_vsturn WHERE seed=%s and tunex=%s and tuney=%s
-         ORDER BY nturn"""
-    cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
-    ftype=[('seed',int),('tunex',float),('tuney',float),('DAwtrap',float),('DAstrap',float),('DAwsimp',float),('DAssimp',float),('DAstraperr',float),('DAstraperrang',float),('DAstraperramp',float),('nturn',float),('tlossmin',float),('mtime',float)]
-    data=np.fromiter(cur,dtype=ftype)
+    #check if table da_vsturn exists
+    #yes -> return table
+    #no  -> return 0 len table = []
+    cmd="""SELECT name FROM sqlite_master
+        WHERE type='table'
+        ORDER BY name"""
+    cur=self.conn.cursor().execute(cmd)
+    ftype=[('name',np.str_,16)]
+    tabnames=np.fromiter(cur,dtype=ftype)
+    if 'da_vsturn' in tabnames['name']: 
+      ftype=[('seed',int),('tunex',float),('tuney',float),('DAwtrap',float),('DAstrap',float),('DAwsimp',float),('DAssimp',float),('DAstraperr',float),('DAstraperrang',float),('DAstraperramp',float),('nturn',float),('tlossmin',float),('mtime',float)]
+      cmd="""SELECT *
+           FROM da_vsturn WHERE seed=%s and tunex=%s and tuney=%s
+           ORDER BY nturn"""
+      cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
+      data=np.fromiter(cur,dtype=ftype)
+    else:
+      data=[]
     return data
   def get_surv(self,seed,tune):
     '''get survival turns from DB calculated from emitI and emitII'''

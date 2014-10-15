@@ -13,13 +13,13 @@ fi
 echo '***** comparing outputfiles DAres* *****'
 for i in ${study}/*;
 do
-  #echo $i ${study}_reference/${i#*/}
+#  echo $i ${study}_reference/${i#*/}
   diff $i ${study}_reference/${i#*/}
 done
 
 echo '--- da_vs_turns --';
 echo '... test da_vs_turns'
-../../sixdb ${study}.db da_vs_turns -force -outfile
+../../sixdb ${study}.db da_vs_turns -outfile
 echo '... test plot_da_vs_turns'
 ../../sixdb ${study}.db plot_da_vs_turns
 ../../sixdb ${study}.db plot_da_vs_turns -plotlog
@@ -28,7 +28,7 @@ echo '... test plot_comp_da_vs_tursn'
 echo '***** comparing output files DA.out ***** '
 for i in ${study}/*/*/DA.out;
 do
-  #echo $i ${study}_reference/${i#*/}
+#  echo $i ${study}_reference/${i#*/}
   diff $i ${study}_reference/${i#*/}
 done
 echo '... clean up study '${study}
