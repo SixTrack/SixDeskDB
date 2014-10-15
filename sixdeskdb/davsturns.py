@@ -188,14 +188,6 @@ def clean_dir_da_vst(db,files):
 # main analysis - putting the pieces together
 def RunDaVsTurns(db,force,outfile,turnstep):
   '''Da vs turns -- calculate da vs turns for study dbname'''
-  if(force==False and outfile==False):
-    print('Nothing to be done!')
-    return
-  if(force):#remove all files
-    files=['DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png']
-  else:
-    files=[]
-  clean_dir_da_vst(db,files)# create directory structure and delete old files if force=true
   # start analysis
   try:
     turnstep=int(float(turnstep))
@@ -215,16 +207,16 @@ def RunDaVsTurns(db,force,outfile,turnstep):
       print('... get da vs turns data')
       DAout = db.get_da_vst(seed,tune)
       if(len(DAout)>0):#reload data, if input data has changed redo the analysis
-        print 'lendaout>0'
         an_mtime=DAout['mtime'].min()
         res_mtime=db.execute('SELECT max(mtime) FROM six_results')[0][0]
         if res_mtime>an_mtime or force is True:
+          files=['DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png']
+          clean_dir_da_vst(db,files)# create directory structure and delete old files
           print('... input data has changed - recalculate da vs turns')
           DAout=mk_da_vst(DAsurv,seed,tune,turnstep)
           print('.... save data in database')
           db.st_da_vst(DAout)
       else:#create data
-        print 'lendaout=0'
         print('... calculate da vs turns')
         DAout=mk_da_vst(DAsurv,seed,tune,turnstep)
         print('.... save data in database')
