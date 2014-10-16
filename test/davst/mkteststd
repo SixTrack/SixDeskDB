@@ -32,5 +32,5 @@ do
   diff $i ${study}_reference/${i#*/}
 done
 echo '... clean up study '${study}
-cleanstd ${study}
+./cleanstd ${study}
 
