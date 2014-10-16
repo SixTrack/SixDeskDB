@@ -35,8 +35,94 @@ def get_min_turn_ang(s,t,a,it):
       mta[iang]=(ang,sang.max(),tang.min())
   return mta
 #@profile
+def mk_da_vst_ang(data,seed,tune,nang,turnstep):
+  """returns 'seed','tunex','tuney','dawavg','dasavg','dawsimp','dassimp',
+             'dawavgerr','dasavgerr','dasavgerrep','dasavgerrepang',
+             'dasavgerrepamp','dawsimperr','dassimperr','nturn','tlossmin',
+             'mtime'
+     with nang being the number of angles. Useful to study the dependence
+     on the number of angles.
+  the da is in steps of turnstep
+  das:       integral over radius 
+             das = 2/pi*int_0^(2pi)[r(theta)]dtheta=<r(theta)>
+                 = 2/pi*dtheta*sum(a_i*r(theta_i))
+  daw:       integral over phase space
+             daw = (int_0^(2pi)[(r(theta))^4*sin(2*theta)]dtheta)^1/4
+                 = (dtheta*sum(a_i*r(theta_i)^4*sin(2*theta_i)))^1/4
+  simple average (avg): a_i=1
+  simpson rule (simp):  a_i=(55/24.,-1/6.,11/8.,1,....1,11/8.,-1/6.,55/24.)
+                        numerical recipes open formulas 4.1.15 and 4.1.18      
+  """
+  mtime=time.time()
+  (tunex,tuney)=tune
+  s,a,t=data['sigma'],data['angle'],data['sturn']
+  tmax=np.max(t[s>0])#maximum number of turns
+  #set the 0 in t to tmax*100 in order to check if turnnumber<it (any(tang[tang<it])<it in get_min_turn_ang)
+  t[s==0]=tmax*100
+  angmax=len(a[:,0])#number of angles
+  angstep=np.pi/(2*(angmax+1))#step in angle in rad
+  ampstep=np.abs((s[s>0][1])-(s[s>0][0]))
+  ftype=[('seed',int),('tunex',float),('tuney',float),('dawavg',float),('dasavg',float),('dawsimp',float),('dassimp',float),('dawavgerr',float),('dasavgerr',float),('dasavgerrep',float),('dasavgerrepang',float),('dasavgerrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+  l_turnstep=len(np.arange(turnstep,tmax,turnstep))
+  daout=np.ndarray(l_turnstep,dtype=ftype)
+  for nm in daout.dtype.names:
+    daout[nm]=np.zeros(l_turnstep)
+  dacount=0
+  currentdawavg=0
+  currenttlossmin=0
+  #define integration coefficients at beginning and end which are unequal to 1
+  ajsimp_s=np.array([55/24.,-1/6.,11/8.])#Simpson rule
+  ajsimp_e=np.array([11/8.,-1/6.,55/24.])
+  for it in np.arange(turnstep,tmax,turnstep):
+    mta=get_min_turn_ang(s,t,a,it)
+    mta_angle=mta['angle']*np.pi/180#convert to rad
+    l_mta_angle=len(mta_angle)
+    mta_sigma=mta['sigma']
+    if(l_mta_angle>6):
+      # define coefficients for simpson rule (simp)
+      # ajsimp =  [55/24.,-1/6.,11/8.,1,....1,11/8.,-1/6.,55/24. ]
+      ajsimp=np.concatenate((ajsimp_s,np.ones(l_mta_angle-6),ajsimp_e))
+      calcsimp=True
+    else:
+      print('WARNING! mk_da_vst - You need at least 7 angles to calculate the da vs turns with the simpson rule! da*simp* will be set to 0.') 
+      calcsimp=False
+    # ---- simple average (avg)
+    # int
+    dawavg = (((mta_sigma**4*np.sin(2*mta_angle)).sum())*angstep)**(1/4.)
+    dasavg = (2./np.pi)*(mta_sigma).sum()*angstep
+    # error
+    dawavgerrint   = np.abs(((mta_sigma**3*np.sin(2*mta_angle)).sum())*angstep*ampstep)
+    dawavgerr      = np.abs(1/4.*dawavg**(-3/4.))*dawavgerrint
+    dasavgerr      = np.abs(angstep*ampstep*l_mta_angle)*(2./np.pi)
+    dasavgerrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
+    dasavgerrepamp = ampstep/2
+    dasavgerrep    = np.sqrt(dasavgerrepang**2+dasavgerrepamp**2)
+    # ---- simpson rule (simp)
+    if(calcsimp):
+      # int
+      dawsimpint = (ajsimp*((mta_sigma**4)*np.sin(2*mta_angle))).sum()*angstep
+      dawsimp    = (dawsimpint)**(1/4.)
+      dassimpint = (ajsimp*mta_sigma).sum()*angstep
+      dassimp    = (2./np.pi)*dassimpint
+      # error
+      dawsimperrint = (ajsimp*(4*(mta_sigma**3)*np.sin(2*mta_angle))).sum()*angstep*ampstep
+      dawsimperr    = np.abs(1/4.*dawsimp**(-3/4.))*dawsimperrint
+      dassimperr = np.abs(angstep*ampstep*(ajsimp.sum()))*(2./np.pi) 
+    else:
+      (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
+    tlossmin=np.min(mta['sturn'])
+    if(dawavg!=currentdawavg and it-turnstep > 0 and tlossmin!=currenttlossmin):
+      daout[dacount]=(seed,tunex,tuney,dawavg,dasavg,dawsimp,dassimp,dawavgerr,dasavgerr,dasavgerrep,dasavgerrepang,dasavgerrepamp,dawsimperr,dassimperr,it-turnstep,tlossmin,mtime)
+#      daout[dacount]=(seed,tunex,tuney,dawavg,dasavg,dawsimp,dassimp,dasavgerrep,dasavgerrepang,dasavgerrepamp,it-turnstep,tlossmin,mtime)
+      dacount=dacount+1
+    currentdawavg =dawavg
+    currenttlossmin=tlossmin
+  return daout[daout['dawavg']>0]#delete 0 from errors
 def mk_da_vst(data,seed,tune,turnstep):
-  """returns daout with dawavg,dasavg,dawsimp,dassimp,dasavgerrep,dasavgerrepang,dasavgerrepamp,nturn,tlossmin.
+  """returns 'seed','tunex','tuney','dawavg','dasavg','dawsimp','dassimp',
+             'dawavgerr','dasavgerr','dasavgerrep','dasavgerrepang',
+             'dasavgerrepamp','dawsimperr','dassimperr','nturn','tlossmin',
+             'mtime'
   the da is in steps of turnstep
   das:       integral over radius 
              das = 2/pi*int_0^(2pi)[r(theta)]dtheta=<r(theta)>
