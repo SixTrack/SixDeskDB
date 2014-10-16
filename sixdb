@@ -38,12 +38,12 @@ class SixDB(object):
             self.help()
         elif len(args)==1:
             cmd=self.args[0]
-            getattr(self,cmd)()
+            self.help(cmd)
         else:
             study=self.args[0]
             cmd=self.args[1]
             if not hasattr(self,cmd):
-                print "Error: command `%s' illegal"%cmd
+                print "Error: command `%s' not found"%cmd
                 print self.help(cmd)
             else:
               try:
@@ -64,7 +64,7 @@ Usage: sixdb <cmd> <help>
         """
         cmds="load_dir info da  da_vs_turns plot_da_vs_turns plot_comp_da_vs_turns mad interactive".split()
         msg="""sixdb: command line interface of SixDeskDB
-Usage: sixdb <study> <cmd> <options> or sixdb <cmd> help
+Usage: sixdb <study> <cmd> <options> or sixdb <cmd> to get additional help
         """
         if cmd is None:
             print msg
@@ -73,13 +73,13 @@ Usage: sixdb <study> <cmd> <options> or sixdb <cmd> help
                 doc=getattr(self,cmd).__doc__.splitlines()[0]
                 print "%-11s: %s"%(cmd,doc)
             print
-            print "To obtain help on commands use sixdb help <cmd>"
+            print "To obtain help on commands use sixdb <cmd>"
         elif cmd in cmds:
             print "%s:"%cmd,
             print getattr(self,cmd).__doc__
         else:
             print "Command not found"
-            print "To get all command options type: sixdb help"
+            print "To get all command options type: sixdb"
     def info(self,study):
        """Print basic infomation on the database.
 
@@ -89,12 +89,18 @@ Usage: sixdb <dbname> info
     def da(self,study):
        """Compute DAres files from database.
 
-Usage: sixdb <dbname> da
+Usage: sixdb <dbname> da [-force] [-nostd]
+Options:
+    -force Force recalculation of DA
+    -nostd Do not add std column in .plot for backward compatibility
        """
        force=False
+       nostd=False
        if '-force' in self.args:
           force=True
-       SixDeskDB(study).mk_da(force)
+       if '-nostd' in self.args:
+          nostd=True
+       SixDeskDB(study).mk_da(force=force,nostd=nostd)
     def load_dir(self,study):
        """Create database from a SixDesk directory dir.
 
@@ -222,7 +228,13 @@ db.plot_col('sturns1',1,45)
 db.plot_polar_col('sturns1',1)
 """
         print
-        IPython.start_ipython(user_ns={'db':db},argv=['--pylab'])
+        if hasattr(IPython,'start_ipython'):
+          IPython.start_ipython(user_ns={'db':db},argv=['--pylab'])
+        else:
+          from IPython.terminal.embed import InteractiveShellEmbed
+          ipshell = InteractiveShellEmbed(user_ns={db:'db'})
+          ipshell.enable_pylab()
+          ipshell()
     def set(self,study):
         """Redefine environment variables
         Usage: sixdb <dbname> set <key1> <value1> ...

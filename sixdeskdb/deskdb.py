@@ -86,8 +86,12 @@ def col_count(cur, table):
 
 def mk_dir(dirname):
    if not os.path.isdir(dirname):
-     os.mkdir(dirname)
-     print "Make dir %s"%dirname
+     try:
+       os.mkdir(dirname)
+       print "Make dir %s"%dirname
+     except OSError,msg:
+       print "Error creating dir %s"%dirname
+       print "OSError:", msg
    return dirname
 
 def dict_to_list(dict):
@@ -1263,7 +1267,7 @@ class SixDeskDB(object):
 
   def mk_analysis_dir(self,seed=None,tunes=None,angle=None):
     '''create analysis directory structure'''
-    dirname=self.LHCDescrip
+    dirname='dares_'+self.LHCDescrip
     out=[mk_dir(dirname)]
     if seed is not None:
       seed=str(seed)
@@ -1443,13 +1447,13 @@ class SixDeskDB(object):
                 iin=chaostest[0]
                 achaos=rad*sigx1[iin]
             else:
-                iin=len(iel)
+                iin=iel
             chaos1test=np.where(dist > 1e-2)[0]
             if len(chaos1test)>0:
                 iend=chaos1test[0]
                 achaos1=rad*sigx1[iend]
             else:
-                iend=len(iel)
+                iend=iel
             alost2test=np.where( (sturns1<turn_max) | (sturns2<turn_max))[0]
             if len(alost2test)>0:
                 ialost2=alost2test[0]
