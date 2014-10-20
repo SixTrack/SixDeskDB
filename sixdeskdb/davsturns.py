@@ -2,12 +2,19 @@
 import numpy as np
 import matplotlib.pyplot as pl
 import glob, sys, os, time
-from deskdb import SixDeskDB,tune_dir
+from deskdb import SixDeskDB,tune_dir,mk_dir
 
 # basic functions
-def ang_to_i(ang,angmax):
-  """converts angle [degrees] to index (sixtrackindex-1, e.g. for 59 angles [0,...,58])"""
-  return int(round(ang/(90./(angmax+1))-1))
+def get_divisors(n):
+  """finds the divisors of an integer number"""
+  large_divisors = []
+  for i in xrange(1, int(np.sqrt(n) + 1)):
+    if n % i is 0:
+      yield i
+      if i is not n / i:
+        large_divisors.insert(0, n / i)
+  for divisor in large_divisors:
+    yield divisor
 
 # functions necessary for the analysis
 #@profile
@@ -34,90 +41,20 @@ def get_min_turn_ang(s,t,a,it):
     else:
       mta[iang]=(ang,sang.max(),tang.min())
   return mta
+def select_ang_surv(data,seed,nang):
+  """returns data reduced to ((angmax+1)/nang)-1 angles -> nang being the divisor of angmax"""
+  angmax=len(data['angle'][:,0])#number of angles
+  print nang
+  if(nang not in list(get_divisors(angmax+1))[:-2]):
+    print('%s is not a divisor of %s or two large - the two largest divisors are not used')%(nang,angmax+1)
+    sys.exit(0)
+  #define variables for only selection of angles
+  s,a,t=data['sigma'][nang::nang+1],data['angle'][nang::nang+1],data['sturn'][nang::nang+1]
+  ftype=[('angle',float),('sigma',float),('sturn',float)]
+  dataang=np.ndarray(np.shape(a),dtype=ftype)
+  dataang['sigma'],dataang['angle'],dataang['sturn']=s,a,t
+  return dataang
 #@profile
-def mk_da_vst_ang(data,seed,tune,nang,turnstep):
-  """returns 'seed','tunex','tuney','dawavg','dasavg','dawsimp','dassimp',
-             'dawavgerr','dasavgerr','dasavgerrep','dasavgerrepang',
-             'dasavgerrepamp','dawsimperr','dassimperr','nturn','tlossmin',
-             'mtime'
-     with nang being the number of angles. Useful to study the dependence
-     on the number of angles.
-  the da is in steps of turnstep
-  das:       integral over radius 
-             das = 2/pi*int_0^(2pi)[r(theta)]dtheta=<r(theta)>
-                 = 2/pi*dtheta*sum(a_i*r(theta_i))
-  daw:       integral over phase space
-             daw = (int_0^(2pi)[(r(theta))^4*sin(2*theta)]dtheta)^1/4
-                 = (dtheta*sum(a_i*r(theta_i)^4*sin(2*theta_i)))^1/4
-  simple average (avg): a_i=1
-  simpson rule (simp):  a_i=(55/24.,-1/6.,11/8.,1,....1,11/8.,-1/6.,55/24.)
-                        numerical recipes open formulas 4.1.15 and 4.1.18      
-  """
-  mtime=time.time()
-  (tunex,tuney)=tune
-  s,a,t=data['sigma'],data['angle'],data['sturn']
-  tmax=np.max(t[s>0])#maximum number of turns
-  #set the 0 in t to tmax*100 in order to check if turnnumber<it (any(tang[tang<it])<it in get_min_turn_ang)
-  t[s==0]=tmax*100
-  angmax=len(a[:,0])#number of angles
-  angstep=np.pi/(2*(angmax+1))#step in angle in rad
-  ampstep=np.abs((s[s>0][1])-(s[s>0][0]))
-  ftype=[('seed',int),('tunex',float),('tuney',float),('dawavg',float),('dasavg',float),('dawsimp',float),('dassimp',float),('dawavgerr',float),('dasavgerr',float),('dasavgerrep',float),('dasavgerrepang',float),('dasavgerrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
-  l_turnstep=len(np.arange(turnstep,tmax,turnstep))
-  daout=np.ndarray(l_turnstep,dtype=ftype)
-  for nm in daout.dtype.names:
-    daout[nm]=np.zeros(l_turnstep)
-  dacount=0
-  currentdawavg=0
-  currenttlossmin=0
-  #define integration coefficients at beginning and end which are unequal to 1
-  ajsimp_s=np.array([55/24.,-1/6.,11/8.])#Simpson rule
-  ajsimp_e=np.array([11/8.,-1/6.,55/24.])
-  for it in np.arange(turnstep,tmax,turnstep):
-    mta=get_min_turn_ang(s,t,a,it)
-    mta_angle=mta['angle']*np.pi/180#convert to rad
-    l_mta_angle=len(mta_angle)
-    mta_sigma=mta['sigma']
-    if(l_mta_angle>6):
-      # define coefficients for simpson rule (simp)
-      # ajsimp =  [55/24.,-1/6.,11/8.,1,....1,11/8.,-1/6.,55/24. ]
-      ajsimp=np.concatenate((ajsimp_s,np.ones(l_mta_angle-6),ajsimp_e))
-      calcsimp=True
-    else:
-      print('WARNING! mk_da_vst - You need at least 7 angles to calculate the da vs turns with the simpson rule! da*simp* will be set to 0.') 
-      calcsimp=False
-    # ---- simple average (avg)
-    # int
-    dawavg = (((mta_sigma**4*np.sin(2*mta_angle)).sum())*angstep)**(1/4.)
-    dasavg = (2./np.pi)*(mta_sigma).sum()*angstep
-    # error
-    dawavgerrint   = np.abs(((mta_sigma**3*np.sin(2*mta_angle)).sum())*angstep*ampstep)
-    dawavgerr      = np.abs(1/4.*dawavg**(-3/4.))*dawavgerrint
-    dasavgerr      = np.abs(angstep*ampstep*l_mta_angle)*(2./np.pi)
-    dasavgerrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
-    dasavgerrepamp = ampstep/2
-    dasavgerrep    = np.sqrt(dasavgerrepang**2+dasavgerrepamp**2)
-    # ---- simpson rule (simp)
-    if(calcsimp):
-      # int
-      dawsimpint = (ajsimp*((mta_sigma**4)*np.sin(2*mta_angle))).sum()*angstep
-      dawsimp    = (dawsimpint)**(1/4.)
-      dassimpint = (ajsimp*mta_sigma).sum()*angstep
-      dassimp    = (2./np.pi)*dassimpint
-      # error
-      dawsimperrint = (ajsimp*(4*(mta_sigma**3)*np.sin(2*mta_angle))).sum()*angstep*ampstep
-      dawsimperr    = np.abs(1/4.*dawsimp**(-3/4.))*dawsimperrint
-      dassimperr = np.abs(angstep*ampstep*(ajsimp.sum()))*(2./np.pi) 
-    else:
-      (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
-    tlossmin=np.min(mta['sturn'])
-    if(dawavg!=currentdawavg and it-turnstep > 0 and tlossmin!=currenttlossmin):
-      daout[dacount]=(seed,tunex,tuney,dawavg,dasavg,dawsimp,dassimp,dawavgerr,dasavgerr,dasavgerrep,dasavgerrepang,dasavgerrepamp,dawsimperr,dassimperr,it-turnstep,tlossmin,mtime)
-#      daout[dacount]=(seed,tunex,tuney,dawavg,dasavg,dawsimp,dassimp,dasavgerrep,dasavgerrepang,dasavgerrepamp,it-turnstep,tlossmin,mtime)
-      dacount=dacount+1
-    currentdawavg =dawavg
-    currenttlossmin=tlossmin
-  return daout[daout['dawavg']>0]#delete 0 from errors
 def mk_da_vst(data,seed,tune,turnstep):
   """returns 'seed','tunex','tuney','dawavg','dasavg','dawsimp','dassimp',
              'dawavgerr','dasavgerr','dasavgerrep','dasavgerrepang',
@@ -143,6 +80,8 @@ def mk_da_vst(data,seed,tune,turnstep):
   angmax=len(a[:,0])#number of angles
   angstep=np.pi/(2*(angmax+1))#step in angle in rad
   ampstep=np.abs((s[s>0][1])-(s[s>0][0]))
+#  print angstep
+#  print ampstep
   ftype=[('seed',int),('tunex',float),('tuney',float),('dawavg',float),('dasavg',float),('dawsimp',float),('dassimp',float),('dawavgerr',float),('dasavgerr',float),('dasavgerrep',float),('dasavgerrepang',float),('dasavgerrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
   l_turnstep=len(np.arange(turnstep,tmax,turnstep))
   daout=np.ndarray(l_turnstep,dtype=ftype)
@@ -154,7 +93,9 @@ def mk_da_vst(data,seed,tune,turnstep):
   #define integration coefficients at beginning and end which are unequal to 1
   ajsimp_s=np.array([55/24.,-1/6.,11/8.])#Simpson rule
   ajsimp_e=np.array([11/8.,-1/6.,55/24.])
+  warn=True
   for it in np.arange(turnstep,tmax,turnstep):
+#  for it in np.arange(turnstep,turnstep+100000,turnstep):
     mta=get_min_turn_ang(s,t,a,it)
     mta_angle=mta['angle']*np.pi/180#convert to rad
     l_mta_angle=len(mta_angle)
@@ -165,16 +106,24 @@ def mk_da_vst(data,seed,tune,turnstep):
       ajsimp=np.concatenate((ajsimp_s,np.ones(l_mta_angle-6),ajsimp_e))
       calcsimp=True
     else:
-      print('WARNING! mk_da_vst - You need at least 7 angles to calculate the da vs turns with the simpson rule! da*simp* will be set to 0.') 
+      if(warn):
+        print('WARNING! mk_da_vst - You need at least 7 angles to calculate the da vs turns with the simpson rule! da*simp* will be set to 0.')
+        warn=False 
       calcsimp=False
     # ---- simple average (avg)
     # int
-    dawavg = (((mta_sigma**4*np.sin(2*mta_angle)).sum())*angstep)**(1/4.)
-    dasavg = (2./np.pi)*(mta_sigma).sum()*angstep
+    dawavgint = ((mta_sigma**4*np.sin(2*mta_angle)).sum())*angstep
+    dawavg    = (dawavgint)**(1/4.)
+    dasavg    = (2./np.pi)*(mta_sigma).sum()*angstep
     # error
     dawavgerrint   = np.abs(((mta_sigma**3*np.sin(2*mta_angle)).sum())*angstep*ampstep)
-    dawavgerr      = np.abs(1/4.*dawavg**(-3/4.))*dawavgerrint
+    dawavgerr      = np.abs(1/4.*dawavgint**(-3/4.))*dawavgerrint
+#    print('dawavgerrint=%s'%dawavgerrint)
+#    print('dawavg      =%s'%dawavg)
+#    print('dawavgerr   =%s'%dawavgerr)
     dasavgerr      = np.abs(angstep*ampstep*l_mta_angle)*(2./np.pi)
+#    print('dasavg      =%s'%dasavg)
+#    print('dasavgerr   =%s'%dasavgerr)
     dasavgerrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
     dasavgerrepamp = ampstep/2
     dasavgerrep    = np.sqrt(dasavgerrepang**2+dasavgerrepamp**2)
@@ -187,7 +136,7 @@ def mk_da_vst(data,seed,tune,turnstep):
       dassimp    = (2./np.pi)*dassimpint
       # error
       dawsimperrint = (ajsimp*(4*(mta_sigma**3)*np.sin(2*mta_angle))).sum()*angstep*ampstep
-      dawsimperr    = np.abs(1/4.*dawsimp**(-3/4.))*dawsimperrint
+      dawsimperr    = np.abs(1/4.*dawsimpint**(-3/4.))*dawsimperrint
       dassimperr = np.abs(angstep*ampstep*(ajsimp.sum()))*(2./np.pi) 
     else:
       (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
@@ -210,7 +159,7 @@ def reload_daout_old(path):
 def save_daout(data,path):
   daout=data[['seed','tunex','tuney','dawavg','dasavg','dawsimp','dassimp','dawavgerr','dasavgerr','dasavgerrep','dasavgerrepang','dasavgerrepamp','dawsimperr','dassimperr','nturn','tlossmin','mtime']]
 #  daoutold=data[['dawavg','dasavg','dasavgerrep','dasavgerrepang','dasavgerrepamp','nturn','tlossmin']]
-  np.savetxt(path+'/DA.out',daout,fmt='%.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %d')
+  np.savetxt(path+'/DA.out',daout,fmt='%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %d %.12f')
 def reload_daout(path):
   ftype=[('seed',int),('tunex',float),('tuney',float),('dawavg',float),('dasavg',float),('dawsimp',float),('dassimp',float),('dawavgerr',float),('dasavgerr',float),('dasavgerrep',float),('dasavgerrepang',float),('dasavgerrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
   return np.loadtxt(glob.glob(path+'/DA.out*')[0],dtype=ftype,delimiter=' ')
@@ -279,7 +228,39 @@ def clean_dir_da_vst(db,files):
   if(len(files)>0):
     print('remove old {0} ... files in '+db.LHCDescrip).format(files)
 
-# main analysis - putting the pieces together
+# for error analysis - data is not saved in database but output files are generated
+def RunDaVsTurnsAng(db,seed,tune,turnstep):
+  """Da vs turns -- calculate da vs turns for divisors of angmax, 
+     e.g. for angmax=29+1 for divisors [1, 2, 3, 5, 6, 10]"""
+  # start analysis
+  try:
+    turnstep=int(float(turnstep))
+  except [ValueError,NameError,TypeError]:
+    print('Error in RunDaVsTurns: turnstep must be integer values!')
+    sys.exit(0)
+  if(seed not in db.get_db_seeds()):
+    print('WARNING: Seed %s is missing in database !!!'%seed)
+    sys.exit(0)
+  if(tune not in db.get_tunes()):
+    print('WARNING: tune %s is missing in database !!!'%tune)
+    sys.exit(0)
+  seed=int(seed)
+  print('analyzing seed {0} and tune {1}...').format(str(seed),str(tune))
+  dirname=db.mk_analysis_dir(seed,tune)#directory struct already created in clean_dir_da_vst, only get dir name (string) here
+  print('... get survival data')
+  dasurvtot= db.get_surv(seed,tune)
+  a=dasurvtot['angle']
+  angmax=len(a[:,0])#number of angles
+  print('... number of angles: %s, divisors: %s'%(angmax,str(list(get_divisors(angmax+1))[0:-2])))
+  for nang in list(get_divisors(angmax+1))[0:-2]:
+    dirnameang='%s/%s'%(dirname,nang)
+    mk_dir(dirnameang)
+    dasurv=select_ang_surv(dasurvtot,seed,nang)
+    print('... calculate da vs turns')
+    daout=mk_da_vst(dasurv,seed,tune,turnstep)
+    save_daout(daout,dirnameang)
+    print('... save da vs turns data in {0}/DA.out').format(dirnameang)
+# in analysis - putting the pieces together
 def RunDaVsTurns(db,force,outfile,outfileold,turnstep):
   '''Da vs turns -- calculate da vs turns for study dbname'''
   # start analysis

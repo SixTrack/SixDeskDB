@@ -14,7 +14,7 @@
 import sqlite3, time, os, re, gzip, sys, glob
 from cStringIO import StringIO
 import copy
-
+                                     
 try:
   import numpy as np
   import matplotlib
@@ -1589,6 +1589,10 @@ class SixDeskDB(object):
     else:
       data=[]
     return data
+  def mk_da_vst_ang(self,seed,tune,turnstep):
+    """Da vs turns -- calculate da vs turns for divisors of angmax, 
+    e.g. for angmax=29+1 for divisors [1, 2, 3, 5, 6, 10]"""
+    RunDaVsTurnsAng(self,seed,tune,turnstep)
   def get_surv(self,seed,tune):
     '''get survival turns from DB calculated from emitI and emitII'''
     #change for new db version
