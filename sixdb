@@ -19,7 +19,7 @@ if sys.version_info < (2, 6):
   print "SixDeskDB requires Python version >=2.6"
   sys.exit(1)
 
-from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns,PlotDaVsTurns,PlotCompDaVsTurns
+from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns,RunDaVsTurnsAng,PlotDaVsTurns,PlotCompDaVsTurns
 #from dbtocentral,config
 
 def str2bool(st):
@@ -122,7 +122,9 @@ Usage: sixdb <dbname> da_vs_turns
     -tmax          : maximum number of turns 
                      (default: max. number of turns tracked) 
     -outfile       : survival data is saved in DAsurv.out
-                     and the da_vs_turns in DA.out"""
+                     and the da_vs_turns in DA.out
+    -outfileold    : da_vs_turns is saved in DAold.out with the
+                     old data format"""
        args=self.args
        try:
          db=SixDeskDB(study)
@@ -133,10 +135,12 @@ Usage: sixdb <dbname> da_vs_turns
        force=False
        turnstep=100
        outfile=False
+       outfileold=False
        if '-force' in args: force=True
        if '-outfile' in args: outfile=True
+       if '-outfileold' in args: outfileold=True
        if '-turnstep' in args: turnstep=args[args.index('-turnstep')+1]
-       RunDaVsTurns(db,force,outfile,turnstep)
+       RunDaVsTurns(db,force,outfile,outfileold,turnstep)
 
     def plot_da_vs_turns(self,study):
        """Create survival and da vs turns plots.
