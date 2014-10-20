@@ -118,12 +118,8 @@ def mk_da_vst(data,seed,tune,turnstep):
     # error
     dawavgerrint   = np.abs(((mta_sigma**3*np.sin(2*mta_angle)).sum())*angstep*ampstep)
     dawavgerr      = np.abs(1/4.*dawavgint**(-3/4.))*dawavgerrint
-#    print('dawavgerrint=%s'%dawavgerrint)
-#    print('dawavg      =%s'%dawavg)
-#    print('dawavgerr   =%s'%dawavgerr)
-    dasavgerr      = np.abs(angstep*ampstep*l_mta_angle)*(2./np.pi)
-#    print('dasavg      =%s'%dasavg)
-#    print('dasavgerr   =%s'%dasavgerr)
+#    dasavgerr      = np.abs(angstep*ampstep*l_mta_angle)*(2./np.pi)#original formula
+    dasavgerr      = ampstep*angmax/(angmax+1)#simplified
     dasavgerrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
     dasavgerrepamp = ampstep/2
     dasavgerrep    = np.sqrt(dasavgerrepang**2+dasavgerrepamp**2)
@@ -137,13 +133,13 @@ def mk_da_vst(data,seed,tune,turnstep):
       # error
       dawsimperrint = (ajsimp*(4*(mta_sigma**3)*np.sin(2*mta_angle))).sum()*angstep*ampstep
       dawsimperr    = np.abs(1/4.*dawsimpint**(-3/4.))*dawsimperrint
-      dassimperr = np.abs(angstep*ampstep*(ajsimp.sum()))*(2./np.pi) 
+#      dassimperr    = np.abs(angstep*ampstep*(ajsimp.sum()))*(2./np.pi)#original formula 
+      dassimperr    = ampstep#simplified
     else:
       (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
     tlossmin=np.min(mta['sturn'])
     if(dawavg!=currentdawavg and it-turnstep > 0 and tlossmin!=currenttlossmin):
       daout[dacount]=(seed,tunex,tuney,dawavg,dasavg,dawsimp,dassimp,dawavgerr,dasavgerr,dasavgerrep,dasavgerrepang,dasavgerrepamp,dawsimperr,dassimperr,it-turnstep,tlossmin,mtime)
-#      daout[dacount]=(seed,tunex,tuney,dawavg,dasavg,dawsimp,dassimp,dasavgerrep,dasavgerrepang,dasavgerrepamp,it-turnstep,tlossmin,mtime)
       dacount=dacount+1
     currentdawavg =dawavg
     currenttlossmin=tlossmin
@@ -158,7 +154,6 @@ def reload_daout_old(path):
   return np.loadtxt(glob.glob(path+'/DAold.out*')[0],dtype=ftype,delimiter=' ')
 def save_daout(data,path):
   daout=data[['seed','tunex','tuney','dawavg','dasavg','dawsimp','dassimp','dawavgerr','dasavgerr','dasavgerrep','dasavgerrepang','dasavgerrepamp','dawsimperr','dassimperr','nturn','tlossmin','mtime']]
-#  daoutold=data[['dawavg','dasavg','dasavgerrep','dasavgerrepang','dasavgerrepamp','nturn','tlossmin']]
   np.savetxt(path+'/DA.out',daout,fmt='%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %d %.12f')
 def reload_daout(path):
   ftype=[('seed',int),('tunex',float),('tuney',float),('dawavg',float),('dasavg',float),('dawsimp',float),('dassimp',float),('dawavgerr',float),('dasavgerr',float),('dasavgerrep',float),('dasavgerrepang',float),('dasavgerrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
