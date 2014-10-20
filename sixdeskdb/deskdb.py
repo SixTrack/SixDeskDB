@@ -1,20 +1,23 @@
-#!/usr/bin/env python
-
-# python implementation of Sixdesk storage using local database and creation of
-# study using database
-# done by Moonis Javed (monis.javed@gmail.com)
-# This stores the study to a local database
-# Below are indicated thing that need to be edited by hand.
-# You have to use it from main like
-# python main.py loaddir <study location>
-# python main.py loaddb <studyDB> <new location of study>
+# Store the study to a local database
 #
+# Moonis Javed <monis.javed@gmail.com>,
+# Riccardo De Maria <riccardo.de.maria@cern.ch>
+# Xavier Valls Pla  <xavier.valls.pla@cern.ch>
+# Danilo Banfi <danilo.banfi@cern.ch>
+#
+# This software is distributed under the terms of the GNU Lesser General Public
+# License version 2.1, copied verbatim in the file ``COPYING''.
+
+# In applying this licence, CERN does not waive the privileges and immunities
+# granted to it by virtue of its status as an Intergovernmental Organization or
+# submit itself to any jurisdiction.
+
 # NOTA: please use python version >=2.6
 
 import sqlite3, time, os, re, gzip, sys, glob
 from cStringIO import StringIO
 import copy
-                                     
+
 try:
   import numpy as np
   import matplotlib
@@ -135,20 +138,24 @@ def guess_range(l):
   stop=l[-1]
   return start,stop,step
 
-def split_fort10fn(fn):
-  ll=fn.split('/')
-  data=ll[-8:-1]
-  study,seed,simul,tunes,rng,turns,angle=data
-  if '-' in rng:
-    join='-'
-  else:
-    join='_'
+def split_job_params(dirname):
+  ll=dirname.split('/')
+  data=ll[-6:]
+  seed,simul,tunes,rng,turns,angle=data
   seed=int(seed)
   tunex,tuney=map(float,tunes.split('_'))
-  amp1,amp2=map(float,rng.split(join))
+  amp1,amp2=map(float,rng.split('_'))
   angle=float(angle)
-  turns=10**int(turns[1])
-  return study,seed,tunex,tuney,amp1,amp2,join,turns,angle
+  #turns=10**int(turns[1])
+  return seed,simul,tunex,tuney,amp1,amp2,turns,angle
+
+def get_job_dirname(seed,simul,tunex,tuney,amp1,amp2,turne,angle):
+  t='%s/%s/%s/%s/%s/%s/'
+  #turne=np.log10(turns)
+  rng="%s_%s"%(amp1,amp2)
+  tunes="%s_%s"%(tunex,tuney)
+  return t%(seed,simul,tunes,rng,turne,angle)
+
 
 def check_mad_out(fhs):
   closest2=[]
@@ -355,7 +362,7 @@ class SixDeskDB(object):
     print "Looking for fort.2, fort.8, fort.16 in %s"%workdir
     data=[]
     for dirName in glob.glob(os.path.join(workdir,'mad.dorun_*')):
-        print 'found new mad run',dirName.split('/')[-1]
+        print 'found mad run',dirName.split('/')[-1]
         for filename in os.listdir(dirName):
           if not (filename.endswith('.mask') or 'out' in filename
               or filename.endswith('log') or filename.endswith('lsf')):
@@ -429,9 +436,9 @@ class SixDeskDB(object):
     if rows:
       tab.insertl(rows)
       rows = {}
-    print ' no of fort.2 updated/found: %d/%d'%(update[2],len(f2s))
-    print ' no of fort.8 updated/found: %d/%d'%(update[8],len(f8s))
-    print ' no of fort.16 updated/found: %d/%d'%(update[16],len(f16s))
+    print ' number of fort.2 updated/found: %d/%d'%(update[2],len(f2s))
+    print ' number of fort.8 updated/found: %d/%d'%(update[8],len(f8s))
+    print ' number of fort.16 updated/found: %d/%d'%(update[16],len(f16s))
 
   def st_six_beta(self):
     ''' store sixdesktunes, betavalues '''
@@ -467,7 +474,7 @@ class SixDeskDB(object):
         data.append(vals)
       except ValueError:
         print "Error in %s"%fullname
-    print " no of sixdesktunes, betavalues, mychrom inserted: %d"%len(data)
+    print " number of sixdesktunes, betavalues, mychrom inserted: %d"%len(data)
     tab.insertl(data)
 
   def st_six_input(self):
@@ -479,76 +486,84 @@ class SixDeskDB(object):
     tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
     cols1 = SQLTable.cols_from_fields(tables.Six_Res.fields)
     tab1 = SQLTable(conn,'six_results',cols1,tables.Six_Res.key)
-    #tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
-    maxtime = tab.selectl("max(mtime)")[0][0]
-    maxtime10 = tab1.selectl("max(mtime)")[0][0]
-    count = 0
+    f3_data={}
+    for row in cur.execute('SELECT id,mtime,seed,simul,tunex,tuney,amp1,amp2,turns,angle FROM six_input'):
+        f3_data[tuple(row[2:])]=row[:2]
+    f10_data={}
+    for row in cur.execute('SELECT DISTINCT six_input_id,mtime FROM six_results'):
+        f10_data[row[0]]=row[1]
+    count3 = 0
     count10 = 0
-    if not maxtime:
-      maxtime = 0
-    if not maxtime10:
-      maxtime10 = 0
-    # cols = SQLTable.cols_from_fields(tables.Files.fields)
-    # tab1 = SQLTable(conn,'files',cols,tables.Files.key)
     workdir = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
     extra_files = []
-    rows = []
+    rows3 = []
     rows10 = []
-    six_id = 1
+    six_id_new = list(cur.execute('SELECT max(id) FROM six_input'))[0][0]
+    if six_id_new is None:
+      six_id_new=1
+    else:
+      six_id_new+=1
     print "Looking for fort.3.gz, fort.10.gz files in\n %s"%workdir
-    #cmd = """find %s -type f -name 'fort.3.gz'"""%(workdir)
-    #a = os.popen(cmd).read().split('\n')[:-1]
-    #print 'fort.3 files =',len(a)
-    file_count=0
+    file_count3=0
     file_count10 = 0
     for dirName in glob.iglob(os.path.join(workdir,'*','*','*','*','*','*')):
       f3=os.path.join(dirName, 'fort.3.gz')
       f10=os.path.join(dirName, 'fort.10.gz')
-      #dirName,files=os.path.split(dirName.strip())
       ranges= dirName.split('/')[-3]
       if '_' in ranges:
         fn3_exists=fn10_exists=False
         if os.path.exists(f3):
-            file_count+=1
+            file_count3+=1
             fn3_exists=True
         if os.path.exists(f10):
             file_count10 += 1
             fn10_exists=True
-        if file_count%100==0:
+        if file_count3%100==0:
            sys.stdout.write('.')
            sys.stdout.flush()
         if fn3_exists:
+            jobparmams=split_job_params(dirName)
+            six_id_old,mtime3_old=f3_data.get(jobparmams,[-1,0])
             mtime3 = os.path.getmtime(f3)
-            if mtime3>maxtime:
-                dirn = [six_id] + re.split('/|_', dirName)[-8:]
-                dirn.extend([sqlite3.Binary(open(f3).read()),mtime3])
-                if fn10_exists:
-                  mtime10 = os.path.getmtime(f10)
-                  if mtime10 > maxtime:
-                    FileObj = gzip.open(f10,"r").read().split("\n")[:-1]
-                    countl = 1
-                    for lines in FileObj:
-                      rows10.append([six_id,countl]+lines.split()+[mtime10])
-                      countl += 1
-                    count10 += 1
-                    rows.append(dirn)
-                six_id += 1
-                count += 1
-        if len(rows) == 6000:
-          tab.insertl(rows)
+            if six_id_old==-1:
+                six_id=six_id_new
+                six_id_new+=1
+            else:
+                six_id=six_id_old
+            if mtime3>mtime3_old:
+              count3+=1
+              f3file=sqlite3.Binary(compressBuf(f3))
+              dirn = [six_id] + list(jobparmams) + [f3file,mtime3]
+              rows3.append(dirn)
+        if fn10_exists:
+           mtime10 = os.path.getmtime(f10)
+           mtime10_old=f10_data.get(six_id,0)
+           if mtime10 > mtime10_old and os.path.getsize(f10)>0:
+             countl = 1
+             for lines in gzip.open(f10,"r"):
+                rows10.append([six_id,countl]+lines.split()+[mtime10])
+                countl += 1
+             count10 += 1
+        if len(rows3) == 6000:
+          tab.insertl(rows3)
           tab1.insertl(rows10)
-          rows = []
+          rows3 = []
           rows10 = []
-    if rows:
-      tab.insertl(rows)
-      tab1.insertl(rows10)
-      rows = []
-    print '\n no of fort.3 updated/found: %d/%d'%(count,file_count)
-    print ' no of fort.10 updated/found: %d/%d'%(count10,file_count10)
+    tab.insertl(rows3)
+    tab1.insertl(rows10)
+    rows3 = []
+    print '\n number of fort.3 updated/found: %d/%d'%(count3,file_count3)
+    print ' number of fort.10 updated/found: %d/%d'%(count10,file_count10)
     sql="""CREATE VIEW IF NOT EXISTS results
            AS SELECT * FROM six_input INNER JOIN six_results
            ON six_input.id==six_results.six_input_id"""
-    self.conn.cursor().execute(sql)
+    cur.execute(sql)
+    sql="""SELECT count(*) FROM results"""
+    results=list(cur.execute(sql))[0][0]
+    sql="""SELECT COUNT(DISTINCT six_input_id) FROM six_results"""
+#    sql="""SELECT COUNT(*) FROM six_results"""
+    jobs=list(cur.execute(sql))[0][0]
+    print " db now contains %d results from %d jobs"% (results,jobs)
 
   def execute(self,sql):
     cur= self.conn.cursor()
@@ -1526,8 +1541,13 @@ class SixDeskDB(object):
         idxangle=final['angle']==angle
         idx     =idxangle&(final['alost1']!=0)
         idxneg  =idxangle&(final['alost1']<0)
-        mini, smini = np.min(np.abs(final['alost1'][idx])), np.argmin(np.abs(final['alost1'][idx]))
-        maxi, smaxi = np.max(np.abs(final['alost1'][idx])), np.argmax(np.abs(final['alost1'][idx]))
+        finalalost=np.abs(final['alost1'][idx])
+        imini=np.argmin(finalalost)
+        mini=finalalost[imini]
+        smini=final['seed'][idx][imini]
+        imaxi=np.argmax(finalalost)
+        maxi=finalalost[imaxi]
+        smaxi=final['seed'][idx][imaxi]
         toAvg = np.abs(final['alost1'][idx])
         i = len(toAvg)
         mean = np.mean(toAvg)
