@@ -30,6 +30,8 @@ except ImportError:
   raise ImportError
 
 import tables
+import lsfqueue
+import madout
 from sqltable import SQLTable
 for t in (np.int8, np.int16, np.int32, np.int64,np.uint8, np.uint16, np.uint32, np.uint64):
   sqlite3.register_adapter(t, long)
@@ -157,54 +159,6 @@ def get_job_dirname(seed,simul,tunex,tuney,amp1,amp2,turne,angle):
   return t%(seed,simul,tunes,rng,turne,angle)
 
 
-def check_mad_out(fhs):
-  closest2=[]
-  closest1=[]
-  closest0=[]
-  kqs={}
-  kqt={}
-  for fh in fhs:
-    for l in fh:
-      l=l.strip()
-      if l.startswith('closest'):
-        if l.startswith('closest2 =  '):
-          closest2.append(float(l.split('=')[1].split(';')[0]))
-        elif l.startswith('closest1 =  '):
-          closest1.append(float(l.split('=')[1].split(';')[0]))
-        elif l.startswith('closest0 =  '):
-          closest0.append(float(l.split('=')[1].split(';')[0]))
-      elif 'kmqsmax*100' in l:
-        name,val=extract_kmax(l)
-        kqs.setdefault(name,[]).append(val)
-      elif 'kmqtmax*100' in l:
-        name,val=extract_kmax(l)
-        kqt.setdefault(name,[]).append(val)
-  print "Mad6tOut clo0: %s"%minmaxavg(closest0)
-  print "Mad6tOut clo1: %s"%minmaxavg(closest1)
-  print "Mad6tOut clo2: %s"%minmaxavg(closest2)
-  kqsmax=[max(abs(m) for m in l) for l in zip(*kqs.values())]
-  kqtmax=[max(abs(m) for m in l) for l in zip(*kqt.values())]
-  print "Mad6tOut kqt : %s"%minmaxavg(kqtmax)
-  print "Mad6tOut kqs : %s"%minmaxavg(kqsmax)
-
-def extract_kmax(l):
-  name,val=l.split('=')
-  name=name.split('/')[0]
-  val=float(val.split(';')[0])
-  return name,val
-
-def minmaxavg(l,fmt="%13e"):
-  if len(l)>0:
-      l=np.array(l)
-      mi=l.min()
-      ma=l.max()
-      av=l.mean()
-      tmp="min %s avg %s max %s"%(fmt,fmt,fmt)
-      return tmp%(mi,av,ma)
-  else:
-      return "no data to find min and max"
-
-
 
 def check_sixdeskenv(studyDir):
   sixdeskenv=os.path.join(studyDir,'sixdeskenv')
@@ -298,16 +252,19 @@ class SixDeskDB(object):
           columms=[i[1] for i in self.execute("PRAGMA table_info(%s)"%tab)]
           print "%s(%d):\n  %s"%(tab,rows,', '.join(columms))
 
-  def mad_out(db):
-      mad_runs=db.execute('SELECT DISTINCT run_id FROM mad6t_run')
+  def mad_out(self):
+      mad_runs=self.execute('SELECT DISTINCT run_id FROM mad6t_run')
       if len(mad_runs)==0:
-          print "No mad outout data"
-      for run in mad_runs:
+          print "No mad out data"
+      for run, in mad_runs:
           print "Checking %s"%run
-          sql="SELECT mad_out FROM mad6t_run WHERE run_id=='%s'"%run
-          bufs=db.execute(sql)
-          bufs=[StringIO(decompressBuf(buf[0])) for buf in bufs]
-          check_mad_out(bufs)
+          sql="SELECT seed,mad_out FROM mad6t_run WHERE run_id=='%s' ORDER BY seed"%run
+          data=self.execute(sql)
+          data=[(seed,StringIO(decompressBuf(out))) for seed,out in data]
+          resname=os.path.join(self.mk_analysis_dir(),run)+'.csv'
+          madout.check_mad_out(data,resname)
+          print resname
+
 
   def set_variables(self,lst,mtime):
     '''set additional variables besides predefined environment variables
@@ -1074,25 +1031,64 @@ class SixDeskDB(object):
 
   def gen_job_params(self):
     '''generate jobparams based on values '''
-    turnsl = '%E'%(float(self.env_var['turnsl']))
-    turnsl = 'e'+str(int(turnsl.split('+')[1]))
-    for seed in self.get_seeds():
-      for tunex,tuney in self.get_tunes():
-        for amp1,amp2 in self.get_amplitudes():
-          for angle in self.get_angles():
-            yield (seed,tunex,tuney,amp1,amp2,turnsl,angle)
+    if self.env_var['long']==1:
+      simul='simul'
+      turns = '%E'%(float(self.env_var['turnsl']))
+      turns = 'e'+str(int(turns.split('+')[1]))
+      for seed in self.get_seeds():
+        for tunex,tuney in self.get_tunes():
+          for amp1,amp2 in self.get_amplitudes():
+            for angle in self.get_angles():
+              yield (seed,simul,tunex,tuney,amp1,amp2,turns,angle)
+    if self.env_var['short']==1:
+      simul='short'
+      turns = '%E'%(float(self.env_var['turnss']))
+      turns = 'e'+str(int(turns.split('+')[1]))
+      for seed in self.get_seeds():
+        for tunex,tuney in self.get_tunes():
+          for amp1,amp2 in self.get_amplitudes():
+            for angle in self.get_angles():
+              yield (seed,simul,tunex,tuney,amp1,amp2,turns,angle)
+
 
   def get_missing_jobs(self):
     '''get missing jobs '''
     turnsl = '%E'%(float(self.env_var['turnsl']))
     turnsl = 'e'+str(int(turnsl.split('+')[1]))
-    existing = self.execute("""SELECT seed,tunex,tuney,amp1,amp2,turns,angle from
-      six_input where turns='%s'"""%(turnsl))
-    existing=  set(existing)
+    existing = self.execute("""SELECT seed,simul,tunex,tuney,amp1,amp2,
+                               turns,angle from six_input""")
+    existing= set(existing)
     needed=set(self.gen_job_params())
     #print sorted(existing)[0]
     #print sorted(needed)[0]
     return list(needed-existing)
+
+  def get_running_jobs(self,missing,threshold=7*24*3600):
+    running=set()
+    for lsfjob in lsfqueue.parse_bjobs():
+        if lsfjob in missing:
+          job=self.running[lsfjob]
+          if job.stat in ('PEND','RUN'):
+            tmp="TrackOut job: %s %s %s %s %s"
+            print tmp%(job.jobid,jobshort,job.submit_time,job.start_time,job.stat)
+            if not (job.stat=='RUN' and job.run_since()>threshold):
+               running.add(lsfjob)
+    return running
+
+  def make_lsf_missing_jobs(self):
+    for job in self.get_missing_jobs():
+       seed,simul,tunex,tuney,amp1,amp2,turns,angle=job
+       tmp="%s%%%s%%s%%%s%%%s%%%s%%%s"
+       ranges="%g_%g"%(amp1,amp2)
+       tunes="%s_%s"%(tunex,tuney)
+       missing.add(tmp%(name,seed,tunes,ranges,turns,angle))
+    if len(missing)==0:
+        print "No missing jobs"
+    running=self.get_running_jobs(missing)
+    if len(running)>0:
+        print "%d job running"
+    for job in missing-running:
+        print job
 
   def inspect_jobparams(self):
     data=list(self.iter_job_params())
@@ -1581,6 +1577,7 @@ class SixDeskDB(object):
         else:
           fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax, std))
     fhplot.close()
+    print fnplot
 
 # -------------------------------- da_vs_turns -----------------------------------------------------------
   def st_da_vst(self,data):
