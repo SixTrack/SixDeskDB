@@ -37,14 +37,18 @@ def parse_env(studydir):
   return eval(os.popen(cmd).read())
 
 
-def compressBuf(file):
+def compressBuf(filename):
   '''file compression for storing in DB'''
-  buf = open(file,'r').read()
-  zbuf = StringIO()
-  zfile = gzip.GzipFile(mode = 'wb',  fileobj = zbuf, compresslevel = 9)
-  zfile.write(buf)
-  zfile.close()
-  return zbuf.getvalue()
+  if os.path.isfile(filename):
+      buf = open(filename,'r').read()
+      zbuf = StringIO()
+      zfile = gzip.GzipFile(mode = 'wb',  fileobj = zbuf, compresslevel = 9)
+      zfile.write(buf)
+      zfile.close()
+      return zbuf.getvalue()
+  else:
+      print "Warning: %s not found"%filename
+      return ''
 
 def decompressBuf(buf):
   '''file decompression to retrieve from DB'''
@@ -350,17 +354,16 @@ class SixDeskDB(object):
       a = [str(i[0]) for i in a]
     print "Looking for fort.2, fort.8, fort.16 in %s"%workdir
     data=[]
-    for dirName, _, fileList in os.walk(workdir):
-      if 'mad.dorun' in dirName and not (dirName.split('/')[-1] in a):
+    for dirName in glob.glob(os.path.join(workdir,'mad.dorun_*')):
         print 'found new mad run',dirName.split('/')[-1]
-        for files in fileList:
-          if not (files.endswith('.mask') or 'out' in files
-              or files.endswith('log') or files.endswith('lsf')):
-            fnroot,seed=os.path.splitext(files)
+        for filename in os.listdir(dirName):
+          if not (filename.endswith('.mask') or 'out' in filename
+              or filename.endswith('log') or filename.endswith('lsf')):
+            fnroot,seed=os.path.splitext(filename)
             seed=int(seed[1:])
             run_id = dirName.split('/')[-1]
             mad_in = sqlite3.Binary(
-              compressBuf(os.path.join(dirName, files))
+              compressBuf(os.path.join(dirName, filename))
               )
             out_file=os.path.join(dirName,fnroot+'.out.%d'%seed)
             log_file=os.path.join(dirName,fnroot+'_mad6t_%d.log'%seed)
@@ -370,12 +373,12 @@ class SixDeskDB(object):
             mad_log = sqlite3.Binary(compressBuf(log_file))
             time = os.path.getmtime( log_file)
             data.append([run_id, seed, mad_in, mad_out, mad_lsf,mad_log,time])
-          if files.endswith('.mask'):
-            path = os.path.join(dirName, files)
+          if filename.endswith('.mask'):
+            path = os.path.join(dirName, filename)
             key = path.replace(env_var['scratchdir']+'/','')
             extra_files.append([key,path])
-      if len(data)>0:
-        tab.insertl(data)
+        if len(data)>0:
+          tab.insertl(data)
     if extra_files:
       self.add_files(extra_files)
 
@@ -385,12 +388,11 @@ class SixDeskDB(object):
     env_var = self.env_var
     workdir = env_var['sixtrack_input']
     extra_files = []
-    for dirName, _, fileList in os.walk(workdir):
-      for files in fileList:
-        if 'fort.3' in files or files.endswith('.tmp'):
-          path = os.path.join(dirName, files)
-          key = path.replace(env_var['scratchdir']+'/','')
-          extra_files.append([key,path])
+    for filename in os.listdir(workdir):
+      if 'fort.3' in filename or filename.endswith('.tmp'):
+        path = os.path.join(workdir, filename)
+        key =  os.path.join('sixtrack_input',filename)
+        extra_files.append([key,path])
     if extra_files:
       self.add_files(extra_files)
 
