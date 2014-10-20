@@ -109,9 +109,10 @@ Usage: sixdb <studydir> load_dir
 files, e.g. ~/w1/sixjobs or ~/w1/sixjobs/studies/job_tracking."""
        SixDeskDB.from_dir(study)
     def mad(self,study):
-        """Analyse the output of mad6t (HL-LHC specific)
+       """Analyse the output of mad6t (HL-LHC specific)
 
 Usage: sixdb <dbname> mad"""
+       SixDeskDB(study).mad_out()
     def da_vs_turns(self,study):
        """Create database DA vs turns.
 
@@ -224,9 +225,9 @@ Usage: sixdb <dbname> plot_comp_da_vs_turns <compdbname>
         import IPython
         import matplotlib.pyplot as pl
         import numpy, scipy
+        print "db=SixDeskDB('%s')\n"%study
         db=SixDeskDB(study)
-        print """job_hllhc10_test10.db open as db
-Example:
+        print """\nExample:
 print db.get_col('sturns1',1,45)
 db.plot_col('sturns1',1,45)
 db.plot_polar_col('sturns1',1)
