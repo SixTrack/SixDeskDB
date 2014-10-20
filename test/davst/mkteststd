@@ -11,26 +11,29 @@ fi
 ../../sixdb ${study}.db info || exit 1
 ../../sixdb ${study}.db da || exit 1
 echo '***** comparing outputfiles DAres* *****'
-for i in ${study}/*;
+for i in dares_${study}/*;
 do
-  #echo $i ${study}_reference/${i#*/}
+#  echo $i ${study}_reference/${i#*/}
   diff $i ${study}_reference/${i#*/}
 done
 
 echo '--- da_vs_turns --';
 echo '... test da_vs_turns'
-../../sixdb ${study}.db da_vs_turns -force -outfile
+../../sixdb ${study}.db da_vs_turns -outfile -outfileold
 echo '... test plot_da_vs_turns'
 ../../sixdb ${study}.db plot_da_vs_turns
 ../../sixdb ${study}.db plot_da_vs_turns -plotlog
 echo '... test plot_comp_da_vs_tursn'
 ../../sixdb ${study}.db plot_comp_da_vs_turns ${study}.db -lblname job1 -complblname job2
-echo '***** comparing output files DA.out ***** '
-for i in ${study}/*/*/DA.out;
+echo '***** comparing output files DAold.out ***** '
+for i in dares_${study}/*/*/DAold.out;
 do
-  #echo $i ${study}_reference/${i#*/}
-  diff $i ${study}_reference/${i#*/}
+  fref=${study}_reference/${i#*/}
+  fref=${fref%DAold.out}DA.out
+  echo $i $fref
+#  diff $i $fref
+#  diff $i ${study}_reference/${i#*/}
 done
 echo '... clean up study '${study}
-cleanstd ${study}
+./cleanstd ${study}
 
