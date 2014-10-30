@@ -1599,7 +1599,7 @@ class SixDeskDB(object):
     ftype=[('name',np.str_,16)]
     tabnames=np.fromiter(cur,dtype=ftype)
     if 'da_vsturn' in tabnames['name']:
-      ftype=[('seed',int),('tunex',float),('tuney',float),('dawavg',float),('dasavg',float),('dawsimp',float),('dassimp',float),('dawavgerr',float),('dasavgerr',float),('dasavgerrep',float),('dasavgerrepang',float),('dasavgerrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+      ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
       cmd="""SELECT *
            FROM da_vsturn WHERE seed=%s and tunex=%s and tuney=%s
            ORDER BY nturn"""
@@ -1634,8 +1634,8 @@ class SixDeskDB(object):
     data=self.get_da_vst(seed,tune)
     pl.close('all')
     pl.figure(figsize=(6,6))
-    pl.errorbar(data['dasavg'],data['tlossmin'],xerr=data['dasavgerrep'],fmt='bo',markersize=2,label='simple average')
-    pl.plot(data['dawavg'],data['tlossmin'],'ro',markersize=3,label='weighted average')
+    pl.errorbar(data['dastrap'],data['tlossmin'],xerr=data['dastraperrep'],fmt='bo',markersize=2,label='simple average')
+    pl.plot(data['dawtrap'],data['tlossmin'],'ro',markersize=3,label='weighted average')
     pl.title('seed '+str(seed))
     pl.xlim([ampmin,ampmax])
     pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)

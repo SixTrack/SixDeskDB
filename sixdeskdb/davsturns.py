@@ -56,9 +56,9 @@ def select_ang_surv(data,seed,nang):
   return dataang
 #@profile
 def mk_da_vst(data,seed,tune,turnstep):
-  """returns 'seed','tunex','tuney','dawavg','dasavg','dawsimp','dassimp',
-             'dawavgerr','dasavgerr','dasavgerrep','dasavgerrepang',
-             'dasavgerrepamp','dawsimperr','dassimperr','nturn','tlossmin',
+  """returns 'seed','tunex','tuney','dawtrap','dastrap','dawsimp','dassimp',
+             'dawtraperr','dastraperr','dastraperrep','dastraperrepang',
+             'dastraperrepamp','dawsimperr','dassimperr','nturn','tlossmin',
              'mtime'
   the da is in steps of turnstep
   das:       integral over radius 
@@ -67,9 +67,9 @@ def mk_da_vst(data,seed,tune,turnstep):
   daw:       integral over phase space
              daw = (int_0^(2pi)[(r(theta))^4*sin(2*theta)]dtheta)^1/4
                  = (dtheta*sum(a_i*r(theta_i)^4*sin(2*theta_i)))^1/4
-  simple average (avg): a_i=1
-  simpson rule (simp):  a_i=(55/24.,-1/6.,11/8.,1,....1,11/8.,-1/6.,55/24.)
-                        numerical recipes open formulas 4.1.15 and 4.1.18      
+  trapezoidal rule (trap):  a_i=(3/2,1, ... ,1,3/2)
+  simpson rule     (simp):  a_i=(55/24.,-1/6.,11/8.,1, ... 1,11/8.,-1/6.,55/24.)
+                            numerical recipes open formulas 4.1.15 and 4.1.18      
   """
   mtime=time.time()
   (tunex,tuney)=tune
@@ -82,47 +82,56 @@ def mk_da_vst(data,seed,tune,turnstep):
   ampstep=np.abs((s[s>0][1])-(s[s>0][0]))
 #  print angstep
 #  print ampstep
-  ftype=[('seed',int),('tunex',float),('tuney',float),('dawavg',float),('dasavg',float),('dawsimp',float),('dassimp',float),('dawavgerr',float),('dasavgerr',float),('dasavgerrep',float),('dasavgerrepang',float),('dasavgerrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+  ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
   l_turnstep=len(np.arange(turnstep,tmax,turnstep))
   daout=np.ndarray(l_turnstep,dtype=ftype)
   for nm in daout.dtype.names:
     daout[nm]=np.zeros(l_turnstep)
   dacount=0
-  currentdawavg=0
+  currentdawtrap=0
   currenttlossmin=0
   #define integration coefficients at beginning and end which are unequal to 1
+  ajtrap_s=np.array([3/2.])#Simpson rule
+  ajtrap_e=np.array([3/2.])
   ajsimp_s=np.array([55/24.,-1/6.,11/8.])#Simpson rule
   ajsimp_e=np.array([11/8.,-1/6.,55/24.])
-  warn=True
+  warnsimp=True
   for it in np.arange(turnstep,tmax,turnstep):
 #  for it in np.arange(turnstep,turnstep+100000,turnstep):
     mta=get_min_turn_ang(s,t,a,it)
     mta_angle=mta['angle']*np.pi/180#convert to rad
     l_mta_angle=len(mta_angle)
     mta_sigma=mta['sigma']
+    if(l_mta_angle>2):
+      # define coefficients for simpson rule (simp)
+      # ajtrap =  [3/2.,1,....1,3/2.]
+      ajtrap=np.concatenate((ajtrap_s,np.ones(l_mta_angle-2),ajtrap_e))
+    else:
+      print('WARNING! mk_da_vst - You need at least 3 angles to calculate the da vs turns! Aborting!!!')
+      sys.exit(0)
     if(l_mta_angle>6):
       # define coefficients for simpson rule (simp)
       # ajsimp =  [55/24.,-1/6.,11/8.,1,....1,11/8.,-1/6.,55/24. ]
       ajsimp=np.concatenate((ajsimp_s,np.ones(l_mta_angle-6),ajsimp_e))
       calcsimp=True
     else:
-      if(warn):
+      if(warnsimp):
         print('WARNING! mk_da_vst - You need at least 7 angles to calculate the da vs turns with the simpson rule! da*simp* will be set to 0.')
-        warn=False 
+        warnsimp=False 
       calcsimp=False
-    # ---- simple average (avg)
+    # ---- trapezoidal rule (trap)
     # int
-    dawavgint = ((mta_sigma**4*np.sin(2*mta_angle)).sum())*angstep
-    dawavg    = (dawavgint)**(1/4.)
-    dasavg    = (2./np.pi)*(mta_sigma).sum()*angstep
+    dawtrapint = ((ajtrap*(mta_sigma**4*np.sin(2*mta_angle))).sum())*angstep
+    dawtrap    = (dawtrapint)**(1/4.)
+    dastrap    = (2./np.pi)*(ajtrap*(mta_sigma)).sum()*angstep
     # error
-    dawavgerrint   = np.abs(((mta_sigma**3*np.sin(2*mta_angle)).sum())*angstep*ampstep)
-    dawavgerr      = np.abs(1/4.*dawavgint**(-3/4.))*dawavgerrint
-#    dasavgerr      = np.abs(angstep*ampstep*l_mta_angle)*(2./np.pi)#original formula
-    dasavgerr      = ampstep*angmax/(angmax+1)#simplified
-    dasavgerrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
-    dasavgerrepamp = ampstep/2
-    dasavgerrep    = np.sqrt(dasavgerrepang**2+dasavgerrepamp**2)
+    dawtraperrint   = np.abs(((ajtrap*(mta_sigma**3*np.sin(2*mta_angle))).sum())*angstep*ampstep)
+    dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint
+#    dastraperr      = np.abs(angstep*ampstep*l_mta_angle)*(2./np.pi)#original formula
+    dastraperr      = ampstep*angmax/(angmax+1)#simplified
+    dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
+    dastraperrepamp = ampstep/2
+    dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)
     # ---- simpson rule (simp)
     if(calcsimp):
       # int
@@ -138,25 +147,25 @@ def mk_da_vst(data,seed,tune,turnstep):
     else:
       (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
     tlossmin=np.min(mta['sturn'])
-    if(dawavg!=currentdawavg and it-turnstep > 0 and tlossmin!=currenttlossmin):
-      daout[dacount]=(seed,tunex,tuney,dawavg,dasavg,dawsimp,dassimp,dawavgerr,dasavgerr,dasavgerrep,dasavgerrepang,dasavgerrepamp,dawsimperr,dassimperr,it-turnstep,tlossmin,mtime)
+    if(dawtrap!=currentdawtrap and it-turnstep > 0 and tlossmin!=currenttlossmin):
+      daout[dacount]=(seed,tunex,tuney,dawtrap,dastrap,dawsimp,dassimp,dawtraperr,dastraperr,dastraperrep,dastraperrepang,dastraperrepamp,dawsimperr,dassimperr,it-turnstep,tlossmin,mtime)
       dacount=dacount+1
-    currentdawavg =dawavg
+    currentdawtrap =dawtrap
     currenttlossmin=tlossmin
-  return daout[daout['dawavg']>0]#delete 0 from errors
+  return daout[daout['dawtrap']>0]#delete 0 from errors
 
 # functions to reload and create da.out files for previous scripts
 def save_daout_old(data,path):
-  daoutold=data[['dawavg','dasavg','dasavgerrep','dasavgerrepang','dasavgerrepamp','nturn','tlossmin']]
+  daoutold=data[['dawtrap','dastrap','dastraperrep','dastraperrepang','dastraperrepamp','nturn','tlossmin']]
   np.savetxt(path+'/DAold.out',daoutold,fmt='%.6f %.6f %.6f %.6f %.6f %d %d')
 def reload_daout_old(path):
-  ftype=[('dawavg',float),('dasavg',float),('dasavgerrep',float),('dasavgerrepang',float),('dasavgerrepamp',float),('nturn',float),('tlossmin',float)]
+  ftype=[('dawtrap',float),('dastrap',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('nturn',float),('tlossmin',float)]
   return np.loadtxt(glob.glob(path+'/DAold.out*')[0],dtype=ftype,delimiter=' ')
 def save_daout(data,path):
-  daout=data[['seed','tunex','tuney','dawavg','dasavg','dawsimp','dassimp','dawavgerr','dasavgerr','dasavgerrep','dasavgerrepang','dasavgerrepamp','dawsimperr','dassimperr','nturn','tlossmin','mtime']]
+  daout=data[['seed','tunex','tuney','dawtrap','dastrap','dawsimp','dassimp','dawtraperr','dastraperr','dastraperrep','dastraperrepang','dastraperrepamp','dawsimperr','dassimperr','nturn','tlossmin','mtime']]
   np.savetxt(path+'/DA.out',daout,fmt='%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %d %.12f')
 def reload_daout(path):
-  ftype=[('seed',int),('tunex',float),('tuney',float),('dawavg',float),('dasavg',float),('dawsimp',float),('dassimp',float),('dawavgerr',float),('dasavgerr',float),('dasavgerrep',float),('dasavgerrepang',float),('dasavgerrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+  ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
   return np.loadtxt(glob.glob(path+'/DA.out*')[0],dtype=ftype,delimiter=' ')
 def save_dasurv(data,path):
   np.savetxt(path+'/DAsurv.out',np.reshape(data,-1),fmt='%.8f %.8f %d')
@@ -194,10 +203,10 @@ def plot_comp_da_vst(db,dbcomp,lblname,complblname,seed,tune,ampmin,ampmax,tmax,
   datacomp=dbcomp.get_da_vst(seed,tune)
   pl.close('all')
   pl.figure(figsize=(6,6))
-  pl.errorbar(data['dasavg'],data['tlossmin'],xerr=data['dasavgerrep'],fmt='bo',markersize=2,label='simple average '+lblname)
-  pl.plot(data['dawavg'],data['tlossmin'],'ro',markersize=3,label='weighted average '+lblname)
-  pl.errorbar(datacomp['dasavg'],datacomp['tlossmin'],xerr=datacomp['dasavgerrep'],fmt='go',markersize=2,label='simple average '+complblname)
-  pl.plot(datacomp['dawavg'],datacomp['tlossmin'],'o',color='orange',markersize=3,label='weighted average '+complblname)
+  pl.errorbar(data['dastrap'],data['tlossmin'],xerr=data['dastraperrep'],fmt='bo',markersize=2,label='simple average '+lblname)
+  pl.plot(data['dawtrap'],data['tlossmin'],'ro',markersize=3,label='weighted average '+lblname)
+  pl.errorbar(datacomp['dastrap'],datacomp['tlossmin'],xerr=datacomp['dastraperrep'],fmt='go',markersize=2,label='simple average '+complblname)
+  pl.plot(datacomp['dawtrap'],datacomp['tlossmin'],'o',color='orange',markersize=3,label='weighted average '+complblname)
   pl.title('seed '+str(seed))
   pl.xlim([ampmin,ampmax])
   pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)
