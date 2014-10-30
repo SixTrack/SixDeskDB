@@ -120,15 +120,15 @@ def mk_da_vst(data,seed,tune,turnstep):
         warnsimp=False 
       calcsimp=False
     # ---- trapezoidal rule (trap)
-    # int
+    # integral
     dawtrapint = ((ajtrap*(mta_sigma**4*np.sin(2*mta_angle))).sum())*angstep
     dawtrap    = (dawtrapint)**(1/4.)
     dastrap    = (2./np.pi)*(ajtrap*(mta_sigma)).sum()*angstep
     # error
-    dawtraperrint   = np.abs(((ajtrap*(mta_sigma**3*np.sin(2*mta_angle))).sum())*angstep*ampstep)
+    dawtraperrint   = np.abs(((ajtrap*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum())*angstep*ampstep)
     dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint
 #    dastraperr      = np.abs(angstep*ampstep*l_mta_angle)*(2./np.pi)#original formula
-    dastraperr      = ampstep*angmax/(angmax+1)#simplified
+    dastraperr      = ampstep/2
     dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
     dastraperrepamp = ampstep/2
     dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)
@@ -140,10 +140,10 @@ def mk_da_vst(data,seed,tune,turnstep):
       dassimpint = (ajsimp*mta_sigma).sum()*angstep
       dassimp    = (2./np.pi)*dassimpint
       # error
-      dawsimperrint = (ajsimp*(4*(mta_sigma**3)*np.sin(2*mta_angle))).sum()*angstep*ampstep
+      dawsimperrint = (ajsimp*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum()*angstep*ampstep
       dawsimperr    = np.abs(1/4.*dawsimpint**(-3/4.))*dawsimperrint
 #      dassimperr    = np.abs(angstep*ampstep*(ajsimp.sum()))*(2./np.pi)#original formula 
-      dassimperr    = ampstep#simplified
+      dassimperr    = ampstep/2#simplified
     else:
       (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
     tlossmin=np.min(mta['sturn'])
