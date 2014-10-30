@@ -1369,10 +1369,11 @@ class SixDeskDB(object):
     seeds=self.get_seeds()
     mtime=self.execute('SELECT max(mtime) from results')[0][0]
     final=[]
-    sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 AND turn_max=%d '%(names,turnsl)
+    sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 AND turn_max=%d'%(names,turnsl)
     LHCDescrip=self.LHCDescrip
     for tunex,tuney in self.get_tunes():
         sixdesktunes="%g_%g"%(tunex,tuney)
+        sql1+=' AND tunex=%g AND tuney=%g'%(tunex,tuney)
         for angle in angles:
             fndot='DAres.%s.%s.%s.%d'%(LHCDescrip,sixdesktunes,turnse,anumber)
             fndot=os.path.join(dirname,fndot)
@@ -1388,7 +1389,7 @@ class SixDeskDB(object):
                 alost2 = 0.
                 achaos = 0
                 achaos1 = 0
-                sql=sql1+'AND seed=%g AND angle=%g ORDER BY amp1'%(seed,angle)
+                sql=sql1+' AND seed=%g AND angle=%g ORDER BY amp1'%(seed,angle)
                 if self.debug:
                     print sql
                 inp=np.array(self.execute(sql),dtype=rectype)
@@ -1515,79 +1516,79 @@ class SixDeskDB(object):
     dirname=self.mk_analysis_dir()
     cols=SQLTable.cols_from_fields(tables.Da_Post.fields)
     datab=SQLTable(self.conn,'da_post',cols)
-    final=datab.select(orderby='angle,seed')
+    turnsl=self.env_var['turnsl']
     turnse=self.env_var['turnse']
-    tunex=float(self.env_var['tunex'])
-    tuney=float(self.env_var['tuney'])
-    sixdesktunes="%g_%g"%(tunex,tuney)
-    ns1l=self.env_var['ns1l']
-    ns2l=self.env_var['ns2l']
-    if len(final)>0:
-        an_mtime=final['mtime'].min()
-        res_mtime=self.execute('SELECT max(mtime) FROM six_results')[0][0]
-        if res_mtime>an_mtime or force is True:
-            self.read10b()
-            final=datab.select(orderby='angle,seed')
-    else:
-      self.read10b()
-      final=datab.select(orderby='angle,seed')
-
-    #print final['mtime']
-    #print self.execute('SELECT max(mtime) FROM six_results')[0][0]
-
-    fnplot='DAres.%s.%s.%s.plot'%(self.LHCDescrip,sixdesktunes,turnse)
-    fnplot= os.path.join(dirname,fnplot)
-    fhplot = open(fnplot, 'w')
-    fn=0
-    #for k in eqaper:
-    #  msg="Angle %-4g, Seed %2d: Dynamic Aperture below:  %.2f Sigma"
-    #  print msg %( final['angle'][k],final['seed'][k], final['Amin'][k])
-    for angle in np.unique(final['angle']):
-        fn+=1
-        study= final['name'][0]
-        idxangle=final['angle']==angle
-        idx     =idxangle&(final['alost1']!=0)
-        idxneg  =idxangle&(final['alost1']<0)
-        finalalost=np.abs(final['alost1'][idx])
-        imini=np.argmin(finalalost)
-        mini=finalalost[imini]
-        smini=final['seed'][idx][imini]
-        imaxi=np.argmax(finalalost)
-        maxi=finalalost[imaxi]
-        eqaper = np.where((final['alost2'] == final['Amin']))[0]
-        smaxi=final['seed'][idx][imaxi]
-        toAvg = np.abs(final['alost1'][idx])
-        i = len(toAvg)
-        mean = np.mean(toAvg)
-        std = np.sqrt(np.mean(toAvg*toAvg)-mean**2)
-        idxneg = (final['angle']==angle)&(final['alost1']<0)
-        nega = len(final['alost1'][idxneg])
-        Amin = np.min(final['Amin'][idxangle])
-        Amax = np.max(final['Amax'][idxangle])
-
-
-        print "Angle %s"%angle
-        if i == 0:
-          print "Dynamic Aperture below:  %.2f Sigma"%Amax
-          mini  = -Amax
-          maxi  = -Amax
-          mean  = -Amax
+    for tunex,tuney in self.get_tunes():
+        sixdesktunes="%g_%g"%(tunex,tuney)
+        wh="turnsl=%d AND tunex=%g AND tuney=%g"%(turnsl,tunex,tuney)
+        final=datab.select(where=wh,orderby='angle,seed')
+        if len(final)>0:
+            an_mtime=final['mtime'].min()
+            res_mtime=self.execute('SELECT max(mtime) FROM six_results')[0][0]
+            if res_mtime>an_mtime or force is True:
+                self.read10b()
+                final=datab.select(where=wh,orderby='angle,seed')
         else:
-          if i < int(self.env_var['iend']):
-            maxi = -Amax
-          elif len(eqaper)>0:
-            mini = -Amin
-          print "Minimum:  %.2f  Sigma at Seed #: %d" %(mini, smini)
-          print "Maximum:  %.2f  Sigma at Seed #: %d" %(maxi, smaxi)
-          print "Average: %.2f Sigma" %(mean)
-        print "# of (Aav-A0)/A0 >10%%:  %d"  %nega
-        name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
-        if nostd:
-          fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
-        else:
-          fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax, std))
-    fhplot.close()
-    print fnplot
+          self.read10b()
+          final=datab.select(where=wh,orderby='angle,seed')
+
+        ns1l=self.env_var['ns1l']
+        ns2l=self.env_var['ns2l']
+        #print final['mtime']
+        #print self.execute('SELECT max(mtime) FROM six_results')[0][0]
+
+        fnplot='DAres.%s.%s.%s.plot'%(self.LHCDescrip,sixdesktunes,turnse)
+        fnplot= os.path.join(dirname,fnplot)
+        fhplot = open(fnplot, 'w')
+        fn=0
+        #for k in eqaper:
+        #  msg="Angle %-4g, Seed %2d: Dynamic Aperture below:  %.2f Sigma"
+        #  print msg %( final['angle'][k],final['seed'][k], final['Amin'][k])
+        for angle in np.unique(final['angle']):
+            fn+=1
+            study= final['name'][0]
+            idxangle=final['angle']==angle
+            idx     =idxangle&(final['alost1']!=0)
+            idxneg  =idxangle&(final['alost1']<0)
+            finalalost=np.abs(final['alost1'][idx])
+            imini=np.argmin(finalalost)
+            mini=finalalost[imini]
+            smini=final['seed'][idx][imini]
+            imaxi=np.argmax(finalalost)
+            maxi=finalalost[imaxi]
+            eqaper = np.where((final['alost2'] == final['Amin']))[0]
+            smaxi=final['seed'][idx][imaxi]
+            toAvg = np.abs(final['alost1'][idx])
+            i = len(toAvg)
+            mean = np.mean(toAvg)
+            std = np.sqrt(np.mean(toAvg*toAvg)-mean**2)
+            idxneg = (final['angle']==angle)&(final['alost1']<0)
+            nega = len(final['alost1'][idxneg])
+            Amin = np.min(final['Amin'][idxangle])
+            Amax = np.max(final['Amax'][idxangle])
+
+            print "Angle:    %.2f"%angle
+            if i == 0:
+              print "Dynamic Aperture below:  %.2f Sigma"%Amax
+              mini  = -Amax
+              maxi  = -Amax
+              mean  = -Amax
+            else:
+              if i < int(self.env_var['iend']):
+                maxi = -Amax
+              elif len(eqaper)>0:
+                mini = -Amin
+              print "Minimum:  %.2f  Sigma at Seed #: %d" %(mini, smini)
+              print "Maximum:  %.2f  Sigma at Seed #: %d" %(maxi, smaxi)
+              print "Average: %.2f Sigma" %(mean)
+            print "# of (Aav-A0)/A0 >10%%:  %d"  %nega
+            name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
+            if nostd:
+              fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
+            else:
+              fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax, std))
+        fhplot.close()
+        print fnplot
 
 # -------------------------------- da_vs_turns -----------------------------------------------------------
   def st_da_vst(self,data):
