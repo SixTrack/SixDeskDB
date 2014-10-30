@@ -45,7 +45,7 @@ def select_ang_surv(data,seed,nang):
   """returns data reduced to ((angmax+1)/nang)-1 angles -> nang being the divisor of angmax"""
   angmax=len(data['angle'][:,0])#number of angles
   print nang
-  if(nang not in list(get_divisors(angmax+1))[:-2]):
+  if(nang not in list(get_divisors(angmax+1))[:-3]):
     print('%s is not a divisor of %s or two large - the two largest divisors are not used')%(nang,angmax+1)
     sys.exit(0)
   #define variables for only selection of angles
@@ -255,8 +255,8 @@ def RunDaVsTurnsAng(db,seed,tune,turnstep):
   dasurvtot= db.get_surv(seed,tune)
   a=dasurvtot['angle']
   angmax=len(a[:,0])#number of angles
-  print('... number of angles: %s, divisors: %s'%(angmax,str(list(get_divisors(angmax+1))[0:-2])))
-  for nang in list(get_divisors(angmax+1))[0:-2]:
+  print('... number of angles: %s, divisors: %s'%(angmax,str(list(get_divisors(angmax+1))[0:-3])))
+  for nang in list(get_divisors(angmax+1))[0:-3]:
     dirnameang='%s/%s'%(dirname,nang)
     mk_dir(dirnameang)
     dasurv=select_ang_surv(dasurvtot,seed,nang)
