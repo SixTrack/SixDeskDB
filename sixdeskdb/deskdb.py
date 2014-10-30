@@ -207,9 +207,10 @@ class SixDeskDB(object):
         content = sqlite3.Binary(compressBuf(path))
         toinsert.append([key,content,mtime])
     filetab.insertl(toinsert)
-  def __init__(self,dbname,create=False):
+  def __init__(self,dbname,create=False,debug=False):
     '''initialise variables and location for study creation 
         or database creation, usage listed in main.py'''
+    self.debug=debug
     if not dbname.endswith('.db'):
         dbname+='.db'
     if create is False and not os.path.exists(dbname):
@@ -1388,7 +1389,12 @@ class SixDeskDB(object):
             achaos = 0
             achaos1 = 0
             sql=sql1+'AND seed=%g AND angle=%g ORDER BY amp1'%(seed,angle)
+            if self.debug:
+                print sql
             inp=np.array(self.execute(sql),dtype=rectype)
+            if inp.size<2 :
+                print 'not enought data for angle = %s ad seed = %s'%(angle,seed)
+                break
             betx=inp['betx']
             betx2=inp['betx2']
             bety=inp['bety']
@@ -1405,9 +1411,6 @@ class SixDeskDB(object):
             sturns2=inp['sturns2']
             turn_max=inp['turn_max'].max()
 
-            if inp.size<2 :
-                print 'not enought data for angle = %s' %angle
-                break
 
             zero = 1e-10
             xidx=(betx>zero) & (emitx>zero)
