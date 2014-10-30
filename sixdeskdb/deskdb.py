@@ -1359,151 +1359,156 @@ class SixDeskDB(object):
              ('amp1','float'),('amp2','float'),('angle','float'),
              ('mtime','float')]
     names=','.join(zip(*rectype)[0])
+    turnsl=self.env_var['turnsl']
     turnse=self.env_var['turnse']
-    tunex=float(self.env_var['tunex'])
-    tuney=float(self.env_var['tuney'])
-    sixdesktunes="%g_%g"%(tunex,tuney)
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
-    sql='SELECT %s FROM results ORDER BY tunex,tuney,seed,amp1,amp2,angle'%names
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     anumber=1
-    angles=self.get_angles()#np.unique(tmp['angle'])
-    seeds=self.get_seeds()#np.unique(tmp['seed'])
+    angles=self.get_angles()
+    seeds=self.get_seeds()
     mtime=self.execute('SELECT max(mtime) from results')[0][0]
     final=[]
-    sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 '%names
-    for angle in angles:
-        fndot='DAres.%s.%s.%s.%d'%(self.LHCDescrip,sixdesktunes,turnse,anumber)
-        fndot=os.path.join(dirname,fndot)
-        fhdot = open(fndot, 'w')
-        for seed in seeds:
-            ich1 = 0
-            ich2 = 0
-            ich3 = 0
-            icount = 1.
-            iin  = -999
-            iend = -999
-            alost1 = 0.
-            alost2 = 0.
-            achaos = 0
-            achaos1 = 0
-            sql=sql1+'AND seed=%g AND angle=%g ORDER BY amp1'%(seed,angle)
-            if self.debug:
-                print sql
-            inp=np.array(self.execute(sql),dtype=rectype)
-            if inp.size<2 :
-                print 'not enought data for angle = %s ad seed = %s'%(angle,seed)
-                break
-            betx=inp['betx']
-            betx2=inp['betx2']
-            bety=inp['bety']
-            bety2=inp['bety2']
-            sigx1=inp['sigx1']
-            sigy1=inp['sigy1']
-            emitx=inp['emitx']
-            emity=inp['emity']
-            distp=inp['distp']
-            dist=inp['dist']
-            sigxavgnld=inp['sigxavgnld']
-            sigyavgnld=inp['sigyavgnld']
-            sturns1=inp['sturns1']
-            sturns2=inp['sturns2']
-            turn_max=inp['turn_max'].max()
+    sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 AND turn_max=%d '%(names,turnsl)
+    LHCDescrip=self.LHCDescrip
+    for tunex,tuney in self.get_tunes():
+        sixdesktunes="%g_%g"%(tunex,tuney)
+        for angle in angles:
+            fndot='DAres.%s.%s.%s.%d'%(LHCDescrip,sixdesktunes,turnse,anumber)
+            fndot=os.path.join(dirname,fndot)
+            fhdot = open(fndot, 'w')
+            for seed in seeds:
+                ich1 = 0
+                ich2 = 0
+                ich3 = 0
+                icount = 1.
+                iin  = -999
+                iend = -999
+                alost1 = 0.
+                alost2 = 0.
+                achaos = 0
+                achaos1 = 0
+                sql=sql1+'AND seed=%g AND angle=%g ORDER BY amp1'%(seed,angle)
+                if self.debug:
+                    print sql
+                inp=np.array(self.execute(sql),dtype=rectype)
+                if len(inp)==0:
+                    msg="all particle lost for angle = %s and seed = %s"
+                    print msg%(angle,seed)
+                    continue
+                betx=inp['betx']
+                betx2=inp['betx2']
+                bety=inp['bety']
+                bety2=inp['bety2']
+                sigx1=inp['sigx1']
+                sigy1=inp['sigy1']
+                emitx=inp['emitx']
+                emity=inp['emity']
+                distp=inp['distp']
+                dist=inp['dist']
+                sigxavgnld=inp['sigxavgnld']
+                sigyavgnld=inp['sigyavgnld']
+                sturns1=inp['sturns1']
+                sturns2=inp['sturns2']
+                turn_max=inp['turn_max'].max()
 
-
-            zero = 1e-10
-            xidx=(betx>zero) & (emitx>zero)
-            yidx=(bety>zero) & (emity>zero)
-            sigx1[xidx]=np.sqrt(betx[xidx]*emitx[xidx])
-            sigy1[yidx]=np.sqrt(bety[yidx]*emity[yidx])
-            iel=inp.size-1
-            rat=0
-
-            if sigx1[0]>0:
-                rat=sigy1[0]**2*betx[0]/(sigx1[0]**2*bety[0])
-            if sigx1[0]**2*bety[0]<sigy1[0]**2*betx[0]:
-                rat=2
-            if emity[0]>emitx[0]:
+                zero = 1e-10
+                xidx=(betx>zero) & (emitx>zero)
+                yidx=(bety>zero) & (emity>zero)
+                sigx1[xidx]=np.sqrt(betx[xidx]*emitx[xidx])
+                sigy1[yidx]=np.sqrt(bety[yidx]*emity[yidx])
+                iel=inp.size-1
                 rat=0
-                dummy=np.copy(betx)
-                betx=bety
-                bety=dummy
-                dummy=np.copy(betx2)
-                betx2=bety2
-                bety2=dummy
-                dummy=np.copy(sigx1)
-                sigx1=sigy1
-                sigy1=dummy
-                dummy=np.copy(sigxavgnld)
-                sigxavgnld=sigyavgnld
-                sigyavgnld=dummy
-                dummy=np.copy(emitx)
-                emitx=emity
-                emity=dummy
 
-            sigma=np.sqrt(betx[0]*Elhc/Einj)
-            if abs(emity[0])>0 and abs(sigx1[0])>0:
-                if abs(emitx[0])<zero :
-                    rad=np.sqrt(1+(sigy1[0]**2*betx[0])/(sigx1[0]**2*bety[0]))/sigma
-                else:
-                    rad=np.sqrt((emitx[0]+emity[0])/emitx[0])/sigma
-            else:
-                rad=1
-            if abs(sigxavgnld[0])>zero and abs(bety[0])>zero and sigma > 0:
-                if abs(emitx[0]) < zero :
-                    rad1=np.sqrt(1+(pow(sigyavgnld[0],2)*betx[0])/(pow(sigxavgnld[0],2)*bety[0]))/sigma
-                else:
-                    rad1=(sigyavgnld[0]*np.sqrt(betx[0])-sigxavgnld[0]*np.sqrt(bety2[0]))/(sigxavgnld[0]*np.sqrt(bety[0])-sigyavgnld[0]*np.sqrt(betx2[0]))
-                    rad1=np.sqrt(1+rad1*rad1)/sigma
-            else:
-                rad1 = 1
-            chaostest=np.where((distp>2.)|(distp<=0.5))[0]
-            if len(chaostest)>0:
-                iin=chaostest[0]
-                achaos=rad*sigx1[iin]
-            else:
-                iin=iel
-            chaos1test=np.where(dist > 1e-2)[0]
-            if len(chaos1test)>0:
-                iend=chaos1test[0]
-                achaos1=rad*sigx1[iend]
-            else:
-                iend=iel
-            alost2test=np.where( (sturns1<turn_max) | (sturns2<turn_max))[0]
-            if len(alost2test)>0:
-                ialost2=alost2test[0]
-                alost2=rad*sigx1[ialost2]
-            icount=1.
-            if iin != -999 and iend == -999 : iend=iel
-            if iin != -999 and iend > iin :
-                for i in range(iin,iend+1) :
-                    if(abs(rad*sigx1[i])>zero):
-                        alost1 += rad1 * sigxavgnld[i]/rad/sigx1[i]
-                    if(i!=iend):
-                        icount+=1.
-                alost1 = alost1/icount
-                if alost1 >= 1.1 or alost1 <= 0.9:  alost1= -1. * alost1
-            else:
-                alost1 = 1.0
+                if sigx1[0]>0:
+                    rat=sigy1[0]**2*betx[0]/(sigx1[0]**2*bety[0])
+                if sigx1[0]**2*bety[0]<sigy1[0]**2*betx[0]:
+                    rat=2
+                if emity[0]>emitx[0]:
+                    rat=0
+                    dummy=np.copy(betx)
+                    betx=bety
+                    bety=dummy
+                    dummy=np.copy(betx2)
+                    betx2=bety2
+                    bety2=dummy
+                    dummy=np.copy(sigx1)
+                    sigx1=sigy1
+                    sigy1=dummy
+                    dummy=np.copy(sigxavgnld)
+                    sigxavgnld=sigyavgnld
+                    sigyavgnld=dummy
+                    dummy=np.copy(emitx)
+                    emitx=emity
+                    emity=dummy
 
-            alost1=alost1*alost2
-            name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
-            name1= '%s%ss%s%s-%s%s.%d'%(self.LHCDescrip,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
-            if(seed<10):
-                name1+=" "
-            if(anumber<10):
-                name1+=" "
-            fmt=' %-39s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
-            fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*sigx1[0],rad*sigx1[iel]))
-            final.append([name2, tunex, tuney, int(seed),
-                           angle,achaos,achaos1,alost1,alost2,
-                           rad*sigx1[0],rad*sigx1[iel],mtime])
-        anumber+=1
-        fhdot.close()
-        print fndot
+                sigma=np.sqrt(betx[0]*Elhc/Einj)
+                if abs(emity[0])>0 and abs(sigx1[0])>0:
+                    if abs(emitx[0])>=zero :
+                        eex=emitx[0]
+                        eey=emity[0]
+                    else:
+                        eey=sigy1[0]**2/bety[0]
+                        eex=sigx1[0]**2/betx[0]
+                    rad=np.sqrt(1+eey/eex)/sigma
+                else:
+                    rad=1
+                if abs(sigxavgnld[0])>zero and abs(bety[0])>zero and sigma > 0:
+                    if abs(emitx[0]) < zero:
+                        eey=sigyavgnld[0]**2/bety[0]
+                        eex=sigxavgnld[0]**2/betx[0]
+                        rad1=np.sqrt(1+eey/eex)/sigma
+                    else:
+                        rad1=(sigyavgnld[0]*np.sqrt(betx[0])-sigxavgnld[0]*np.sqrt(bety2[0]))/(sigxavgnld[0]*np.sqrt(bety[0])-sigyavgnld[0]*np.sqrt(betx2[0]))
+                        rad1=np.sqrt(1+rad1*rad1)/sigma
+                else:
+                    rad1 = 1
+                chaostest=np.where((distp>2.)|(distp<=0.5))[0]
+                if len(chaostest)>0:
+                    iin=chaostest[0]
+                    achaos=rad*sigx1[iin]
+                else:
+                    iin=iel
+                chaos1test=np.where(dist > 1e-2)[0]
+                if len(chaos1test)>0:
+                    iend=chaos1test[0]
+                    achaos1=rad*sigx1[iend]
+                else:
+                    iend=iel
+                alost2test=np.where((sturns1<turn_max)|(sturns2<turn_max))[0]
+                if len(alost2test)>0:
+                    ialost2=alost2test[0]
+                    alost2=rad*sigx1[ialost2]
+                icount=1.
+                if iin != -999 and iend == -999 : iend=iel
+                if iin != -999 and iend > iin :
+                    for i in range(iin,iend+1) :
+                        if(abs(rad*sigx1[i])>zero):
+                            alost1 += rad1 * sigxavgnld[i]/rad/sigx1[i]
+                        if(i!=iend):
+                            icount+=1.
+                    alost1 = alost1/icount
+                    if alost1 >= 1.1 or alost1 <= 0.9:  alost1= -1. * alost1
+                else:
+                    alost1 = 1.0
+
+                alost1=alost1*alost2
+                name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
+                name1= '%s%ss%s%s-%s%s.%d'%(self.LHCDescrip,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
+                if(seed<10):
+                    name1+=" "
+                if(anumber<10):
+                    name1+=" "
+                fmt=' %-39s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
+                fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*sigx1[0],rad*sigx1[iel]))
+                final.append([name2, turnsl,tunex, tuney, int(seed),
+                               angle,achaos,achaos1,alost1,alost2,
+                               rad*sigx1[0],rad*sigx1[iel],mtime])
+            anumber+=1
+            fhdot.close()
+            print fndot
     cols=SQLTable.cols_from_fields(tables.Da_Post.fields)
-    datab=SQLTable(self.conn,'da_post',cols)
+    datab=SQLTable(self.conn,'da_post',cols,tables.Da_Post.key,recreate=True)
     datab.insertl(final)
 
   def mk_da(self,force=False,nostd=False):
@@ -1534,6 +1539,9 @@ class SixDeskDB(object):
     fnplot= os.path.join(dirname,fnplot)
     fhplot = open(fnplot, 'w')
     fn=0
+    #for k in eqaper:
+    #  msg="Angle %-4g, Seed %2d: Dynamic Aperture below:  %.2f Sigma"
+    #  print msg %( final['angle'][k],final['seed'][k], final['Amin'][k])
     for angle in np.unique(final['angle']):
         fn+=1
         study= final['name'][0]
@@ -1546,22 +1554,21 @@ class SixDeskDB(object):
         smini=final['seed'][idx][imini]
         imaxi=np.argmax(finalalost)
         maxi=finalalost[imaxi]
+        eqaper = np.where((final['alost2'] == final['Amin']))[0]
         smaxi=final['seed'][idx][imaxi]
         toAvg = np.abs(final['alost1'][idx])
         i = len(toAvg)
         mean = np.mean(toAvg)
         std = np.sqrt(np.mean(toAvg*toAvg)-mean**2)
         idxneg = (final['angle']==angle)&(final['alost1']<0)
-        eqaper = np.where((final['alost2'] == final['Amin']))[0]
         nega = len(final['alost1'][idxneg])
         Amin = np.min(final['Amin'][idxangle])
         Amax = np.max(final['Amax'][idxangle])
 
-        #for k in eqaper:
-        #  msg="Angle %d, Seed %d: Dynamic Aperture below:  %.2f Sigma"
-        #  print msg %( final['angle'][k],final['seed'][k], final['Amin'][k])
 
+        print "Angle %s"%angle
         if i == 0:
+          print "Dynamic Aperture below:  %.2f Sigma"%Amax
           mini  = -Amax
           maxi  = -Amax
           mean  = -Amax
