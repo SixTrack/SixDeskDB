@@ -45,8 +45,8 @@ def select_ang_surv(data,seed,nang):
   """returns data reduced to ((angmax+1)/nang)-1 angles -> nang being the divisor of angmax"""
   angmax=len(data['angle'][:,0])#number of angles
   print nang
-  if(nang not in list(get_divisors(angmax+1))[:-3]):
-    print('%s is not a divisor of %s or two large - the two largest divisors are not used')%(nang,angmax+1)
+  if((nang not in list(get_divisors(angmax+1))) or ((angmax+1)/nang-1<3)):
+    print('%s is not a divisor of %s or two large (((angmax+1)/nang)-1<3)')%(nang,angmax+1)
     sys.exit(0)
   #define variables for only selection of angles
   s,a,t=data['sigma'][nang::nang+1],data['angle'][nang::nang+1],data['sturn'][nang::nang+1]
@@ -235,7 +235,7 @@ def clean_dir_da_vst(db,files):
 # for error analysis - data is not saved in database but output files are generated
 def RunDaVsTurnsAng(db,seed,tune,turnstep):
   """Da vs turns -- calculate da vs turns for divisors of angmax, 
-     e.g. for angmax=29+1 for divisors [1, 2, 3, 5, 6, 10]"""
+     e.g. for angmax=29+1 for divisors [1, 2, 3, 5, 6] - last 2 [10,15] are omitted as the number of angles has to be larger than 3"""
   # start analysis
   try:
     turnstep=int(float(turnstep))
@@ -255,8 +255,11 @@ def RunDaVsTurnsAng(db,seed,tune,turnstep):
   dasurvtot= db.get_surv(seed,tune)
   a=dasurvtot['angle']
   angmax=len(a[:,0])#number of angles
-  print('... number of angles: %s, divisors: %s'%(angmax,str(list(get_divisors(angmax+1))[0:-3])))
-  for nang in list(get_divisors(angmax+1))[0:-3]:
+  #use only divisors nang with (angmax+1)/nang-1>=3 = minimum number of angles for trapezoidal rule
+  divsall=np.array(list(get_divisors(angmax+1)))
+  divs=divsall[(angmax+1)/divsall-1>2]
+  print('... number of angles: %s, divisors: %s'%(angmax,str(divs)))
+  for nang in divs:
     dirnameang='%s/%s'%(dirname,nang)
     mk_dir(dirnameang)
     dasurv=select_ang_surv(dasurvtot,seed,nang)
