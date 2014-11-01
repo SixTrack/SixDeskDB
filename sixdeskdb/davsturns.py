@@ -162,8 +162,8 @@ def reload_daout_old(path):
   ftype=[('dawtrap',float),('dastrap',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('nturn',float),('tlossmin',float)]
   return np.loadtxt(glob.glob(path+'/DAold.out*')[0],dtype=ftype,delimiter=' ')
 def save_daout(data,path):
-  daout=data[['seed','tunex','tuney','dawtrap','dastrap','dawsimp','dassimp','dawtraperr','dastraperr','dastraperrep','dastraperrepang','dastraperrepamp','dawsimperr','dassimperr','nturn','tlossmin','mtime']]
-  np.savetxt(path+'/DA.out',daout,fmt='%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %d %.12f')
+  daout=data[['seed','tunex','tuney','dawtrap','dastrap','dawsimp','dassimp','dawtraperr','dastraperr','dastraperrep','dastraperrepang','dastraperrepamp','dawsimperr','dassimperr','nturn','tlossmin']]
+  np.savetxt(path+'/DA.out',daout,fmt='%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %d')
 def reload_daout(path):
   ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
   return np.loadtxt(glob.glob(path+'/DA.out*')[0],dtype=ftype,delimiter=' ')
@@ -267,6 +267,7 @@ def RunDaVsTurnsAng(db,seed,tune,turnstep):
     daout=mk_da_vst(dasurv,seed,tune,turnstep)
     save_daout(daout,dirnameang)
     print('... save da vs turns data in {0}/DA.out').format(dirnameang)
+
 # in analysis - putting the pieces together
 def RunDaVsTurns(db,force,outfile,outfileold,turnstep):
   '''Da vs turns -- calculate da vs turns for study dbname'''
@@ -314,7 +315,7 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep):
 def PlotDaVsTurns(db,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog):
   print('Da vs turns -- create survival and da vs turns plots')
   try:
-    ampmaxsurv=float(ampmaxsurv)
+    ampmaxsurv =float(ampmaxsurv)
     ampmindavst=float(ampmindavst)
     ampmaxdavst=float(ampmaxdavst)
   except [ValueError,NameError,TypeError]:
