@@ -258,8 +258,8 @@ def save_daout(data,path):
   daout=data[['seed','tunex','tuney','dawtrap','dastrap','dawsimp','dassimp','dawtraperr','dastraperr','dastraperrep','dastraperrepang','dastraperrepamp','dawsimperr','dassimperr','nturn','tlossmin']]
   np.savetxt(path+'/DA.out',daout,fmt='%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %d')
 def save_davst_fit(data,filename):
-  fitdata=data[['seed','tunex','tuney','fitdat','fitdaterr','fitndrop','kappa','res','dinf','dinferr','b0','b0err','b1mean','b1meanerr','b1std','mtime']]
-  np.savetxt(filename,fitdata,fmt='%d %.6f %.6f %s %s %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d')
+  fitdata=data[['seed','tunex','tuney','fitdat','fitdaterr','fitndrop','kappa','res','dinf','dinferr','b0','b0err','b1mean','b1meanerr','b1std']]
+  np.savetxt(filename,fitdata,fmt='%d %.6f %.6f %s %s %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f')
 def reload_daout(path):
   ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
   return np.loadtxt(glob.glob(path+'/DA.out*')[0],dtype=ftype,delimiter=' ')
@@ -429,12 +429,11 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
             print('fit da vs turns for tune {0} ...').format(str(tune))
             fitdaout=mk_da_vst_fit(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap)
             print('.... save fitdata in database')
-            db.st_da_vst_fit(fitdaout)
             if(outfilefit):
               turnse=db.env_var['turnse']
               (tunex,tuney)=tune
               sixdesktunes="%g_%g"%(tunex,tuney)
-              fndot='%s/DAfit.%s.%s.%s.plot'%(db.mk_analysis_dir(),db.LHCDescrip,sixdesktunes,turnse)
+              fndot='%s/DAfit.%s.%s.%s.%s.%s.plot'%(db.mk_analysis_dir(),db.LHCDescrip,sixdesktunes,turnse,fitdat,fitdaterr)
               save_davst_fit(fitdaout,fndot)
               print('... save da vs turns fit data in {0}').format(fndot)
         else:

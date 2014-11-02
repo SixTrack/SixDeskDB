@@ -1592,26 +1592,24 @@ class SixDeskDB(object):
     tab.insert(data)
   def get_da_vst(self,seed,tune):
     '''get da vs turns data from DB'''
-    #change for new db version
     (tunex,tuney)=tune
-    #check if table da_vsturn exists
-    #yes -> return table
-    #no  -> return 0 len table = []
     cmd="""SELECT name FROM sqlite_master
         WHERE type='table'
         ORDER BY name"""
     cur=self.conn.cursor().execute(cmd)
     ftype=[('name',np.str_,16)]
     tabnames=np.fromiter(cur,dtype=ftype)
+    #check if table da_vst exists in database
     if 'da_vst' in tabnames['name']:
       ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
       cmd="""SELECT *
-           FROM da_vsturn WHERE seed=%s and tunex=%s and tuney=%s
+           FROM da_vst WHERE seed=%s and tunex=%s and tuney=%s
            ORDER BY nturn"""
       cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
       data=np.fromiter(cur,dtype=ftype)
     else:
       #02/11/2014 remaned table da_vsturn to da_vst - keep da_vsturn for backward compatibility
+      #check if table da_vsturn exists in database
       if 'da_vsturn' in tabnames['name']:
         ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
         cmd="""SELECT *
@@ -1619,8 +1617,30 @@ class SixDeskDB(object):
              ORDER BY nturn"""
         cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
         data=np.fromiter(cur,dtype=ftype)
+      #if tables da_vst and da_vsturn do not exist, return an empty list
       else:      
         data=[]
+    return data
+  def get_da_vst_fit(self,seed,tune):
+    '''get da vs turns data from DB'''
+    (tunex,tuney)=tune
+    cmd="""SELECT name FROM sqlite_master
+        WHERE type='table'
+        ORDER BY name"""
+    cur=self.conn.cursor().execute(cmd)
+    ftype=[('name',np.str_,16)]
+    tabnames=np.fromiter(cur,dtype=ftype)
+    #check if table da_vst exists in database
+    if 'da_vst_fit' in tabnames['name']:
+      ftype=[('seed',float),('tunex',float),('tuney',float),('fitdat',np.str_, 30),('fitdaterr',np.str_, 30),('fitndrop',float),('kappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float),('b1mean',float),('b1meanerr',float),('b1std',float),('mtime',float)]
+      cmd="""SELECT *
+           FROM da_vst_fit WHERE seed=%s and tunex=%s and tuney=%s
+           ORDER BY fitdat,fitdaterr,fitndrop"""
+      cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
+      data=np.fromiter(cur,dtype=ftype)
+    #if tables da_vst_fit does not exist, return an empty list
+    else:      
+      data=[]
     return data
   def mk_da_vst_ang(self,seed,tune,turnstep):
     """Da vs turns -- calculate da vs turns for divisors of angmax, 

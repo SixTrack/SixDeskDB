@@ -205,7 +205,7 @@ class Da_Vst_Fit(object):
   ('b1meanerr', 'float', 'error b1mean used for fit'),
   ('b1std', 'float', 'std(b1) over seeds'),
   ('mtime','float','last modification time')]
-  key=['seed','tunex','tuney','fitdat','fitdaterr','fitndrop']
+  key=['fitdat','fitdaterr','fitndrop','tunex','tuney','seed']
 
 acc_var = ['BNL','COLUMNS','CORR_TEST','G_FILENAME_ENCODING','LHCDesHome',
     'LHCDesName','LHCDescrip','LINES','MADX','MADX_PATH','SIXTRACKBNLEXE',

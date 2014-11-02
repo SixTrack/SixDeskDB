@@ -19,24 +19,26 @@ done
 
 echo '--- da_vs_turns --';
 echo '... test da_vs_turns'
-../../sixdb ${study}.db da_vs_turns -outfile -outfileold
-echo '... test plot_da_vs_turns'
-../../sixdb ${study}.db plot_da_vs_turns
-../../sixdb ${study}.db plot_da_vs_turns -plotlog
-echo '... test plot_comp_da_vs_tursn'
-../../sixdb ${study}.db plot_comp_da_vs_turns ${study}.db -lblname job1 -complblname job2
+../../sixdb ${study}.db da_vs_turns -outfile -outfileold -fit -outfilefit
+../../sixdb ${study}.db da_vs_turns -outfile -outfileold -fitopt 'dastrap' 'dastraperrep' 25 -5 5 0.01 -outfilefit
+#echo '... test plot_da_vs_turns'
+#../../sixdb ${study}.db plot_da_vs_turns
+#../../sixdb ${study}.db plot_da_vs_turns -plotlog
 echo '***** comparing output files DAold.out ***** '
 for i in dares_${study}/*/*/DAold.out;
 do
-#  echo $i dares_${study}_reference/${i#*/}
   diff $i dares_${study}_reference/${i#*/}
 done
 echo '***** comparing output files DA.out ***** '
 for i in dares_${study}/*/*/DA.out;
 do
-#  echo $i dares_${study}_reference/${i#*/}
+  diff $i dares_${study}_reference/${i#*/}
+done
+echo '***** comparing output files DAfit.* ***** '
+for i in dares_${study}/DAfit*;
+do
   diff $i dares_${study}_reference/${i#*/}
 done
 echo '... clean up study '${study}
-./cleanstd ${study}
+#./cleanstd ${study}
 
