@@ -1583,7 +1583,12 @@ class SixDeskDB(object):
   def st_da_vst(self,data):
     ''' store da vs turns data '''
     cols  = SQLTable.cols_from_dtype(data.dtype)
-    tab   = SQLTable(self.conn,'da_vsturn',cols,tables.Da_Vst.key)
+    tab   = SQLTable(self.conn,'da_vst',cols,tables.Da_Vst.key)
+    tab.insert(data)
+  def st_da_vst_fit(self,data):
+    ''' store da vs turns fit data '''
+    cols  = SQLTable.cols_from_dtype(data.dtype)
+    tab   = SQLTable(self.conn,'da_vst_fit',cols,tables.Da_Vst_Fit.key)
     tab.insert(data)
   def get_da_vst(self,seed,tune):
     '''get da vs turns data from DB'''
@@ -1598,7 +1603,7 @@ class SixDeskDB(object):
     cur=self.conn.cursor().execute(cmd)
     ftype=[('name',np.str_,16)]
     tabnames=np.fromiter(cur,dtype=ftype)
-    if 'da_vsturn' in tabnames['name']:
+    if 'da_vst' in tabnames['name']:
       ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
       cmd="""SELECT *
            FROM da_vsturn WHERE seed=%s and tunex=%s and tuney=%s
@@ -1606,7 +1611,16 @@ class SixDeskDB(object):
       cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
       data=np.fromiter(cur,dtype=ftype)
     else:
-      data=[]
+      #02/11/2014 remaned table da_vsturn to da_vst - keep da_vsturn for backward compatibility
+      if 'da_vsturn' in tabnames['name']:
+        ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+        cmd="""SELECT *
+             FROM da_vsturn WHERE seed=%s and tunex=%s and tuney=%s
+             ORDER BY nturn"""
+        cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
+        data=np.fromiter(cur,dtype=ftype)
+      else:      
+        data=[]
     return data
   def mk_da_vst_ang(self,seed,tune,turnstep):
     """Da vs turns -- calculate da vs turns for divisors of angmax, 

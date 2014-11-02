@@ -188,6 +188,25 @@ class Da_Vst(object):
   ('mtime','float','last modification time')]
   key=['seed','tunex','tuney','nturn']
 
+class Da_Vst_Fit(object):
+  fields=[
+  ('seed', 'int', 'seed value'),
+  ('tunex', 'float', 'tunex value'),
+  ('tuney' ,'float', 'tuney value'),
+  ('fitdat', 'str', 'data used for fit'),
+  ('fitdaterr', 'str', 'dataerr used for fit'),
+  ('kappa', 'float', 'optimal kappa (optkap)'),
+  ('res', 'float', 'fit residual for optkap'),
+  ('dinf', 'float', 'dinf for optkap'),
+  ('dinferr', 'float', 'dinferr for optkap'),
+  ('b0', 'float', 'b0 for optkap'),
+  ('b0err', 'float', 'b0 for optkap'),
+  ('b1mean', 'float', 'b1mean used for fit'),
+  ('b1meanerr', 'float', 'error b1mean used for fit'),
+  ('b1std', 'float', 'std(b1) over seeds'),
+  ('mtime','float','last modification time')]
+  key=['seed','tunex','tuney','fitdat','fitdaterr','fitndrop']
+
 acc_var = ['BNL','COLUMNS','CORR_TEST','G_FILENAME_ENCODING','LHCDesHome',
     'LHCDesName','LHCDescrip','LINES','MADX','MADX_PATH','SIXTRACKBNLEXE',
     'SIXTRACKDAEXE','SIXTRACKEXE','basedir','beam','boincdir','bunch_charge',

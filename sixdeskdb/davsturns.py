@@ -1,10 +1,11 @@
 # da vs turns module
 import numpy as np
+from scipy import optimize
 import matplotlib.pyplot as pl
 import glob, sys, os, time
 from deskdb import SixDeskDB,tune_dir,mk_dir
 
-# basic functions
+# ------------- basic functions -----------
 def get_divisors(n):
   """finds the divisors of an integer number"""
   large_divisors = []
@@ -16,7 +17,27 @@ def get_divisors(n):
   for divisor in large_divisors:
     yield divisor
 
-# functions necessary for the analysis
+def linear_fit(datx,daty,daterr):
+  '''Linear model fit with f(x)=p0+p1*x
+  (datx,daty): data, daterr: measurement error
+  return values (res,p0,p0err,p1,p1err):
+      - res: sum of residuals^2 normalized with the measurment error
+      - p0,p1: fit paramaeters
+      - p0err, p1err: error of fit parameters'''
+  fitfunc = lambda p,x: p[0]+p[1]*x#p[0]=Dinf, p[1]=b0
+  errfunc = lambda p,x,y,err: (y-fitfunc(p,x))/err
+  pinit = [0.1, 0.1]
+  #minimize 
+  outfit=optimize.leastsq(errfunc, pinit,args=(datx,daty,daterr),full_output=1)
+  (p0,p1)=outfit[0]#(p[0],p[1])
+  var    =outfit[1]#variance matrix
+  p0err  =np.sqrt(var[0,0])#err p[0]
+  p1err  =np.sqrt(var[1,1])#err p[1]
+#  res=sum((daty-fitfunc((p0,p1),datx))**2)/len(datx-2)    #not weighted with error
+  res=sum((errfunc((p0,p1),datx,daty,daterr))**2)/len(datx)#weighted with error
+  return (res,p0,p0err,p1,p1err)
+
+# ----------- functions necessary for the analysis -----------
 #@profile
 def get_min_turn_ang(s,t,a,it):
   """returns array with (angle,minimum sigma,sturn) of particles with lost turn number < it.
@@ -80,8 +101,6 @@ def mk_da_vst(data,seed,tune,turnstep):
   angmax=len(a[:,0])#number of angles
   angstep=np.pi/(2*(angmax+1))#step in angle in rad
   ampstep=np.abs((s[s>0][1])-(s[s>0][0]))
-#  print angstep
-#  print ampstep
   ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
   l_turnstep=len(np.arange(turnstep,tmax,turnstep))
   daout=np.ndarray(l_turnstep,dtype=ftype)
@@ -97,7 +116,6 @@ def mk_da_vst(data,seed,tune,turnstep):
   ajsimp_e=np.array([11/8.,-1/6.,55/24.])
   warnsimp=True
   for it in np.arange(turnstep,tmax,turnstep):
-#  for it in np.arange(turnstep,turnstep+100000,turnstep):
     mta=get_min_turn_ang(s,t,a,it)
     mta_angle=mta['angle']*np.pi/180#convert to rad
     l_mta_angle=len(mta_angle)
@@ -127,7 +145,6 @@ def mk_da_vst(data,seed,tune,turnstep):
     # error
     dawtraperrint   = np.abs(((ajtrap*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum())*angstep*ampstep)
     dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint
-#    dastraperr      = np.abs(angstep*ampstep*l_mta_angle)*(2./np.pi)#original formula
     dastraperr      = ampstep/2
     dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
     dastraperrepamp = ampstep/2
@@ -142,7 +159,6 @@ def mk_da_vst(data,seed,tune,turnstep):
       # error
       dawsimperrint = (ajsimp*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum()*angstep*ampstep
       dawsimperr    = np.abs(1/4.*dawsimpint**(-3/4.))*dawsimperrint
-#      dassimperr    = np.abs(angstep*ampstep*(ajsimp.sum()))*(2./np.pi)#original formula 
       dassimperr    = ampstep/2#simplified
     else:
       (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
@@ -154,7 +170,84 @@ def mk_da_vst(data,seed,tune,turnstep):
     currenttlossmin=tlossmin
   return daout[daout['dawtrap']>0]#delete 0 from errors
 
-# functions to reload and create da.out files for previous scripts
+# ----------- functions to calculat the fit -----------
+def get_fit_data(data,fitdat,fitdaterr,fitndrop,fitkap,b1):
+  '''linearize data for da vs turns fit according to model:
+        D(N) = Dinf+b0/(log(N^(exp(-b1))))^kappa'''
+  datx=1/(np.log(data['tlossmin'][fitndrop::]**np.exp(-b1))**fitkap)
+#  print (fitdat,fitdaterr)
+  daty=data[fitdat][fitndrop::]
+  daterr=data[fitdaterr][fitndrop::]
+  return datx,daty,daterr
+
+def get_b1mean(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap):
+  '''returns (mean(b1),errmean(b1),std(b1)) over the seeds
+  with b1 being the fit parameter in:
+        D(N) = Dinf+b0/(log(N^(exp(-b1))))^kappa
+  and a linear relation is assumed between:
+        log(|b|)=log(|b0|)+b1*kappa <=> b=b0*exp(b1*kappa)
+  with b being the fit paramter in:
+        D(N) = Dinf+b/(log(N))^kappa
+  fitndrop=do not include first fitndrop data points
+  fitkap=kappa'''
+  if(not db.check_seeds()):
+    print('!!! Seeds are missing in database !!!')
+  ftype=[('seed',int),('res',float),('logb0',float),('logb0err',float),('b1',float),('b1err',float)]
+  lklog=np.zeros(len(db.get_db_seeds()),dtype=ftype)
+  ftype=[('kappa',float),('res',float),('dinf',float),('dinferr',float),('b',float),('berr',float)]
+  lkap=np.zeros(len(np.arange(fitskap,fitekap+fitdkap,fitdkap))-1,dtype=ftype)
+  ccs=0
+  for seed in db.get_db_seeds():
+    data=db.get_da_vst(seed,tune)
+    #start: scan over kappa
+    cck=0
+    for kap in np.arange(fitskap,fitekap+fitdkap,fitdkap):
+      if(abs(kap)>1.e-6):#for kappa=0: D(N)=Dinf+b/(log(N)^kappa)=D(N)=Dinf+b -> fit does not make sense
+        datx,daty,daterr=get_fit_data(data,fitdat,fitdaterr,fitndrop,kap,0)#fit D(N)=Dinf+b/(log(N)^kappa
+        lkap[cck]=(kap,)+linear_fit(datx,daty,daterr)
+        cck+=1
+    lklog[ccs]=(seed,)+linear_fit(lkap['kappa'],np.log(np.abs(lkap['b'])),1)#linear fit log(|b|)=log(|b0|)+b1*kappa for each seed
+    ccs+=1
+  return (np.mean(lklog['b1']),np.sqrt(np.mean(lklog['b1err']**2)),np.std(lklog['b1']))#error of mean value = sqrt(sum_i((1/n)*sigma_i**2))
+
+def mk_da_vst_fit(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap):
+  '''1) a) fit D(N)=Dinf+b/(log(N))^kappa for all seeds and
+           scan range (skap,ekap,dkap)
+        b) assume linear dependence of b on kappa:
+             log(|b|)=log(|b0|)+b1*kappa
+           -> b1 for all seeds
+        c) calculate avg(b1) over all seeds
+     2) a) fit D(N)=Dinf+b0/(log(N)^(exp(-b1)))^kappa
+           for fixed b1=b1mean (obtained in 1))
+           and scan range (skap,ekap,dkap)
+        b) use (b0,kappa) with minimum residual'''
+  mtime=time.time()
+  (tunex,tuney)=tune
+  print('calculating b1mean ...')
+  (b1mean,b1meanerr,b1std)=get_b1mean(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap) 
+  print('average over %s seeds: b1mean=%s, b1meanerr=%s, b1std=%s'%(round(len(db.get_db_seeds())),round(b1mean,3),round(b1meanerr,3),round(b1std,3)))
+  print('start scan over kappa for fixed b1=%s to find kappa with minimum residual ...'%b1mean)
+  ftype=[('kappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float)]
+  lkap=np.zeros(len(np.arange(fitskap,fitekap+fitdkap,fitdkap))-1,dtype=ftype)#-1 as kappa=0 is not used
+  ftype=[('seed',float),('tunex',float),('tuney',float),('fitdat',np.str_, 30),('fitdaterr',np.str_, 30),('fitndrop',float),('kappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float),('b1mean',float),('b1meanerr',float),('b1std',float),('mtime',float)]
+  minkap=np.zeros(len(db.get_db_seeds()),dtype=ftype)
+  ccs=0
+  for seed in db.get_db_seeds():
+    data=db.get_da_vst(seed,tune)
+    #start: scan over kappa
+    cck=0
+    for kap in np.arange(fitskap,fitekap+fitdkap,fitdkap):
+      if(abs(kap)>1.e-6):#for kappa=0: D(N)=Dinf+b/(log(N)^kappa)=D(N)=Dinf+b -> fit does not make sense
+        datx,daty,daterr=get_fit_data(data,fitdat,fitdaterr,fitndrop,kap,b1mean)
+        lkap[cck]=(kap,)+linear_fit(datx,daty,daterr)
+        cck+=1
+    iminkap=np.argmin(lkap['res'])
+    minkap[ccs]=(seed,tunex,tuney,fitdat,fitdaterr,fitndrop,)+tuple(lkap[iminkap])+(b1mean,b1meanerr,b1std,mtime,)
+    ccs+=1
+  print('... scan over kappa is finished!')
+  return minkap 
+
+# ----------- functions to reload and create DA.out files for previous scripts -----------
 def save_daout_old(data,path):
   daoutold=data[['dawtrap','dastrap','dastraperrep','dastraperrepang','dastraperrepamp','nturn','tlossmin']]
   np.savetxt(path+'/DAold.out',daoutold,fmt='%.6f %.6f %.6f %.6f %.6f %d %d')
@@ -164,6 +257,9 @@ def reload_daout_old(path):
 def save_daout(data,path):
   daout=data[['seed','tunex','tuney','dawtrap','dastrap','dawsimp','dassimp','dawtraperr','dastraperr','dastraperrep','dastraperrepang','dastraperrepamp','dawsimperr','dassimperr','nturn','tlossmin']]
   np.savetxt(path+'/DA.out',daout,fmt='%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %d')
+def save_davst_fit(data,filename):
+  fitdata=data[['seed','tunex','tuney','fitdat','fitdaterr','fitndrop','kappa','res','dinf','dinferr','b0','b0err','b1mean','b1meanerr','b1std','mtime']]
+  np.savetxt(filename,fitdata,fmt='%d %.6f %.6f %s %s %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d')
 def reload_daout(path):
   ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
   return np.loadtxt(glob.glob(path+'/DA.out*')[0],dtype=ftype,delimiter=' ')
@@ -269,13 +365,13 @@ def RunDaVsTurnsAng(db,seed,tune,turnstep):
     print('... save da vs turns data in {0}/DA.out').format(dirnameang)
 
 # in analysis - putting the pieces together
-def RunDaVsTurns(db,force,outfile,outfileold,turnstep):
-  '''Da vs turns -- calculate da vs turns for study dbname'''
-  # start analysis
+def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap,outfilefit):
+  '''Da vs turns -- calculate da vs turns for study dbname, if davstfit=True also fit the data'''
+  #---- calculate the da vs turns
   try:
     turnstep=int(float(turnstep))
   except [ValueError,NameError,TypeError]:
-    print('Error in RunDaVsTurns: turnstep must be integer values!')
+    print('Error in RunDaVsTurns: turnstep must be an integer values!')
     sys.exit(0)
   if(not db.check_seeds()):
     print('!!! Seeds are missing in database !!!')
@@ -312,6 +408,44 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep):
       if(outfileold):
         save_daout_old(daout,dirname)
         print('... save da vs turns (old data format) data in {0}/DAold.out').format(dirname)
+  #---- fit the data
+  if(davstfit):
+    if(fitdat in ['dawtrap','dastrap','dawsimp','dassimp']):
+      if(fitdaterr in ['none','dawtraperr','dastraperr','dastraperrep','dastraperrepang','dastraperrepamp','dawsimperr','dassimperr']):
+        try:
+          fitndrop=int(float(fitndrop))
+        except [ValueError,NameError,TypeError]:
+          print('Error in RunDaVsTurns: fitndrop must be an integer values! - Aborting!')
+          sys.exit(0)
+        try:
+          fitskap=float(fitskap)
+          fitekap=float(fitekap)
+          fitdkap=float(fitdkap)
+        except [ValueError,NameError,TypeError]:
+          print('Error in RunDaVsTurns: fitskap,fitekap and fitdkap must be an float values! - Aborting!')
+          sys.exit(0)
+        if((np.arange(fitskap,fitekap+fitdkap,fitdkap)).any()):
+          for tune in db.get_tunes():
+            print('fit da vs turns for tune {0} ...').format(str(tune))
+            fitdaout=mk_da_vst_fit(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap)
+            print('.... save fitdata in database')
+            db.st_da_vst_fit(fitdaout)
+            if(outfilefit):
+              turnse=db.env_var['turnse']
+              (tunex,tuney)=tune
+              sixdesktunes="%g_%g"%(tunex,tuney)
+              fndot='%s/DAfit.%s.%s.%s.plot'%(db.mk_analysis_dir(),db.LHCDescrip,sixdesktunes,turnse)
+              save_davst_fit(fitdaout,fndot)
+              print('... save da vs turns fit data in {0}').format(fndot)
+        else:
+          print('Error in RunDaVsTurns: empty scan range for fitkap!')
+      else:
+        print("Error in -fitopt: <dataerr> has to be 'none','dawtraperr','dastraperr','dastraperrep','dastraperrepang','dastraperrepamp','dawsimperr' or 'dassimperr' - Aborting!")
+        sys.exit(0)
+    else:
+      print("Error in -fitopt: <data> has to be 'dawtrap','dastrap','dawsimp' or 'dassimp' - Aborting!")
+      sys.exit(0)
+
 def PlotDaVsTurns(db,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog):
   print('Da vs turns -- create survival and da vs turns plots')
   try:
@@ -379,16 +513,3 @@ def PlotCompDaVsTurns(db,dbcomp,lblname,complblname,ampmaxsurv,ampmindavst,ampma
       else:
         pl.savefig(dirname+'/DA_comp.png')
         print('... saving plot {0}/DA_comp.png').format(dirname)
-
-#      # case: reload data
-#      else:
-#        try:
-#          daout = reload_daout(dirname)
-#        except IndexError:
-#          print('Error in RunDaVsTurns - DA.out file not found for seed {0}!').format(str(seed))
-#          sys.exit(0)
-#        try:
-#          dasurv= reload_dasurv(dirname)
-#        except IndexError:
-#          print('Error in RunDaVsTurns - DAsurv.out file not found for seed {0}!').format(str(seed))
-#          sys.exit(0)
