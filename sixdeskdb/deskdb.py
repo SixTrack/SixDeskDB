@@ -993,6 +993,16 @@ class SixDeskDB(object):
     """check if angles defined in the environment are presently available in the database"""
     return not len(set(self.get_angles())-set(self.get_db_angles()))>0
 
+  def check_table(self,tab):
+    """check if table tab exists in database"""
+    cmd="""SELECT name FROM sqlite_master
+        WHERE type='table'
+        ORDER BY name"""
+    cur=self.conn.cursor().execute(cmd)
+    ftype=[('name',np.str_,30)]
+    tabnames=np.fromiter(cur,dtype=ftype)
+    return (tab in tabnames['name'])
+
   def get_angles(self):
     ''' get angles from env variables'''
     env_var = self.env_var
@@ -1596,7 +1606,7 @@ class SixDeskDB(object):
     cols  = SQLTable.cols_from_dtype(data.dtype)
     tab   = SQLTable(self.conn,'da_vst',cols,tables.Da_Vst.key,recreate)
     tab.insert(data)
-  def st_da_vst_fit(self,data):
+  def st_da_vst_fit(self,data,recreate=False):
     ''' store da vs turns fit data in database'''
     cols  = SQLTable.cols_from_dtype(data.dtype)
     tab   = SQLTable(self.conn,'da_vst_fit',cols,tables.Da_Vst_Fit.key,recreate=False)
@@ -1604,14 +1614,8 @@ class SixDeskDB(object):
   def get_da_vst(self,seed,tune):
     '''get da vs turns data from DB'''
     (tunex,tuney)=tune
-    cmd="""SELECT name FROM sqlite_master
-        WHERE type='table'
-        ORDER BY name"""
-    cur=self.conn.cursor().execute(cmd)
-    ftype=[('name',np.str_,30)]
-    tabnames=np.fromiter(cur,dtype=ftype)
     #check if table da_vst exists in database
-    if 'da_vst' in tabnames['name']:
+    if(self.check_table('da_vst')):
       ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
       cmd="""SELECT *
            FROM da_vst WHERE seed=%s and tunex=%s and tuney=%s
@@ -1621,7 +1625,7 @@ class SixDeskDB(object):
     else:
       #02/11/2014 remaned table da_vsturn to da_vst - keep da_vsturn for backward compatibility
       #check if table da_vsturn exists in database
-      if 'da_vsturn' in tabnames['name']:
+      if(self.check_table('da_vsturn')):
         ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
         cmd="""SELECT *
              FROM da_vsturn WHERE seed=%s and tunex=%s and tuney=%s
