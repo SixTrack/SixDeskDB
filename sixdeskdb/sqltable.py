@@ -81,15 +81,21 @@ class SQLTable(object):
     self.keys=keys
   def insert(self,data,replace=True):
     '''insert structured array into databse table'''
-    db=self.db;table=self.name
+    db=self.db
+    table=self.name
+    dbtype = self.dbtype
     if replace:
       sql="REPLACE INTO %s(%s) VALUES (%s)"
     else:
       sql="INSERT INTO %s(%s) VALUES (%s)"
+    cur=db.cursor()
+    if dbtype == "sql":
+      cur.execute("begin IMMEDIATE transaction")
+    if len(data) == 0:
+      return
     cols=','.join(data.dtype.names)
     vals=','.join(('?',)*len(data.dtype.names))
     sql_cmd=sql%(table,cols,vals)
-    cur=db.cursor()
     cur.executemany(sql_cmd, data)
     db.commit()
   def insertl(self,data,artype="?",replace=True):

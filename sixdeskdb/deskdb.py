@@ -1591,15 +1591,15 @@ class SixDeskDB(object):
         print fnplot
 
 # -------------------------------- da_vs_turns -----------------------------------------------------------
-  def st_da_vst(self,data):
-    ''' store da vs turns data '''
+  def st_da_vst(self,data,recreate=False):
+    ''' store da vs turns data in database'''
     cols  = SQLTable.cols_from_dtype(data.dtype)
-    tab   = SQLTable(self.conn,'da_vst',cols,tables.Da_Vst.key)
+    tab   = SQLTable(self.conn,'da_vst',cols,tables.Da_Vst.key,recreate)
     tab.insert(data)
   def st_da_vst_fit(self,data):
-    ''' store da vs turns fit data '''
+    ''' store da vs turns fit data in database'''
     cols  = SQLTable.cols_from_dtype(data.dtype)
-    tab   = SQLTable(self.conn,'da_vst_fit',cols,tables.Da_Vst_Fit.key)
+    tab   = SQLTable(self.conn,'da_vst_fit',cols,tables.Da_Vst_Fit.key,recreate=False)
     tab.insert(data)
   def get_da_vst(self,seed,tune):
     '''get da vs turns data from DB'''
@@ -1608,7 +1608,7 @@ class SixDeskDB(object):
         WHERE type='table'
         ORDER BY name"""
     cur=self.conn.cursor().execute(cmd)
-    ftype=[('name',np.str_,16)]
+    ftype=[('name',np.str_,30)]
     tabnames=np.fromiter(cur,dtype=ftype)
     #check if table da_vst exists in database
     if 'da_vst' in tabnames['name']:

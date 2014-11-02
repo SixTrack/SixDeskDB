@@ -21,9 +21,9 @@ echo '--- da_vs_turns --';
 echo '... test da_vs_turns'
 ../../sixdb ${study}.db da_vs_turns -outfile -outfileold -fit -outfilefit
 ../../sixdb ${study}.db da_vs_turns -outfile -outfileold -fitopt 'dastrap' 'dastraperrep' 25 -5 5 0.01 -outfilefit
-#echo '... test plot_da_vs_turns'
-#../../sixdb ${study}.db plot_da_vs_turns
-#../../sixdb ${study}.db plot_da_vs_turns -plotlog
+echo '... test plot_da_vs_turns'
+../../sixdb ${study}.db plot_da_vs_turns
+../../sixdb ${study}.db plot_da_vs_turns -plotlog
 echo '***** comparing output files DAold.out ***** '
 for i in dares_${study}/*/*/DAold.out;
 do
@@ -40,5 +40,5 @@ do
   diff $i dares_${study}_reference/${i#*/}
 done
 echo '... clean up study '${study}
-#./cleanstd ${study}
+./cleanstd ${study}
 
