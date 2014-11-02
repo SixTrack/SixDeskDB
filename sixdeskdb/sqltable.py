@@ -38,12 +38,15 @@ class SQLTable(object):
   @staticmethod
   def query_from_dict(query):
     return ' AND '.join(['%s=%s'%(k,repr(v)) for k,v in query.items()])
-  def __init__(self,db,name,cols,keys=None,dbtype="sql"):
+  def __init__(self,db,name,cols,keys=None,dbtype="sql",recreate=False):
     self.db=db
     self.name=name
     self.cols=cols
     self.keys=keys
     self.dbtype = dbtype
+    if recreate:
+        cur=db.cursor()
+        cur.execute("DROP TABLE %s"%name)
     self.create()
   def create(self):
     db=self.db;table=self.name

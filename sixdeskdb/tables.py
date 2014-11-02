@@ -148,6 +148,7 @@ class Six_Res(object):
 
 class Da_Post(object):
   fields=[('name', 'str',''),
+         ('turnsl','float',''),
          ('tunex','float',''),
          ('tuney','float',''),
          ('seed','int',''),
@@ -159,6 +160,7 @@ class Da_Post(object):
          ('Amin','float',''),
          ('Amax','float',''),
          ('mtime','float','')]
+  key=['turnsl','tunex','tuney','angle','seed']
 
 class Files(object):
   fields=[
