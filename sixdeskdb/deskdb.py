@@ -336,7 +336,10 @@ class SixDeskDB(object):
             mad_out = sqlite3.Binary(compressBuf(out_file))
             mad_lsf = sqlite3.Binary(compressBuf(lsf_file))
             mad_log = sqlite3.Binary(compressBuf(log_file))
-            time = os.path.getmtime( log_file)
+            if os.path.isfile(out_file):
+              time = os.path.getmtime( out_file)
+            else:
+              time = None
             data.append([run_id, seed, mad_in, mad_out, mad_lsf,mad_log,time])
           if filename.endswith('.mask'):
             path = os.path.join(dirName, filename)
