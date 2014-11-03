@@ -394,12 +394,11 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
           print('... input data has changed - recalculate da vs turns')
           daout=mk_da_vst(dasurv,seed,tune,turnstep)
           print('.... save data in database')
-          #check if table exists, if yes delete it before putting in the new data (recreate=True)
-          if(db.check_table('da_vst') or db.check_table('da_vsturn')):
-            recreate=True
-          else:
-            recreate=False
-          db.st_da_vst(daout,recreate)
+          #check if old table name da_vsturn exists, if yes delete it
+          if(db.check_table('da_vsturn')):
+            cur=db.cursor()
+            cur.execute("DROP TABLE da_vsturn")
+          db.st_da_vst(daout,recreate=True)
       else:#create data
         print('... calculate da vs turns')
         daout=mk_da_vst(dasurv,seed,tune,turnstep)
