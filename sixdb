@@ -123,9 +123,24 @@ Usage: sixdb <dbname> da_vs_turns
     -tmax          : maximum number of turns 
                      (default: max. number of turns tracked) 
     -outfile       : survival data is saved in DAsurv.out
-                     and the da_vs_turns in DA.out
-    -outfileold    : da_vs_turns is saved in DAold.out with the
-                     old data format"""
+                     and the da vs turns in DA.out
+    -outfileold    : da vs turns is saved in DAold.out with the
+                     old data format
+    -fit           : fit the da vs turns data assuming the model:
+                        D(N)=Dinf+b0/[log(N^(exp(-b1)))]^kappa
+                     As this is an asumptotic rule, the first 
+                     ndrop data points of the da vs turns are
+                     omitted.
+                     default data:  dawsimp
+                     default error: dawsimperr
+                     default ndrop: 25
+    -fitopt <data> <error> <ndrop> <skap> <ekap> <dkap>: 
+                     specify the data, ndrop and the scan range
+                     for the scan over kappa to be used for the 
+                     fit of the da vs turns
+                     For <error>='none' the errors of the data
+                     are not taken into account
+    -outfilefit    : save da vs turns fit data in DAfit.out"""
        args=self.args
        try:
          db=SixDeskDB(study)
@@ -133,15 +148,33 @@ Usage: sixdb <dbname> da_vs_turns
          print('Error in da_vs_turns: database not found!')
          sys.exit(1)
        # define default values
-       force=False
-       turnstep=100
-       outfile=False
-       outfileold=False
-       if '-force' in args: force=True
-       if '-outfile' in args: outfile=True
+       force      = False
+       turnstep   = 100
+       outfile    = False
+       outfileold = False
+       outfilefit = False
+       davstfit   = False
+       fitdat     = 'dawsimp'
+       fitdaterr  = 'dawsimperr'
+       fitndrop   = 25
+       fitskap    = -5.0
+       fitekap    = 5.0
+       fitdkap    = 0.01
+       if '-force' in args:      force=True
+       if '-turnstep' in args:   turnstep=args[args.index('-turnstep')+1]
+       if '-outfile' in args:    outfile=True
        if '-outfileold' in args: outfileold=True
-       if '-turnstep' in args: turnstep=args[args.index('-turnstep')+1]
-       RunDaVsTurns(db,force,outfile,outfileold,turnstep)
+       if '-outfilefit' in args: outfilefit=True
+       if '-fit' in args:        davstfit=True
+       if '-fitopt' in args:
+         davstfit=True
+         fitdat    = args[args.index('-fitopt')+1]
+         fitdaterr = args[args.index('-fitopt')+2]
+         fitndrop  = args[args.index('-fitopt')+3]
+         fitskap   = args[args.index('-fitopt')+4]
+         fitekap   = args[args.index('-fitopt')+5]
+         fitdkap   = args[args.index('-fitopt')+6]
+       RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap,outfilefit)
 
     def plot_da_vs_turns(self,study):
        """Create survival and da vs turns plots.
@@ -153,8 +186,11 @@ Usage: sixdb <dbname> plot_da_vs_turns
     -amprangedavst : minimum maximum amplitude for da vs turns
                      plots (default: min. and max. amplitude tracked)
     -tmax          : maximum number of turns 
-                     (default: max. number of turns tracked) 
-    -plotlog       : plot da vs turns in logscale (default: False)"""
+                     (default: max. number of turns tracked)
+    -plotdat <fitdat> <fitdaterr>: choose data to be plotted
+                     default: fitdat=dawsimp fitdaterr=dawsimperr 
+    -plotlog       : plot da vs turns in logscale (default: False)
+    -plotfit       : plot da vs turns fit"""
        args=self.args
        try:
          db=SixDeskDB(study)
@@ -162,18 +198,28 @@ Usage: sixdb <dbname> plot_da_vs_turns
          print('Error in da_vs_turns: database not found!')
          sys.exit(1)
        # define default values
-       ampmaxsurv=max(max(db.get_amplitudes()))
-       ampmaxdavst=max(max(db.get_amplitudes()))
-       ampmindavst=min(min(db.get_amplitudes()))
-       tmax=db.get_turnsl()
-       plotlog=False
+       ampmaxsurv  = max(max(db.get_amplitudes()))
+       ampmaxdavst = max(max(db.get_amplitudes()))
+       ampmindavst = min(min(db.get_amplitudes()))
+       tmax        = db.get_turnsl()
+       fitdat      = 'dawsimp'
+       fitdaterr   = 'dawsimperr'
+       plotlog     = False
+       plotfit     = False
+       fitndrop    = 25
        if '-ampmaxsurv' in args: ampmaxsurv=args[args.index('-ampmaxsurv')+1]
        if '-amprangedavst' in args:
          ampmindavst=args[args.index('-amprangedavst')+1]
          ampmaxdavst=args[args.index('-amprangedavst')+2]
        if '-tmax' in args: tmax=args[args.index('-tmax')+1]
        if '-plotlog' in args: plotlog=True
-       PlotDaVsTurns(db,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog)
+       if '-plotfit' in args:
+         plotfit=True
+         fitndrop=args[args.index('-plotfit')+1]
+       if '-plotdat' in args:
+         fitdat   =args[args.index('-plotdat')+1]
+         fitdaterr=args[args.index('-plotdat')+2]
+       PlotDaVsTurns(db,fitdat,fitdaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop)
     def plot_comp_da_vs_turns(self,study):
        """Comparison of survival and da vs turns plots.
 
