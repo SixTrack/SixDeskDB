@@ -76,7 +76,7 @@ def select_ang_surv(data,seed,nang):
   dataang['sigma'],dataang['angle'],dataang['sturn']=s,a,t
   return dataang
 #@profile
-def mk_da_vst(data,seed,tune,turnstep):
+def mk_da_vst(data,seed,tune,turnsl,turnstep):
   """returns 'seed','tunex','tuney','dawtrap','dastrap','dawsimp','dassimp',
              'dawtraperr','dastraperr','dastraperrep','dastraperrepang',
              'dastraperrepamp','dawsimperr','dassimperr','nturn','tlossmin',
@@ -101,7 +101,7 @@ def mk_da_vst(data,seed,tune,turnstep):
   angmax=len(a[:,0])#number of angles
   angstep=np.pi/(2*(angmax+1))#step in angle in rad
   ampstep=np.abs((s[s>0][1])-(s[s>0][0]))
-  ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+  ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
   l_turnstep=len(np.arange(turnstep,tmax,turnstep))
   daout=np.ndarray(l_turnstep,dtype=ftype)
   for nm in daout.dtype.names:
@@ -164,7 +164,7 @@ def mk_da_vst(data,seed,tune,turnstep):
       (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
     tlossmin=np.min(mta['sturn'])
     if(dawtrap!=currentdawtrap and it-turnstep > 0 and tlossmin!=currenttlossmin):
-      daout[dacount]=(seed,tunex,tuney,dawtrap,dastrap,dawsimp,dassimp,dawtraperr,dastraperr,dastraperrep,dastraperrepang,dastraperrepamp,dawsimperr,dassimperr,it-turnstep,tlossmin,mtime)
+      daout[dacount]=(seed,tunex,tuney,turnsl,dawtrap,dastrap,dawsimp,dassimp,dawtraperr,dastraperr,dastraperrep,dastraperrepang,dastraperrepamp,dawsimperr,dassimperr,it-turnstep,tlossmin,mtime)
       dacount=dacount+1
     currentdawtrap =dawtrap
     currenttlossmin=tlossmin
@@ -177,7 +177,10 @@ def get_fit_data(data,fitdat,fitdaterr,fitndrop,fitkap,b1):
   datx=1/(np.log(data['tlossmin'][fitndrop::]**np.exp(-b1))**fitkap)
 #  print (fitdat,fitdaterr)
   daty=data[fitdat][fitndrop::]
-  daterr=data[fitdaterr][fitndrop::]
+  if fitdaterr=='none':#case of no errors
+    daterr=np.ones(len(datx))
+  else:
+    daterr=data[fitdaterr][fitndrop::]
   return datx,daty,daterr
 
 def get_b1mean(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap):
@@ -221,6 +224,7 @@ def mk_da_vst_fit(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap):
            for fixed b1=b1mean (obtained in 1))
            and scan range (skap,ekap,dkap)
         b) use (b0,kappa) with minimum residual'''
+  turnsl=db.env_var['turnsl']
   mtime=time.time()
   (tunex,tuney)=tune
   print('calculating b1mean ...')
@@ -229,7 +233,7 @@ def mk_da_vst_fit(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap):
   print('start scan over kappa for fixed b1=%s to find kappa with minimum residual ...'%b1mean)
   ftype=[('kappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float)]
   lkap=np.zeros(len(np.arange(fitskap,fitekap+fitdkap,fitdkap))-1,dtype=ftype)#-1 as kappa=0 is not used
-  ftype=[('seed',float),('tunex',float),('tuney',float),('fitdat',np.str_, 30),('fitdaterr',np.str_, 30),('fitndrop',float),('kappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float),('b1mean',float),('b1meanerr',float),('b1std',float),('mtime',float)]
+  ftype=[('seed',float),('tunex',float),('tuney',float),('turn_max',int),('fitdat',np.str_, 30),('fitdaterr',np.str_, 30),('fitndrop',float),('kappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float),('b1mean',float),('b1meanerr',float),('b1std',float),('mtime',float)]
   minkap=np.zeros(len(db.get_db_seeds()),dtype=ftype)
   ccs=0
   for seed in db.get_db_seeds():
@@ -242,29 +246,29 @@ def mk_da_vst_fit(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap):
         lkap[cck]=(kap,)+linear_fit(datx,daty,daterr)
         cck+=1
     iminkap=np.argmin(lkap['res'])
-    minkap[ccs]=(seed,tunex,tuney,fitdat,fitdaterr,fitndrop,)+tuple(lkap[iminkap])+(b1mean,b1meanerr,b1std,mtime,)
+    minkap[ccs]=(seed,tunex,tuney,turnsl,fitdat,fitdaterr,fitndrop,)+tuple(lkap[iminkap])+(b1mean,b1meanerr,b1std,mtime,)
     ccs+=1
   print('... scan over kappa is finished!')
   return minkap 
 
 # ----------- functions to reload and create DA.out files for previous scripts -----------
-def save_daout_old(data,path):
+def save_daout_old(data,filename):
   daoutold=data[['dawtrap','dastrap','dastraperrep','dastraperrepang','dastraperrepamp','nturn','tlossmin']]
-  np.savetxt(path+'/DAold.out',daoutold,fmt='%.6f %.6f %.6f %.6f %.6f %d %d')
-def reload_daout_old(path):
+  np.savetxt(filename,daoutold,fmt='%.6f %.6f %.6f %.6f %.6f %d %d')
+def reload_daout_old(filename):
   ftype=[('dawtrap',float),('dastrap',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('nturn',float),('tlossmin',float)]
-  return np.loadtxt(glob.glob(path+'/DAold.out*')[0],dtype=ftype,delimiter=' ')
-def save_daout(data,path):
-  daout=data[['seed','tunex','tuney','dawtrap','dastrap','dawsimp','dassimp','dawtraperr','dastraperr','dastraperrep','dastraperrepang','dastraperrepamp','dawsimperr','dassimperr','nturn','tlossmin']]
-  np.savetxt(path+'/DA.out',daout,fmt='%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %d')
+  return np.loadtxt(filename,dtype=ftype,delimiter=' ')
+def save_daout(data,filename):
+  daout=data[['seed','tunex','tuney','turn_max','dawtrap','dastrap','dawsimp','dassimp','dawtraperr','dastraperr','dastraperrep','dastraperrepang','dastraperrepamp','dawsimperr','dassimperr','nturn','tlossmin']]
+  np.savetxt(filename,daout,fmt='%d %.6f %.6f %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %d')
 def save_davst_fit(data,filename):
-  fitdata=data[['seed','tunex','tuney','fitdat','fitdaterr','fitndrop','kappa','res','dinf','dinferr','b0','b0err','b1mean','b1meanerr','b1std']]
-  np.savetxt(filename,fitdata,fmt='%d %.5f %.5f %s %s %d %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f')
-def reload_daout(path):
-  ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
-  return np.loadtxt(glob.glob(path+'/DA.out*')[0],dtype=ftype,delimiter=' ')
-def save_dasurv(data,path):
-  np.savetxt(path+'/DAsurv.out',np.reshape(data,-1),fmt='%.8f %.8f %d')
+  fitdata=data[['seed','tunex','tuney','turn_max','fitdat','fitdaterr','fitndrop','kappa','res','dinf','dinferr','b0','b0err','b1mean','b1meanerr','b1std']]
+  np.savetxt(filename,fitdata,fmt='%d %.5f %.5f %d %s %s %d %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f')
+def reload_daout(filename):
+  ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+  return np.loadtxt(filename,dtype=ftype,delimiter=' ')
+def save_dasurv(data,filename):
+  np.savetxt(filename,np.reshape(data,-1),fmt='%.8f %.8f %d')
 def reload_dasurv(path):
   ftype=[('angle', '<f8'), ('sigma', '<f8'), ('sturn', '<f8')]
   data=np.loadtxt(glob.glob(path+'/dasurv.out*')[0],dtype=ftype,delimiter=' ')
@@ -344,6 +348,7 @@ def RunDaVsTurnsAng(db,seed,tune,turnstep):
   if(tune not in db.get_tunes()):
     print('WARNING: tune %s is missing in database !!!'%tune)
     sys.exit(0)
+  turnsl=db.env_var['turnsl']#get turnsl for outputfile names
   seed=int(seed)
   print('analyzing seed {0} and tune {1}...').format(str(seed),str(tune))
   dirname=db.mk_analysis_dir(seed,tune)#directory struct already created in clean_dir_da_vst, only get dir name (string) here
@@ -360,7 +365,7 @@ def RunDaVsTurnsAng(db,seed,tune,turnstep):
     mk_dir(dirnameang)
     dasurv=select_ang_surv(dasurvtot,seed,nang)
     print('... calculate da vs turns')
-    daout=mk_da_vst(dasurv,seed,tune,turnstep)
+    daout=mk_da_vst(dasurv,seed,tune,turnsl,turnstep)
     save_daout(daout,dirnameang)
     print('... save da vs turns data in {0}/DA.out').format(dirnameang)
 
@@ -375,6 +380,8 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
     sys.exit(0)
   if(not db.check_seeds()):
     print('!!! Seeds are missing in database !!!')
+  turnsl=db.env_var['turnsl']#get turnsl for outputfile names
+  turnse=db.env_var['turnse']
   for seed in db.get_db_seeds():
     seed=int(seed)
     print('analyzing seed {0} ...').format(str(seed))
@@ -389,10 +396,10 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
         an_mtime=daout['mtime'].min()
         res_mtime=db.execute('SELECT max(mtime) FROM six_results')[0][0]
         if res_mtime>an_mtime or force is True:
-          files=['DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png']
+          files=('DA.%s.out DAsurv.%s.out DA.%s.png DAsurv.%s.png DAsurv_log.%s.png DAsurv_comp.%s.png DAsurv_comp_log.%s.png'%(turnse,turnse,turnse,turnse,turnse,turnse,turnse)).split()+['DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png']
           clean_dir_da_vst(db,files)# create directory structure and delete old files
           print('... input data has changed - recalculate da vs turns')
-          daout=mk_da_vst(dasurv,seed,tune,turnstep)
+          daout=mk_da_vst(dasurv,seed,tune,turnsl,turnstep)
           print('.... save data in database')
           #check if old table name da_vsturn exists, if yes delete it
           if(db.check_table('da_vsturn')):
@@ -401,17 +408,20 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
           db.st_da_vst(daout,recreate=True)
       else:#create data
         print('... calculate da vs turns')
-        daout=mk_da_vst(dasurv,seed,tune,turnstep)
+        daout=mk_da_vst(dasurv,seed,tune,turnsl,turnstep)
         print('.... save data in database')
         db.st_da_vst(daout,recreate=False)
       if(outfile):# create dasurv.out and da.out files
-        save_dasurv(dasurv,dirname)
-        print('... save survival data in {0}/DAsurv.out').format(dirname)
-        save_daout(daout,dirname)
-        print('... save da vs turns data in {0}/DA.out').format(dirname)
+        fnsurv='%s/DAsurv.%s.out'%(dirname,turnse)
+        save_dasurv(dasurv,fnsurv)
+        print('... save survival data in {0}').format(fnsurv)
+        fndaout='%s/DA.%s.out'%(dirname,turnse)
+        save_daout(daout,fndaout)
+        print('... save da vs turns data in {0}').format(fndaout)
       if(outfileold):
-        save_daout_old(daout,dirname)
-        print('... save da vs turns (old data format) data in {0}/DAold.out').format(dirname)
+        fndaoutold='%s/DAold.%s.out'%(dirname,turnse)
+        save_daout_old(daout,fndaoutold)
+        print('... save da vs turns (old data format) data in {0}').format(fndaoutold)
   #---- fit the data
   if(davstfit):
     if(fitdat in ['dawtrap','dastrap','dawsimp','dassimp']):
@@ -433,8 +443,8 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
             print('fit da vs turns for tune {0} ...').format(str(tune))
             fitdaout=mk_da_vst_fit(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap)
             print('.... save fitdata in database')
+            db.st_da_vst_fit(fitdaout,recreate=False)
             if(outfilefit):
-              turnse=db.env_var['turnse']
               (tunex,tuney)=tune
               sixdesktunes="%g_%g"%(tunex,tuney)
               fndot='%s/DAfit.%s.%s.%s.%s.%s.plot'%(db.mk_analysis_dir(),db.LHCDescrip,sixdesktunes,turnse,fitdat,fitdaterr)
@@ -449,7 +459,9 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
       print("Error in -fitopt: <data> has to be 'dawtrap','dastrap','dawsimp' or 'dassimp' - Aborting!")
       sys.exit(0)
 
-def PlotDaVsTurns(db,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog):
+def PlotDaVsTurns(db,fitdat,fitdaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop):
+  turnsl=db.env_var['turnsl']
+  turnse=db.env_var['turnse']
   print('Da vs turns -- create survival and da vs turns plots')
   try:
     ampmaxsurv =float(ampmaxsurv)
@@ -460,9 +472,9 @@ def PlotDaVsTurns(db,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog):
     sys.exit(0)
   #remove all files
   if(plotlog):
-    files=['DA_log.png','DAsurv.png']
+    files=('DA_log.png DAsurv.png DA_log.%s.png DAsurv.%s.png'%(turnse,turnse)).split()
   else:
-    files=['DA.png','DAsurv.png']
+    files=('DA.png DAsurv.png DA.%s.png DAsurv.%s.png'%(turnse,turnse)).split()
   clean_dir_da_vst(db,files)# create directory structure and delete old files if force=true
   if(not db.check_seeds()):
     print('!!! Seeds are missing in database !!!')
@@ -472,15 +484,15 @@ def PlotDaVsTurns(db,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog):
       dirname=db.mk_analysis_dir(seed,tune)#directory struct already created in clean_dir_da_vst, only get dir name (string) here
       pl.close('all')
       db.plot_surv_2d(seed,tune,ampmaxsurv)#suvival plot
-      pl.savefig(dirname+'/DAsurv.png')
-      print('... saving plot {0}/DAsurv.png').format(dirname)
-      db.plot_da_vst(seed,tune,ampmindavst,ampmaxdavst,tmax,plotlog)#da vs turns plot
+      pl.savefig('%s/DAsurv.%s.png'%(dirname,turnse))
+      print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
+      db.plot_da_vst(seed,tune,fitdat,fitdaterr,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop)#da vs turns plot
       if(plotlog==True):
-        pl.savefig(dirname+'/DA_log.png')
-        print('... saving plot {0}/DA_log.png').format(dirname)
+        pl.savefig('%s/DA_log.%s.png'%(dirname,turnse))
+        print('... saving plot %s/DA_log.%s.png'%(dirname,turnse))
       else:
-        pl.savefig(dirname+'/DA.png')
-        print('... saving plot {0}/DA.png').format(dirname)
+        pl.savefig('%s/DA.%s.png'%(dirname,turnse))
+        print('... saving plot %s/DA.%s.png'%(dirname,turnse))
 
 def PlotCompDaVsTurns(db,dbcomp,lblname,complblname,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog):
   '''Comparison of two studies: survival plots (area of stable particles) and Da vs turns plots'''

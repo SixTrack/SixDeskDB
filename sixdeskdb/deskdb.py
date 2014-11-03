@@ -1613,22 +1613,23 @@ class SixDeskDB(object):
     tab.insert(data)
   def get_da_vst(self,seed,tune):
     '''get da vs turns data from DB'''
+    turnsl=self.env_var['turnsl']
     (tunex,tuney)=tune
     #check if table da_vst exists in database
     if(self.check_table('da_vst')):
-      ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+      ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
       cmd="""SELECT *
-           FROM da_vst WHERE seed=%s and tunex=%s and tuney=%s
+           FROM da_vst WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%d
            ORDER BY nturn"""
-      cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
+      cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
       data=np.fromiter(cur,dtype=ftype)
     else:
-      #02/11/2014 remaned table da_vsturn to da_vst - keep da_vsturn for backward compatibility
+      #02/11/2014 remaned table da_vsturn to da_vst - keep da_vsturn for backward compatibility - note this table did not include the turn_max!!!
       #check if table da_vsturn exists in database
       if(self.check_table('da_vsturn')):
         ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
         cmd="""SELECT *
-             FROM da_vsturn WHERE seed=%s and tunex=%s and tuney=%s
+             FROM da_vsturn WHERE seed=%s AND tunex=%s AND tuney=%s
              ORDER BY nturn"""
         cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
         data=np.fromiter(cur,dtype=ftype)
@@ -1638,20 +1639,14 @@ class SixDeskDB(object):
     return data
   def get_da_vst_fit(self,seed,tune):
     '''get da vs turns data from DB'''
+    turnsl=self.env_var['turnsl']
     (tunex,tuney)=tune
-    cmd="""SELECT name FROM sqlite_master
-        WHERE type='table'
-        ORDER BY name"""
-    cur=self.conn.cursor().execute(cmd)
-    ftype=[('name',np.str_,16)]
-    tabnames=np.fromiter(cur,dtype=ftype)
-    #check if table da_vst exists in database
-    if 'da_vst_fit' in tabnames['name']:
-      ftype=[('seed',float),('tunex',float),('tuney',float),('fitdat',np.str_, 30),('fitdaterr',np.str_, 30),('fitndrop',float),('kappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float),('b1mean',float),('b1meanerr',float),('b1std',float),('mtime',float)]
+    if(self.check_table('da_vst_fit')):
+      ftype=[('seed',float),('tunex',float),('tuney',float),('turn_max',int),('fitdat',np.str_, 30),('fitdaterr',np.str_, 30),('fitndrop',float),('kappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float),('b1mean',float),('b1meanerr',float),('b1std',float),('mtime',float)]
       cmd="""SELECT *
-           FROM da_vst_fit WHERE seed=%s and tunex=%s and tuney=%s
+           FROM da_vst_fit WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%d
            ORDER BY fitdat,fitdaterr,fitndrop"""
-      cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
+      cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
       data=np.fromiter(cur,dtype=ftype)
     #if tables da_vst_fit does not exist, return an empty list
     else:      
@@ -1667,24 +1662,34 @@ class SixDeskDB(object):
     (tunex,tuney)=tune
     emit=float(self.env_var['emit'])
     gamma=float(self.env_var['gamma'])
+    turnsl=self.env_var['turnsl']
     cmd="""SELECT angle,emitx+emity,
          CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
-         FROM results WHERE seed=%s
+         FROM results WHERE seed=%s AND tunex=%g AND tuney=%g AND turn_max=%d
          ORDER BY angle,emitx+emity"""
-    cur=self.conn.cursor().execute(cmd%(seed))
+    cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
     ftype=[('angle',float),('sigma',float),('sturn',float)]
     data=np.fromiter(cur,dtype=ftype)
     data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
     angles=len(set(data['angle']))
     return data.reshape(angles,-1)
 
-  def plot_da_vst(self,seed,tune,ampmin,ampmax,tmax,slog):
-    """dynamic aperture vs number of turns, blue=simple average, red=weighted average"""
+  def plot_da_vst(self,seed,tune,fitdat,fitdaterr,ampmin,ampmax,tmax,slog,sfit,fitndrop):
+    """plot dynamic aperture vs number of turns where fitdat,fitdaterr (='dawsimp','dawsimperr') is the data
+    to be plotted. The data is plotted in blue and the fit in red"""
     data=self.get_da_vst(seed,tune)
     pl.close('all')
     pl.figure(figsize=(6,6))
-    pl.errorbar(data['dastrap'],data['tlossmin'],xerr=data['dastraperrep'],fmt='bo',markersize=2,label='simple average')
-    pl.plot(data['dawtrap'],data['tlossmin'],'ro',markersize=3,label='weighted average')
+    pl.errorbar(data[fitdat],data['tlossmin'],xerr=data[fitdaterr],fmt='bo',markersize=2,label=fitdat)
+    if(sfit):
+      fitdata=self.get_da_vst_fit(seed,tune)
+      fitdata=fitdata[fitdata['fitdat']==fitdat]
+      fitdata=fitdata[fitdata['fitdaterr']==fitdaterr]
+      fitdata=fitdata[np.abs(fitdata['fitndrop']-float(fitndrop))<1.e-6]
+      if(len(fitdata)==1):
+        pl.plot(fitdata['dinf']+fitdata['b0']/(np.log(data['tlossmin']**np.exp(-fitdata['b1mean']))**fitdata['kappa']),data['tlossmin'],'r-')
+      else:
+        print('Warning: no fit data available or data ambigious!')
     pl.title('seed '+str(seed))
     pl.xlim([ampmin,ampmax])
     pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)
