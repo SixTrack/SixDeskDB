@@ -1642,7 +1642,7 @@ class SixDeskDB(object):
     turnsl=self.env_var['turnsl']
     (tunex,tuney)=tune
     if(self.check_table('da_vst_fit')):
-      ftype=[('seed',float),('tunex',float),('tuney',float),('turn_max',int),('fitdat',np.str_, 30),('fitdaterr',np.str_, 30),('fitndrop',float),('kappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float),('b1mean',float),('b1meanerr',float),('b1std',float),('mtime',float)]
+      ftype=[('seed',float),('tunex',float),('tuney',float),('turn_max',int),('fitdat',np.str_, 30),('fitdaterr',np.str_, 30),('fitndrop',float),('kappa',float),('dkappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float),('b1mean',float),('b1meanerr',float),('b1std',float),('mtime',float)]
       cmd="""SELECT *
            FROM da_vst_fit WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%d
            ORDER BY fitdat,fitdaterr,fitndrop"""
