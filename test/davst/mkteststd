@@ -40,5 +40,5 @@ do
   diff $i dares_${study}_reference/${i#*/}
 done
 echo '... clean up study '${study}
-./cleanstd ${study}
+#./cleanstd ${study}
 

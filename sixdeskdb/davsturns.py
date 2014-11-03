@@ -259,7 +259,7 @@ def save_daout(data,path):
   np.savetxt(path+'/DA.out',daout,fmt='%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %d')
 def save_davst_fit(data,filename):
   fitdata=data[['seed','tunex','tuney','fitdat','fitdaterr','fitndrop','kappa','res','dinf','dinferr','b0','b0err','b1mean','b1meanerr','b1std']]
-  np.savetxt(filename,fitdata,fmt='%d %.6f %.6f %s %s %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f')
+  np.savetxt(filename,fitdata,fmt='%d %.5f %.5f %s %s %d %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f')
 def reload_daout(path):
   ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
   return np.loadtxt(glob.glob(path+'/DA.out*')[0],dtype=ftype,delimiter=' ')
