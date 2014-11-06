@@ -231,9 +231,9 @@ def mk_da_vst_fit(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap):
   (b1mean,b1meanerr,b1std)=get_b1mean(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap) 
   print('average over %s seeds: b1mean=%s, b1meanerr=%s, b1std=%s'%(round(len(db.get_db_seeds())),round(b1mean,3),round(b1meanerr,3),round(b1std,3)))
   print('start scan over kappa for fixed b1=%s to find kappa with minimum residual ...'%b1mean)
-  ftype=[('kappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float)]
+  ftype=[('kappa',float),('dkappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float)]
   lkap=np.zeros(len(np.arange(fitskap,fitekap+fitdkap,fitdkap))-1,dtype=ftype)#-1 as kappa=0 is not used
-  ftype=[('seed',float),('tunex',float),('tuney',float),('turn_max',int),('fitdat',np.str_, 30),('fitdaterr',np.str_, 30),('fitndrop',float),('kappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float),('b1mean',float),('b1meanerr',float),('b1std',float),('mtime',float)]
+  ftype=[('seed',float),('tunex',float),('tuney',float),('turn_max',int),('fitdat',np.str_, 30),('fitdaterr',np.str_, 30),('fitndrop',float),('kappa',float),('dkappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float),('b1mean',float),('b1meanerr',float),('b1std',float),('mtime',float)]
   minkap=np.zeros(len(db.get_db_seeds()),dtype=ftype)
   ccs=0
   for seed in db.get_db_seeds():
@@ -243,7 +243,7 @@ def mk_da_vst_fit(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap):
     for kap in np.arange(fitskap,fitekap+fitdkap,fitdkap):
       if(abs(kap)>1.e-6):#for kappa=0: D(N)=Dinf+b/(log(N)^kappa)=D(N)=Dinf+b -> fit does not make sense
         datx,daty,daterr=get_fit_data(data,fitdat,fitdaterr,fitndrop,kap,b1mean)
-        lkap[cck]=(kap,)+linear_fit(datx,daty,daterr)
+        lkap[cck]=(kap,fitdkap,)+linear_fit(datx,daty,daterr)
         cck+=1
     iminkap=np.argmin(lkap['res'])
     minkap[ccs]=(seed,tunex,tuney,turnsl,fitdat,fitdaterr,fitndrop,)+tuple(lkap[iminkap])+(b1mean,b1meanerr,b1std,mtime,)
@@ -262,8 +262,8 @@ def save_daout(data,filename):
   daout=data[['seed','tunex','tuney','turn_max','dawtrap','dastrap','dawsimp','dassimp','dawtraperr','dastraperr','dastraperrep','dastraperrepang','dastraperrepamp','dawsimperr','dassimperr','nturn','tlossmin']]
   np.savetxt(filename,daout,fmt='%d %.6f %.6f %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %d')
 def save_davst_fit(data,filename):
-  fitdata=data[['seed','tunex','tuney','turn_max','fitdat','fitdaterr','fitndrop','kappa','res','dinf','dinferr','b0','b0err','b1mean','b1meanerr','b1std']]
-  np.savetxt(filename,fitdata,fmt='%d %.5f %.5f %d %s %s %d %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f')
+  fitdata=data[['seed','tunex','tuney','turn_max','fitdat','fitdaterr','fitndrop','kappa','dkappa','res','dinf','dinferr','b0','b0err','b1mean','b1meanerr','b1std']]
+  np.savetxt(filename,fitdata,fmt='%d %.5f %.5f %d %s %s %d %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f')
 def reload_daout(filename):
   ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
   return np.loadtxt(filename,dtype=ftype,delimiter=' ')

@@ -200,6 +200,7 @@ class Da_Vst_Fit(object):
   ('fitdat', 'str', 'data used for fit'),
   ('fitdaterr', 'str', 'dataerr used for fit'),
   ('kappa', 'float', 'optimal kappa (optkap)'),
+  ('dkappa', 'float', 'stepsize in kappa'),
   ('res', 'float', 'fit residual for optkap'),
   ('dinf', 'float', 'dinf for optkap'),
   ('dinferr', 'float', 'dinferr for optkap'),
