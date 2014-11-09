@@ -515,6 +515,8 @@ def PlotCompDaVsTurns(db,dbcomp,ldat,ldaterr,lblname,complblname,ampmaxsurv,ampm
   turnsedb    =db.env_var['turnse']
   turnsldbcomp=dbcomp.env_var['turnsl']
   turnsedbcomp=dbcomp.env_var['turnse']
+  if(not turnsldb==turnsldbcomp):
+    print('Warning! Maximum turn number turn_max of %s and %s differ!'%(db.LHCDescrip,dbcomp.LHCDescrip))
   try:
     ampmaxsurv=float(ampmaxsurv)
     ampmindavst=float(ampmindavst)
@@ -525,9 +527,9 @@ def PlotCompDaVsTurns(db,dbcomp,ldat,ldaterr,lblname,complblname,ampmaxsurv,ampm
     sys.exit(0)
   #remove all files
   if(plotlog):
-    files=['DA_comp_log.png','DAsurv_comp.png']
+    files=('DA_comp_log.png DAsurv_comp.png DA_comp_log.%s.png DAsurv_comp.%s.png'%(turnsedb,turnsedb)).split()
   else:
-    files=['DA_comp.png','DAsurv_comp.png']
+    files=('DA_comp.png DAsurv_comp.png DA_comp.%s.png DAsurv_comp.%s.png'%(turnsedb,turnsedb)).split()
   clean_dir_da_vst(db,files)# create directory structure and delete old files if force=true
 # start analysis
   if(not db.check_seeds()):
@@ -539,12 +541,12 @@ def PlotCompDaVsTurns(db,dbcomp,ldat,ldaterr,lblname,complblname,ampmaxsurv,ampm
         dirname=db.mk_analysis_dir(seed,tune)#directories already created with 
         pl.close('all')
         plot_surv_2d_comp(db,dbcomp,lblname,complblname,seed,tune,ampmaxsurv)
-        pl.savefig(dirname+'/DAsurv_comp.png')
-        print('... saving plot {0}/DAsurv_comp.png').format(dirname)
+        pl.savefig('%s/DAsurv_comp.%s.png'%(dirname,turnsedb))
+        print('... saving plot %s/DAsurv_comp.%s.png'%(dirname,turnsedb))
         plot_comp_da_vst(db,dbcomp,ldat,ldaterr,lblname,complblname,seed,tune,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop)
         if(plotlog==True):
-          pl.savefig(dirname+'/DA_comp_log.png')
-          print('... saving plot {0}/DA_comp_log.png').format(dirname)
+          pl.savefig('%s/DA_comp_log.%s.png'%(dirname,turnsedb))
+          print('... saving plot %s/DA_comp_log.%s.png'%(dirname,turnsedb))
         else:
-          pl.savefig(dirname+'/DA_comp.png')
-          print('... saving plot {0}/DA_comp.png').format(dirname)
+          pl.savefig('%s/DA_comp.%s.png'%(dirname,turnsedb))
+          print('... saving plot %s/DA_comp.%s.png'%(dirname,turnsedb))
