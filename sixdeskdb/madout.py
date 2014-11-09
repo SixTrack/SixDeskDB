@@ -1,5 +1,6 @@
 import numpy as np
 
+import re
 
 def check_mad_out(data,resname):
   out={}
@@ -11,7 +12,7 @@ def check_mad_out(data,resname):
         nclosest=int(l.split('closest')[1][0])
         vclosest=float(l.split('=')[1].split(';')[0])
         out.setdefault('closest%d'%nclosest,[]).append(vclosest)
-      elif 'max*100' in l:
+      elif 'max*100' in l or 'max1*100' in l or 'max2*100' in l:
         name,val=extract_kmax(l)
         out.setdefault(name,[]).append(val)
   for k,vals in sorted(out.items()):
