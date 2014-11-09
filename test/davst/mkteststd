@@ -22,7 +22,7 @@ echo '... test da_vs_turns'
 ../../sixdb ${study}.db da_vs_turns -outfile -outfileold -fit -outfilefit
 ../../sixdb ${study}.db da_vs_turns -outfile -outfileold -fitopt 'dastrap' 'dastraperrep' 25 -5 5 0.01 -outfilefit
 echo '... test plot_da_vs_turns'
-echo '... test default - plots will be overwritten'
+echo '... test default'
 ../../sixdb ${study}.db plot_da_vs_turns
 if [ ${study} = job_tracking_bb_2_test_sixdesk ];#test default with fit
 then
