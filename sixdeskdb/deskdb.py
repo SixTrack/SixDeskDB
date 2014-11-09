@@ -1674,22 +1674,36 @@ class SixDeskDB(object):
     angles=len(set(data['angle']))
     return data.reshape(angles,-1)
 
-  def plot_da_vst(self,seed,tune,fitdat,fitdaterr,ampmin,ampmax,tmax,slog,sfit,fitndrop):
-    """plot dynamic aperture vs number of turns where fitdat,fitdaterr (='dawsimp','dawsimperr') is the data
-    to be plotted. The data is plotted in blue and the fit in red"""
+  def plot_da_vst(self,seed,tune,ldat,ldaterr,ampmin,ampmax,tmax,slog,sfit,fitndrop):
+    """plot dynamic aperture vs number of turns where ldat,ldaterr is the data and 
+    the associated error to be plotted. The data is plotted in blue and the fit in red.
+    ldat and ldaterr can be given as ldat='dawsimp',ldaterr='dawsimperr') or as list 
+    ldat=['dawsimp','dassimp'] and ldaterr=['dawsimperr','dassimperr']."""
     data=self.get_da_vst(seed,tune)
     pl.close('all')
     pl.figure(figsize=(6,6))
-    pl.errorbar(data[fitdat],data['tlossmin'],xerr=data[fitdaterr],fmt='bo',markersize=2,label=fitdat)
-    if(sfit):
-      fitdata=self.get_da_vst_fit(seed,tune)
-      fitdata=fitdata[fitdata['fitdat']==fitdat]
-      fitdata=fitdata[fitdata['fitdaterr']==fitdaterr]
-      fitdata=fitdata[np.abs(fitdata['fitndrop']-float(fitndrop))<1.e-6]
-      if(len(fitdata)==1):
-        pl.plot(fitdata['dinf']+fitdata['b0']/(np.log(data['tlossmin']**np.exp(-fitdata['b1mean']))**fitdata['kappa']),data['tlossmin'],'r-')
-      else:
-        print('Warning: no fit data available or data ambigious!')
+    if(len(ldat)==1):#plot data in blue and fit in red
+      fmtdat=['bo']
+      fmtfit=['r-']
+    else:#if several curves are plotted, plot data with points and the fit as solid line in the same color
+      fmtdat=['bo','go','ro','co','mo','yo'] 
+      fmtfit=['b-','g-','r-','c-','m-','y-'] 
+    if(len(ldat)==len(ldaterr)):
+      dmax=len(ldat)
+      for dd in range(dmax):
+        pl.errorbar(data[ldat[dd]],data['tlossmin'],xerr=data[ldaterr[dd]],fmt=fmtdat[dd],markersize=2,label=ldat[dd])
+        if(sfit):
+          fitdata=self.get_da_vst_fit(seed,tune)
+          fitdata=fitdata[fitdata['fitdat']==ldat[dd]]
+          fitdata=fitdata[fitdata['fitdaterr']==ldaterr[dd]]
+          fitdata=fitdata[np.abs(fitdata['fitndrop']-float(fitndrop))<1.e-6]
+          if(len(fitdata)==1):
+            pl.plot(fitdata['dinf']+fitdata['b0']/(np.log(data['tlossmin']**np.exp(-fitdata['b1mean']))**fitdata['kappa']),data['tlossmin'],fmtfit[dd])
+          else:
+            print('Warning: no fit data available or data ambigious!')
+    else:
+       print('Error in PlotDaVsTurns: ldat and ldaterr must have the same length! Aborting!')
+       sys.exit(0)
     pl.title('seed '+str(seed))
     pl.xlim([ampmin,ampmax])
     pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)

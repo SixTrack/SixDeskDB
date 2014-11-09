@@ -459,7 +459,8 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
       print("Error in -fitopt: <data> has to be 'dawtrap','dastrap','dawsimp' or 'dassimp' - Aborting!")
       sys.exit(0)
 
-def PlotDaVsTurns(db,fitdat,fitdaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop):
+def PlotDaVsTurns(db,ldat,ldaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop):
+  '''plot survival plots and da vs turns for list of data ldat and associated error ldaterr'''
   turnsl=db.env_var['turnsl']
   turnse=db.env_var['turnse']
   print('Da vs turns -- create survival and da vs turns plots')
@@ -486,7 +487,7 @@ def PlotDaVsTurns(db,fitdat,fitdaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,pl
       db.plot_surv_2d(seed,tune,ampmaxsurv)#suvival plot
       pl.savefig('%s/DAsurv.%s.png'%(dirname,turnse))
       print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
-      db.plot_da_vst(seed,tune,fitdat,fitdaterr,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop)#da vs turns plot
+      db.plot_da_vst(seed,tune,ldat,ldaterr,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop)#da vs turns plot
       if(plotlog==True):
         pl.savefig('%s/DA_log.%s.png'%(dirname,turnse))
         print('... saving plot %s/DA_log.%s.png'%(dirname,turnse))

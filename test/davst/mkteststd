@@ -22,8 +22,18 @@ echo '... test da_vs_turns'
 ../../sixdb ${study}.db da_vs_turns -outfile -outfileold -fit -outfilefit
 ../../sixdb ${study}.db da_vs_turns -outfile -outfileold -fitopt 'dastrap' 'dastraperrep' 25 -5 5 0.01 -outfilefit
 echo '... test plot_da_vs_turns'
+echo '... test default - plots will be overwritten'
 ../../sixdb ${study}.db plot_da_vs_turns
-../../sixdb ${study}.db plot_da_vs_turns -plotlog -plotfit 25
+if [ ${study} = job_tracking_bb_2_test_sixdesk ];#test default with fit
+then
+  echo '... test log and fit option'
+  ../../sixdb ${study}.db plot_da_vs_turns -plotlog -plotfit 25
+fi
+if [ ${study} = job_tracking_bb_np_nt_dq-4_600Hz_2_test_sixdesk ];#test to plot list of data
+then
+  echo '... test log and fit option for list of data'
+  ../../sixdb ${study}.db plot_da_vs_turns -plotlog -plotfit 25 -plotdat 'dawsimp,dastrap' 'dawsimperr,dastraperrep'
+fi
 echo '***** comparing output files DAold.6.out ***** '
 for i in dares_${study}/*/*/DAold.6.out;
 do
