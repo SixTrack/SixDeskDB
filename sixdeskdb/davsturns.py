@@ -297,16 +297,30 @@ def plot_surv_2d_comp(db,dbcomp,lbl,complbl,seed,tune,ampmax):
   plot_surv_2d_stab(db,lbl,10,'b',seed,tune,ampmax)
   plot_surv_2d_stab(dbcomp,complbl,2,'r',seed,tune,ampmax)
   pl.legend(loc='best')
-def plot_comp_da_vst(db,dbcomp,lblname,complblname,seed,tune,ampmin,ampmax,tmax,slog):
+def plot_comp_da_vst(db,dbcomp,ldat,ldaterr,lblname,complblname,seed,tune,ampmin,ampmax,tmax,slog,sfit,fitndrop):
   """plot dynamic aperture vs number of turns, blue/green=simple average, red/orange=weighted average"""
-  data=db.get_da_vst(seed,tune)
-  datacomp=dbcomp.get_da_vst(seed,tune)
   pl.close('all')
   pl.figure(figsize=(6,6))
-  pl.errorbar(data['dastrap'],data['tlossmin'],xerr=data['dastraperrep'],fmt='bo',markersize=2,label='simple average '+lblname)
-  pl.plot(data['dawtrap'],data['tlossmin'],'ro',markersize=3,label='weighted average '+lblname)
-  pl.errorbar(datacomp['dastrap'],datacomp['tlossmin'],xerr=datacomp['dastraperrep'],fmt='go',markersize=2,label='simple average '+complblname)
-  pl.plot(datacomp['dawtrap'],datacomp['tlossmin'],'o',color='orange',markersize=3,label='weighted average '+complblname)
+  for dbbb in [db,dbcomp]:
+    data=dbbb.get_da_vst(seed,tune)
+    if(dbbb.LHCDescrip==db.LHCDescrip):
+      lbl   = lblname
+      fmtpl = 'bo'
+      fmtfit= 'b-'
+    if(dbbb.LHCDescrip==dbcomp.LHCDescrip):
+      lbl    = complblname
+      fmtpl  = 'ro'
+      fmtfit = 'r-'
+    pl.errorbar(data[ldat[0]],data['tlossmin'],xerr=data[ldaterr[0]],fmt=fmtpl,markersize=2,label='%s %s'%(ldat[0],lbl))
+    if(sfit):
+      fitdata=dbbb.get_da_vst_fit(seed,tune)
+      fitdata=fitdata[fitdata['fitdat']==ldat[0]]
+      fitdata=fitdata[fitdata['fitdaterr']==ldaterr[0]]
+      fitdata=fitdata[np.abs(fitdata['fitndrop']-float(fitndrop))<1.e-6]
+      if(len(fitdata)==1):
+        pl.plot(fitdata['dinf']+fitdata['b0']/(np.log(data['tlossmin']**np.exp(-fitdata['b1mean']))**fitdata['kappa']),data['tlossmin'],fmtfit)
+      else:
+        print('Warning: no fit data available or data ambigious!')
   pl.title('seed '+str(seed))
   pl.xlim([ampmin,ampmax])
   pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)
@@ -398,13 +412,13 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
         if res_mtime>an_mtime or force is True:
           files=('DA.%s.out DAsurv.%s.out DA.%s.png DAsurv.%s.png DAsurv_log.%s.png DAsurv_comp.%s.png DAsurv_comp_log.%s.png'%(turnse,turnse,turnse,turnse,turnse,turnse,turnse)).split()+['DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png']
           clean_dir_da_vst(db,files)# create directory structure and delete old files
-          print('... input data has changed - recalculate da vs turns')
+          print('... input data has changed or force=True - recalculate da vs turns')
           daout=mk_da_vst(dasurv,seed,tune,turnsl,turnstep)
           print('.... save data in database')
           #check if old table name da_vsturn exists, if yes delete it
           if(db.check_table('da_vsturn')):
-            cur=db.cursor()
-            cur.execute("DROP TABLE da_vsturn")
+            print('... delete old table da_vsturn - table will be substituted by new table da_vst')
+            db.execute("DROP TABLE da_vsturn")
           db.st_da_vst(daout,recreate=True)
       else:#create data
         print('... calculate da vs turns')
@@ -459,7 +473,8 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
       print("Error in -fitopt: <data> has to be 'dawtrap','dastrap','dawsimp' or 'dassimp' - Aborting!")
       sys.exit(0)
 
-def PlotDaVsTurns(db,fitdat,fitdaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop):
+def PlotDaVsTurns(db,ldat,ldaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop):
+  '''plot survival plots and da vs turns for list of data ldat and associated error ldaterr'''
   turnsl=db.env_var['turnsl']
   turnse=db.env_var['turnse']
   print('Da vs turns -- create survival and da vs turns plots')
@@ -468,7 +483,7 @@ def PlotDaVsTurns(db,fitdat,fitdaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,pl
     ampmindavst=float(ampmindavst)
     ampmaxdavst=float(ampmaxdavst)
   except [ValueError,NameError,TypeError]:
-    print('Error in RunDaVsTurns: ampmaxsurv and amprangedavst must be float values!')
+    print('Error in PlotDaVsTurns: ampmaxsurv and amprangedavst must be float values!')
     sys.exit(0)
   #remove all files
   if(plotlog):
@@ -486,7 +501,7 @@ def PlotDaVsTurns(db,fitdat,fitdaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,pl
       db.plot_surv_2d(seed,tune,ampmaxsurv)#suvival plot
       pl.savefig('%s/DAsurv.%s.png'%(dirname,turnse))
       print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
-      db.plot_da_vst(seed,tune,fitdat,fitdaterr,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop)#da vs turns plot
+      db.plot_da_vst(seed,tune,ldat,ldaterr,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop)#da vs turns plot
       if(plotlog==True):
         pl.savefig('%s/DA_log.%s.png'%(dirname,turnse))
         print('... saving plot %s/DA_log.%s.png'%(dirname,turnse))
@@ -494,21 +509,27 @@ def PlotDaVsTurns(db,fitdat,fitdaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,pl
         pl.savefig('%s/DA.%s.png'%(dirname,turnse))
         print('... saving plot %s/DA.%s.png'%(dirname,turnse))
 
-def PlotCompDaVsTurns(db,dbcomp,lblname,complblname,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog):
+def PlotCompDaVsTurns(db,dbcomp,ldat,ldaterr,lblname,complblname,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop):
   '''Comparison of two studies: survival plots (area of stable particles) and Da vs turns plots'''
+  turnsldb    =db.env_var['turnsl']
+  turnsedb    =db.env_var['turnse']
+  turnsldbcomp=dbcomp.env_var['turnsl']
+  turnsedbcomp=dbcomp.env_var['turnse']
+  if(not turnsldb==turnsldbcomp):
+    print('Warning! Maximum turn number turn_max of %s and %s differ!'%(db.LHCDescrip,dbcomp.LHCDescrip))
   try:
     ampmaxsurv=float(ampmaxsurv)
     ampmindavst=float(ampmindavst)
     ampmaxdavst=float(ampmaxdavst)
     tmax=int(float(tmax))
   except ValueError,NameError:
-    print('Error in RunDaVsTurns: ampmaxsurv and amprangedavst must be float values and tmax an integer value!')
+    print('Error in PlotCompDaVsTurns: ampmaxsurv and amprangedavst must be float values and tmax an integer value!')
     sys.exit(0)
   #remove all files
   if(plotlog):
-    files=['DA_comp_log.png','DAsurv_comp.png']
+    files=('DA_comp_log.png DAsurv_comp.png DA_comp_log.%s.png DAsurv_comp.%s.png'%(turnsedb,turnsedb)).split()
   else:
-    files=['DA_comp.png','DAsurv_comp.png']
+    files=('DA_comp.png DAsurv_comp.png DA_comp.%s.png DAsurv_comp.%s.png'%(turnsedb,turnsedb)).split()
   clean_dir_da_vst(db,files)# create directory structure and delete old files if force=true
 # start analysis
   if(not db.check_seeds()):
@@ -516,15 +537,16 @@ def PlotCompDaVsTurns(db,dbcomp,lblname,complblname,ampmaxsurv,ampmindavst,ampma
   for seed in db.get_db_seeds():
     seed=int(seed)
     for tune in db.get_tunes():
-      dirname=db.mk_analysis_dir(seed,tune)#directories already created with 
-      pl.close('all')
-      plot_surv_2d_comp(db,dbcomp,lblname,complblname,seed,tune,ampmaxsurv)
-      pl.savefig(dirname+'/DAsurv_comp.png')
-      print('... saving plot {0}/DAsurv_comp.png').format(dirname)
-      plot_comp_da_vst(db,dbcomp,lblname,complblname,seed,tune,ampmindavst,ampmaxdavst,tmax,plotlog)
-      if(plotlog==True):
-        pl.savefig(dirname+'/DA_comp_log.png')
-        print('... saving plot {0}/DA_comp_log.png').format(dirname)
-      else:
-        pl.savefig(dirname+'/DA_comp.png')
-        print('... saving plot {0}/DA_comp.png').format(dirname)
+      if(seed in dbcomp.get_db_seeds() and tune in db.get_tunes()):
+        dirname=db.mk_analysis_dir(seed,tune)#directories already created with 
+        pl.close('all')
+        plot_surv_2d_comp(db,dbcomp,lblname,complblname,seed,tune,ampmaxsurv)
+        pl.savefig('%s/DAsurv_comp.%s.png'%(dirname,turnsedb))
+        print('... saving plot %s/DAsurv_comp.%s.png'%(dirname,turnsedb))
+        plot_comp_da_vst(db,dbcomp,ldat,ldaterr,lblname,complblname,seed,tune,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop)
+        if(plotlog==True):
+          pl.savefig('%s/DA_comp_log.%s.png'%(dirname,turnsedb))
+          print('... saving plot %s/DA_comp_log.%s.png'%(dirname,turnsedb))
+        else:
+          pl.savefig('%s/DA_comp.%s.png'%(dirname,turnsedb))
+          print('... saving plot %s/DA_comp.%s.png'%(dirname,turnsedb))
