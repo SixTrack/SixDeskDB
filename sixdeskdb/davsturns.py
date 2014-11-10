@@ -412,13 +412,13 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
         if res_mtime>an_mtime or force is True:
           files=('DA.%s.out DAsurv.%s.out DA.%s.png DAsurv.%s.png DAsurv_log.%s.png DAsurv_comp.%s.png DAsurv_comp_log.%s.png'%(turnse,turnse,turnse,turnse,turnse,turnse,turnse)).split()+['DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png']
           clean_dir_da_vst(db,files)# create directory structure and delete old files
-          print('... input data has changed - recalculate da vs turns')
+          print('... input data has changed or force=True - recalculate da vs turns')
           daout=mk_da_vst(dasurv,seed,tune,turnsl,turnstep)
           print('.... save data in database')
           #check if old table name da_vsturn exists, if yes delete it
           if(db.check_table('da_vsturn')):
-            cur=db.cursor()
-            cur.execute("DROP TABLE da_vsturn")
+            print('... delete old table da_vsturn - table will be substituted by new table da_vst')
+            db.execute("DROP TABLE da_vsturn")
           db.st_da_vst(daout,recreate=True)
       else:#create data
         print('... calculate da vs turns')
