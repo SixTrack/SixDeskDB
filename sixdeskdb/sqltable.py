@@ -38,12 +38,15 @@ class SQLTable(object):
   @staticmethod
   def query_from_dict(query):
     return ' AND '.join(['%s=%s'%(k,repr(v)) for k,v in query.items()])
-  def __init__(self,db,name,cols,keys=None,dbtype="sql"):
+  def __init__(self,db,name,cols,keys=None,dbtype="sql",recreate=False):
     self.db=db
     self.name=name
     self.cols=cols
     self.keys=keys
     self.dbtype = dbtype
+    if recreate:
+        cur=db.cursor()
+        cur.execute("DROP TABLE %s"%name)
     self.create()
   def create(self):
     db=self.db;table=self.name
@@ -78,15 +81,21 @@ class SQLTable(object):
     self.keys=keys
   def insert(self,data,replace=True):
     '''insert structured array into databse table'''
-    db=self.db;table=self.name
+    db=self.db
+    table=self.name
+    dbtype = self.dbtype
     if replace:
       sql="REPLACE INTO %s(%s) VALUES (%s)"
     else:
       sql="INSERT INTO %s(%s) VALUES (%s)"
+    cur=db.cursor()
+    if dbtype == "sql":
+      cur.execute("begin IMMEDIATE transaction")
+    if len(data) == 0:
+      return
     cols=','.join(data.dtype.names)
     vals=','.join(('?',)*len(data.dtype.names))
     sql_cmd=sql%(table,cols,vals)
-    cur=db.cursor()
     cur.executemany(sql_cmd, data)
     db.commit()
   def insertl(self,data,artype="?",replace=True):

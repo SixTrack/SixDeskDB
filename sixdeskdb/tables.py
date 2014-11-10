@@ -148,6 +148,7 @@ class Six_Res(object):
 
 class Da_Post(object):
   fields=[('name', 'str',''),
+         ('turnsl','float',''),
          ('tunex','float',''),
          ('tuney','float',''),
          ('seed','int',''),
@@ -159,6 +160,7 @@ class Da_Post(object):
          ('Amin','float',''),
          ('Amax','float',''),
          ('mtime','float','')]
+  key=['turnsl','tunex','tuney','angle','seed']
 
 class Files(object):
   fields=[
@@ -172,17 +174,43 @@ class Da_Vst(object):
   ('seed', 'int', 'seed value'),
   ('tunex', 'float', 'tunex value'),
   ('tuney' ,'float', 'tuney value'),
-  ('DAstrap', 'float', 'DAs trap. integ.'),
-  ('DAwtrap', 'float', 'DAw trap. integ.'),
-  ('DAssimp', 'float', 'DAs simp. integ.'),
-  ('DAwsimp', 'float', 'DAw simp. integ.'),
-  ('DAstraperr', 'float', 'error DAs trap. integ.'),
-  ('DAstraperrang', 'float', 'angular error DAs trap. integ.'),
-  ('DAstraperramp', 'float', 'amplitude error DAs trap. integ.'),
+  ('turn_max' ,'int', 'Maximum turn number'),
+  ('dawtrap', 'float', 'DAw trap. integ.'),
+  ('dastrap', 'float', 'DAs trap. integ.'),
+  ('dawsimp', 'float', 'DAw simp. integ.'),
+  ('dassimp', 'float', 'DAs simp. integ.'),
+  ('dawtraperr','float', 'error DAw trap.'),
+  ('dastraperr','float', 'error DAs trap.'),
+  ('dastraperrep', 'float', 'error DAs trap.'),
+  ('dastraperrepang', 'float', 'angular error DAs'),
+  ('dastraperrepamp', 'float', 'amplitude error DAs'),
+  ('dawsimperr','float','error DAw simp. integ.'),
+  ('dassimperr','float','error DAs simp. integ.'),
   ('nturn', 'float', 'lost turn number [turnstep,2*turnstep,...]'),
   ('tlossmin', 'float', 'minimum lost turn number over all angles'),
   ('mtime','float','last modification time')]
   key=['seed','tunex','tuney','nturn']
+
+class Da_Vst_Fit(object):
+  fields=[
+  ('seed', 'int', 'seed value'),
+  ('tunex', 'float', 'tunex value'),
+  ('tuney' ,'float', 'tuney value'),
+  ('turn_max' ,'int', 'Maximum turn number'),
+  ('fitdat', 'str', 'data used for fit'),
+  ('fitdaterr', 'str', 'dataerr used for fit'),
+  ('kappa', 'float', 'optimal kappa (optkap)'),
+  ('dkappa', 'float', 'stepsize in kappa'),
+  ('res', 'float', 'fit residual for optkap'),
+  ('dinf', 'float', 'dinf for optkap'),
+  ('dinferr', 'float', 'dinferr for optkap'),
+  ('b0', 'float', 'b0 for optkap'),
+  ('b0err', 'float', 'b0 for optkap'),
+  ('b1mean', 'float', 'b1mean used for fit'),
+  ('b1meanerr', 'float', 'error b1mean used for fit'),
+  ('b1std', 'float', 'std(b1) over seeds'),
+  ('mtime','float','last modification time')]
+  key=['fitdat','fitdaterr','fitndrop','tunex','tuney','seed']
 
 acc_var = ['BNL','COLUMNS','CORR_TEST','G_FILENAME_ENCODING','LHCDesHome',
     'LHCDesName','LHCDescrip','LINES','MADX','MADX_PATH','SIXTRACKBNLEXE',

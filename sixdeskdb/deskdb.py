@@ -1,14 +1,17 @@
-#!/usr/bin/env python
-
-# python implementation of Sixdesk storage using local database and creation of
-# study using database
-# done by Moonis Javed (monis.javed@gmail.com)
-# This stores the study to a local database
-# Below are indicated thing that need to be edited by hand.
-# You have to use it from main like
-# python main.py loaddir <study location>
-# python main.py loaddb <studyDB> <new location of study>
+# Store the study to a local database
 #
+# Moonis Javed <monis.javed@gmail.com>,
+# Riccardo De Maria <riccardo.de.maria@cern.ch>
+# Xavier Valls Pla  <xavier.valls.pla@cern.ch>
+# Danilo Banfi <danilo.banfi@cern.ch>
+#
+# This software is distributed under the terms of the GNU Lesser General Public
+# License version 2.1, copied verbatim in the file ``COPYING''.
+
+# In applying this licence, CERN does not waive the privileges and immunities
+# granted to it by virtue of its status as an Intergovernmental Organization or
+# submit itself to any jurisdiction.
+
 # NOTA: please use python version >=2.6
 
 import sqlite3, time, os, re, gzip, sys, glob
@@ -27,6 +30,8 @@ except ImportError:
   raise ImportError
 
 import tables
+import lsfqueue
+import madout
 from sqltable import SQLTable
 for t in (np.int8, np.int16, np.int32, np.int64,np.uint8, np.uint16, np.uint32, np.uint64):
   sqlite3.register_adapter(t, long)
@@ -37,14 +42,18 @@ def parse_env(studydir):
   return eval(os.popen(cmd).read())
 
 
-def compressBuf(file):
+def compressBuf(filename):
   '''file compression for storing in DB'''
-  buf = open(file,'r').read()
-  zbuf = StringIO()
-  zfile = gzip.GzipFile(mode = 'wb',  fileobj = zbuf, compresslevel = 9)
-  zfile.write(buf)
-  zfile.close()
-  return zbuf.getvalue()
+  if os.path.isfile(filename):
+      buf = open(filename,'r').read()
+      zbuf = StringIO()
+      zfile = gzip.GzipFile(mode = 'wb',  fileobj = zbuf, compresslevel = 9)
+      zfile.write(buf)
+      zfile.close()
+      return zbuf.getvalue()
+  else:
+      print "Warning: %s not found"%filename
+      return ''
 
 def decompressBuf(buf):
   '''file decompression to retrieve from DB'''
@@ -131,67 +140,23 @@ def guess_range(l):
   stop=l[-1]
   return start,stop,step
 
-def split_fort10fn(fn):
-  ll=fn.split('/')
-  data=ll[-8:-1]
-  study,seed,simul,tunes,rng,turns,angle=data
-  if '-' in rng:
-    join='-'
-  else:
-    join='_'
+def split_job_params(dirname):
+  ll=dirname.split('/')
+  data=ll[-6:]
+  seed,simul,tunes,rng,turns,angle=data
   seed=int(seed)
   tunex,tuney=map(float,tunes.split('_'))
-  amp1,amp2=map(float,rng.split(join))
+  amp1,amp2=map(float,rng.split('_'))
   angle=float(angle)
-  turns=10**int(turns[1])
-  return study,seed,tunex,tuney,amp1,amp2,join,turns,angle
+  #turns=10**int(turns[1])
+  return seed,simul,tunex,tuney,amp1,amp2,turns,angle
 
-def check_mad_out(fhs):
-  closest2=[]
-  closest1=[]
-  closest0=[]
-  kqs={}
-  kqt={}
-  for fh in fhs:
-    for l in fh:
-      l=l.strip()
-      if l.startswith('closest'):
-        if l.startswith('closest2 =  '):
-          closest2.append(float(l.split('=')[1].split(';')[0]))
-        elif l.startswith('closest1 =  '):
-          closest1.append(float(l.split('=')[1].split(';')[0]))
-        elif l.startswith('closest0 =  '):
-          closest0.append(float(l.split('=')[1].split(';')[0]))
-      elif 'kmqsmax*100' in l:
-        name,val=extract_kmax(l)
-        kqs.setdefault(name,[]).append(val)
-      elif 'kmqtmax*100' in l:
-        name,val=extract_kmax(l)
-        kqt.setdefault(name,[]).append(val)
-  print "Mad6tOut clo0: %s"%minmaxavg(closest0)
-  print "Mad6tOut clo1: %s"%minmaxavg(closest1)
-  print "Mad6tOut clo2: %s"%minmaxavg(closest2)
-  kqsmax=[max(abs(m) for m in l) for l in zip(*kqs.values())]
-  kqtmax=[max(abs(m) for m in l) for l in zip(*kqt.values())]
-  print "Mad6tOut kqt : %s"%minmaxavg(kqtmax)
-  print "Mad6tOut kqs : %s"%minmaxavg(kqsmax)
-
-def extract_kmax(l):
-  name,val=l.split('=')
-  name=name.split('/')[0]
-  val=float(val.split(';')[0])
-  return name,val
-
-def minmaxavg(l,fmt="%13e"):
-  if len(l)>0:
-      l=np.array(l)
-      mi=l.min()
-      ma=l.max()
-      av=l.mean()
-      tmp="min %s avg %s max %s"%(fmt,fmt,fmt)
-      return tmp%(mi,av,ma)
-  else:
-      return "no data to find min and max"
+def get_job_dirname(seed,simul,tunex,tuney,amp1,amp2,turne,angle):
+  t='%s/%s/%s/%s/%s/%s/'
+  #turne=np.log10(turns)
+  rng="%s_%s"%(amp1,amp2)
+  tunes="%s_%s"%(tunex,tuney)
+  return t%(seed,simul,tunes,rng,turne,angle)
 
 
 
@@ -242,9 +207,10 @@ class SixDeskDB(object):
         content = sqlite3.Binary(compressBuf(path))
         toinsert.append([key,content,mtime])
     filetab.insertl(toinsert)
-  def __init__(self,dbname,create=False):
+  def __init__(self,dbname,create=False,debug=False):
     '''initialise variables and location for study creation 
         or database creation, usage listed in main.py'''
+    self.debug=debug
     if not dbname.endswith('.db'):
         dbname+='.db'
     if create is False and not os.path.exists(dbname):
@@ -287,16 +253,19 @@ class SixDeskDB(object):
           columms=[i[1] for i in self.execute("PRAGMA table_info(%s)"%tab)]
           print "%s(%d):\n  %s"%(tab,rows,', '.join(columms))
 
-  def mad_out(db):
-      mad_runs=db.execute('SELECT DISTINCT run_id FROM mad6t_run')
+  def mad_out(self):
+      mad_runs=self.execute('SELECT DISTINCT run_id FROM mad6t_run')
       if len(mad_runs)==0:
-          print "No mad outout data"
-      for run in mad_runs:
+          print "No mad out data"
+      for run, in mad_runs:
           print "Checking %s"%run
-          sql="SELECT mad_out FROM mad6t_run WHERE run_id=='%s'"%run
-          bufs=db.execute(sql)
-          bufs=[StringIO(decompressBuf(buf[0])) for buf in bufs]
-          check_mad_out(bufs)
+          sql="SELECT seed,mad_out FROM mad6t_run WHERE run_id=='%s' ORDER BY seed"%run
+          data=self.execute(sql)
+          data=[(seed,StringIO(decompressBuf(out))) for seed,out in data]
+          resname=os.path.join(self.mk_analysis_dir(),run)+'.csv'
+          madout.check_mad_out(data,resname)
+          print resname
+
 
   def set_variables(self,lst,mtime):
     '''set additional variables besides predefined environment variables
@@ -350,17 +319,16 @@ class SixDeskDB(object):
       a = [str(i[0]) for i in a]
     print "Looking for fort.2, fort.8, fort.16 in %s"%workdir
     data=[]
-    for dirName, _, fileList in os.walk(workdir):
-      if 'mad.dorun' in dirName and not (dirName.split('/')[-1] in a):
-        print 'found new mad run',dirName.split('/')[-1]
-        for files in fileList:
-          if not (files.endswith('.mask') or 'out' in files
-              or files.endswith('log') or files.endswith('lsf')):
-            fnroot,seed=os.path.splitext(files)
+    for dirName in glob.glob(os.path.join(workdir,'mad.dorun_*')):
+        print 'found mad run',dirName.split('/')[-1]
+        for filename in os.listdir(dirName):
+          if not (filename.endswith('.mask') or 'out' in filename
+              or filename.endswith('log') or filename.endswith('lsf')):
+            fnroot,seed=os.path.splitext(filename)
             seed=int(seed[1:])
             run_id = dirName.split('/')[-1]
             mad_in = sqlite3.Binary(
-              compressBuf(os.path.join(dirName, files))
+              compressBuf(os.path.join(dirName, filename))
               )
             out_file=os.path.join(dirName,fnroot+'.out.%d'%seed)
             log_file=os.path.join(dirName,fnroot+'_mad6t_%d.log'%seed)
@@ -368,14 +336,17 @@ class SixDeskDB(object):
             mad_out = sqlite3.Binary(compressBuf(out_file))
             mad_lsf = sqlite3.Binary(compressBuf(lsf_file))
             mad_log = sqlite3.Binary(compressBuf(log_file))
-            time = os.path.getmtime( log_file)
+            if os.path.isfile(out_file):
+              time = os.path.getmtime( out_file)
+            else:
+              time = None
             data.append([run_id, seed, mad_in, mad_out, mad_lsf,mad_log,time])
-          if files.endswith('.mask'):
-            path = os.path.join(dirName, files)
+          if filename.endswith('.mask'):
+            path = os.path.join(dirName, filename)
             key = path.replace(env_var['scratchdir']+'/','')
             extra_files.append([key,path])
-      if len(data)>0:
-        tab.insertl(data)
+        if len(data)>0:
+          tab.insertl(data)
     if extra_files:
       self.add_files(extra_files)
 
@@ -385,12 +356,11 @@ class SixDeskDB(object):
     env_var = self.env_var
     workdir = env_var['sixtrack_input']
     extra_files = []
-    for dirName, _, fileList in os.walk(workdir):
-      for files in fileList:
-        if 'fort.3' in files or files.endswith('.tmp'):
-          path = os.path.join(dirName, files)
-          key = path.replace(env_var['scratchdir']+'/','')
-          extra_files.append([key,path])
+    for filename in os.listdir(workdir):
+      if 'fort.3' in filename or filename.endswith('.tmp'):
+        path = os.path.join(workdir, filename)
+        key =  os.path.join('sixtrack_input',filename)
+        extra_files.append([key,path])
     if extra_files:
       self.add_files(extra_files)
 
@@ -427,9 +397,9 @@ class SixDeskDB(object):
     if rows:
       tab.insertl(rows)
       rows = {}
-    print ' no of fort.2 updated/found: %d/%d'%(update[2],len(f2s))
-    print ' no of fort.8 updated/found: %d/%d'%(update[8],len(f8s))
-    print ' no of fort.16 updated/found: %d/%d'%(update[16],len(f16s))
+    print ' number of fort.2 updated/found: %d/%d'%(update[2],len(f2s))
+    print ' number of fort.8 updated/found: %d/%d'%(update[8],len(f8s))
+    print ' number of fort.16 updated/found: %d/%d'%(update[16],len(f16s))
 
   def st_six_beta(self):
     ''' store sixdesktunes, betavalues '''
@@ -465,7 +435,7 @@ class SixDeskDB(object):
         data.append(vals)
       except ValueError:
         print "Error in %s"%fullname
-    print " no of sixdesktunes, betavalues, mychrom inserted: %d"%len(data)
+    print " number of sixdesktunes, betavalues, mychrom inserted: %d"%len(data)
     tab.insertl(data)
 
   def st_six_input(self):
@@ -477,76 +447,84 @@ class SixDeskDB(object):
     tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
     cols1 = SQLTable.cols_from_fields(tables.Six_Res.fields)
     tab1 = SQLTable(conn,'six_results',cols1,tables.Six_Res.key)
-    #tab = SQLTable(conn,'mad6t_results',cols,tables.Mad_Res.key)
-    maxtime = tab.selectl("max(mtime)")[0][0]
-    maxtime10 = tab1.selectl("max(mtime)")[0][0]
-    count = 0
+    f3_data={}
+    for row in cur.execute('SELECT id,mtime,seed,simul,tunex,tuney,amp1,amp2,turns,angle FROM six_input'):
+        f3_data[tuple(row[2:])]=row[:2]
+    f10_data={}
+    for row in cur.execute('SELECT DISTINCT six_input_id,mtime FROM six_results'):
+        f10_data[row[0]]=row[1]
+    count3 = 0
     count10 = 0
-    if not maxtime:
-      maxtime = 0
-    if not maxtime10:
-      maxtime10 = 0
-    # cols = SQLTable.cols_from_fields(tables.Files.fields)
-    # tab1 = SQLTable(conn,'files',cols,tables.Files.key)
     workdir = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
     extra_files = []
-    rows = []
+    rows3 = []
     rows10 = []
-    six_id = 1
+    six_id_new = list(cur.execute('SELECT max(id) FROM six_input'))[0][0]
+    if six_id_new is None:
+      six_id_new=1
+    else:
+      six_id_new+=1
     print "Looking for fort.3.gz, fort.10.gz files in\n %s"%workdir
-    #cmd = """find %s -type f -name 'fort.3.gz'"""%(workdir)
-    #a = os.popen(cmd).read().split('\n')[:-1]
-    #print 'fort.3 files =',len(a)
-    file_count=0
+    file_count3=0
     file_count10 = 0
     for dirName in glob.iglob(os.path.join(workdir,'*','*','*','*','*','*')):
       f3=os.path.join(dirName, 'fort.3.gz')
       f10=os.path.join(dirName, 'fort.10.gz')
-      #dirName,files=os.path.split(dirName.strip())
       ranges= dirName.split('/')[-3]
       if '_' in ranges:
         fn3_exists=fn10_exists=False
         if os.path.exists(f3):
-            file_count+=1
+            file_count3+=1
             fn3_exists=True
         if os.path.exists(f10):
             file_count10 += 1
             fn10_exists=True
-        if file_count%100==0:
+        if file_count3%100==0:
            sys.stdout.write('.')
            sys.stdout.flush()
         if fn3_exists:
+            jobparmams=split_job_params(dirName)
+            six_id_old,mtime3_old=f3_data.get(jobparmams,[-1,0])
             mtime3 = os.path.getmtime(f3)
-            if mtime3>maxtime:
-                dirn = [six_id] + re.split('/|_', dirName)[-8:]
-                dirn.extend([sqlite3.Binary(open(f3).read()),mtime3])
-                if fn10_exists:
-                  mtime10 = os.path.getmtime(f10)
-                  if mtime10 > maxtime:
-                    FileObj = gzip.open(f10,"r").read().split("\n")[:-1]
-                    countl = 1
-                    for lines in FileObj:
-                      rows10.append([six_id,countl]+lines.split()+[mtime10])
-                      countl += 1
-                    count10 += 1
-                    rows.append(dirn)
-                six_id += 1
-                count += 1
-        if len(rows) == 6000:
-          tab.insertl(rows)
+            if six_id_old==-1:
+                six_id=six_id_new
+                six_id_new+=1
+            else:
+                six_id=six_id_old
+            if mtime3>mtime3_old:
+              count3+=1
+              f3file=sqlite3.Binary(compressBuf(f3))
+              dirn = [six_id] + list(jobparmams) + [f3file,mtime3]
+              rows3.append(dirn)
+        if fn10_exists:
+           mtime10 = os.path.getmtime(f10)
+           mtime10_old=f10_data.get(six_id,0)
+           if mtime10 > mtime10_old and os.path.getsize(f10)>0:
+             countl = 1
+             for lines in gzip.open(f10,"r"):
+                rows10.append([six_id,countl]+lines.split()+[mtime10])
+                countl += 1
+             count10 += 1
+        if len(rows3) == 6000:
+          tab.insertl(rows3)
           tab1.insertl(rows10)
-          rows = []
+          rows3 = []
           rows10 = []
-    if rows:
-      tab.insertl(rows)
-      tab1.insertl(rows10)
-      rows = []
-    print '\n no of fort.3 updated/found: %d/%d'%(count,file_count)
-    print ' no of fort.10 updated/found: %d/%d'%(count10,file_count10)
+    tab.insertl(rows3)
+    tab1.insertl(rows10)
+    rows3 = []
+    print '\n number of fort.3 updated/found: %d/%d'%(count3,file_count3)
+    print ' number of fort.10 updated/found: %d/%d'%(count10,file_count10)
     sql="""CREATE VIEW IF NOT EXISTS results
            AS SELECT * FROM six_input INNER JOIN six_results
            ON six_input.id==six_results.six_input_id"""
-    self.conn.cursor().execute(sql)
+    cur.execute(sql)
+    sql="""SELECT count(*) FROM results"""
+    results=list(cur.execute(sql))[0][0]
+    sql="""SELECT COUNT(DISTINCT six_input_id) FROM six_results"""
+#    sql="""SELECT COUNT(*) FROM six_results"""
+    jobs=list(cur.execute(sql))[0][0]
+    print " db now contains %d results from %d jobs"% (results,jobs)
 
   def execute(self,sql):
     cur= self.conn.cursor()
@@ -1018,6 +996,16 @@ class SixDeskDB(object):
     """check if angles defined in the environment are presently available in the database"""
     return not len(set(self.get_angles())-set(self.get_db_angles()))>0
 
+  def check_table(self,tab):
+    """check if table tab exists in database"""
+    cmd="""SELECT name FROM sqlite_master
+        WHERE type='table'
+        ORDER BY name"""
+    cur=self.conn.cursor().execute(cmd)
+    ftype=[('name',np.str_,30)]
+    tabnames=np.fromiter(cur,dtype=ftype)
+    return (tab in tabnames['name'])
+
   def get_angles(self):
     ''' get angles from env variables'''
     env_var = self.env_var
@@ -1057,25 +1045,64 @@ class SixDeskDB(object):
 
   def gen_job_params(self):
     '''generate jobparams based on values '''
-    turnsl = '%E'%(float(self.env_var['turnsl']))
-    turnsl = 'e'+str(int(turnsl.split('+')[1]))
-    for seed in self.get_seeds():
-      for tunex,tuney in self.get_tunes():
-        for amp1,amp2 in self.get_amplitudes():
-          for angle in self.get_angles():
-            yield (seed,tunex,tuney,amp1,amp2,turnsl,angle)
+    if self.env_var['long']==1:
+      simul='simul'
+      turns = '%E'%(float(self.env_var['turnsl']))
+      turns = 'e'+str(int(turns.split('+')[1]))
+      for seed in self.get_seeds():
+        for tunex,tuney in self.get_tunes():
+          for amp1,amp2 in self.get_amplitudes():
+            for angle in self.get_angles():
+              yield (seed,simul,tunex,tuney,amp1,amp2,turns,angle)
+    if self.env_var['short']==1:
+      simul='short'
+      turns = '%E'%(float(self.env_var['turnss']))
+      turns = 'e'+str(int(turns.split('+')[1]))
+      for seed in self.get_seeds():
+        for tunex,tuney in self.get_tunes():
+          for amp1,amp2 in self.get_amplitudes():
+            for angle in self.get_angles():
+              yield (seed,simul,tunex,tuney,amp1,amp2,turns,angle)
+
 
   def get_missing_jobs(self):
     '''get missing jobs '''
     turnsl = '%E'%(float(self.env_var['turnsl']))
     turnsl = 'e'+str(int(turnsl.split('+')[1]))
-    existing = self.execute("""SELECT seed,tunex,tuney,amp1,amp2,turns,angle from
-      six_input where turns='%s'"""%(turnsl))
-    existing=  set(existing)
+    existing = self.execute("""SELECT seed,simul,tunex,tuney,amp1,amp2,
+                               turns,angle from six_input""")
+    existing= set(existing)
     needed=set(self.gen_job_params())
     #print sorted(existing)[0]
     #print sorted(needed)[0]
     return list(needed-existing)
+
+  def get_running_jobs(self,missing,threshold=7*24*3600):
+    running=set()
+    for lsfjob in lsfqueue.parse_bjobs():
+        if lsfjob in missing:
+          job=self.running[lsfjob]
+          if job.stat in ('PEND','RUN'):
+            tmp="TrackOut job: %s %s %s %s %s"
+            print tmp%(job.jobid,jobshort,job.submit_time,job.start_time,job.stat)
+            if not (job.stat=='RUN' and job.run_since()>threshold):
+               running.add(lsfjob)
+    return running
+
+  def make_lsf_missing_jobs(self):
+    for job in self.get_missing_jobs():
+       seed,simul,tunex,tuney,amp1,amp2,turns,angle=job
+       tmp="%s%%%s%%s%%%s%%%s%%%s%%%s"
+       ranges="%g_%g"%(amp1,amp2)
+       tunes="%s_%s"%(tunex,tuney)
+       missing.add(tmp%(name,seed,tunes,ranges,turns,angle))
+    if len(missing)==0:
+        print "No missing jobs"
+    running=self.get_running_jobs(missing)
+    if len(running)>0:
+        print "%d job running"
+    for job in missing-running:
+        print job
 
   def inspect_jobparams(self):
     data=list(self.iter_job_params())
@@ -1345,262 +1372,327 @@ class SixDeskDB(object):
              ('amp1','float'),('amp2','float'),('angle','float'),
              ('mtime','float')]
     names=','.join(zip(*rectype)[0])
+    turnsl=self.env_var['turnsl']
     turnse=self.env_var['turnse']
-    tunex=float(self.env_var['tunex'])
-    tuney=float(self.env_var['tuney'])
-    sixdesktunes="%g_%g"%(tunex,tuney)
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
-    sql='SELECT %s FROM results ORDER BY tunex,tuney,seed,amp1,amp2,angle'%names
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     anumber=1
-    angles=self.get_angles()#np.unique(tmp['angle'])
-    seeds=self.get_seeds()#np.unique(tmp['seed'])
+    angles=self.get_angles()
+    seeds=self.get_seeds()
     mtime=self.execute('SELECT max(mtime) from results')[0][0]
     final=[]
-    sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 '%names
-    for angle in angles:
-        fndot='DAres.%s.%s.%s.%d'%(self.LHCDescrip,sixdesktunes,turnse,anumber)
-        fndot=os.path.join(dirname,fndot)
-        fhdot = open(fndot, 'w')
-        for seed in seeds:
-            ich1 = 0
-            ich2 = 0
-            ich3 = 0
-            icount = 1.
-            iin  = -999
-            iend = -999
-            alost1 = 0.
-            alost2 = 0.
-            achaos = 0
-            achaos1 = 0
-            sql=sql1+'AND seed=%g AND angle=%g ORDER BY amp1'%(seed,angle)
-            inp=np.array(self.execute(sql),dtype=rectype)
-            betx=inp['betx']
-            betx2=inp['betx2']
-            bety=inp['bety']
-            bety2=inp['bety2']
-            sigx1=inp['sigx1']
-            sigy1=inp['sigy1']
-            emitx=inp['emitx']
-            emity=inp['emity']
-            distp=inp['distp']
-            dist=inp['dist']
-            sigxavgnld=inp['sigxavgnld']
-            sigyavgnld=inp['sigyavgnld']
-            sturns1=inp['sturns1']
-            sturns2=inp['sturns2']
-            turn_max=inp['turn_max'].max()
+    sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 AND turn_max=%d'%(names,turnsl)
+    LHCDescrip=self.LHCDescrip
+    for tunex,tuney in self.get_tunes():
+        sixdesktunes="%g_%g"%(tunex,tuney)
+        sql1+=' AND tunex=%g AND tuney=%g'%(tunex,tuney)
+        for angle in angles:
+            fndot='DAres.%s.%s.%s.%d'%(LHCDescrip,sixdesktunes,turnse,anumber)
+            fndot=os.path.join(dirname,fndot)
+            fhdot = open(fndot, 'w')
+            for seed in seeds:
+                ich1 = 0
+                ich2 = 0
+                ich3 = 0
+                icount = 1.
+                iin  = -999
+                iend = -999
+                alost1 = 0.
+                alost2 = 0.
+                achaos = 0
+                achaos1 = 0
+                sql=sql1+' AND seed=%g AND angle=%g ORDER BY amp1'%(seed,angle)
+                if self.debug:
+                    print sql
+                inp=np.array(self.execute(sql),dtype=rectype)
+                if len(inp)==0:
+                    msg="all particle lost for angle = %s and seed = %s"
+                    print msg%(angle,seed)
+                    continue
+                betx=inp['betx']
+                betx2=inp['betx2']
+                bety=inp['bety']
+                bety2=inp['bety2']
+                sigx1=inp['sigx1']
+                sigy1=inp['sigy1']
+                emitx=inp['emitx']
+                emity=inp['emity']
+                distp=inp['distp']
+                dist=inp['dist']
+                sigxavgnld=inp['sigxavgnld']
+                sigyavgnld=inp['sigyavgnld']
+                sturns1=inp['sturns1']
+                sturns2=inp['sturns2']
+                turn_max=inp['turn_max'].max()
 
-            if inp.size<2 :
-                print 'not enought data for angle = %s' %angle
-                break
-
-            zero = 1e-10
-            xidx=(betx>zero) & (emitx>zero)
-            yidx=(bety>zero) & (emity>zero)
-            sigx1[xidx]=np.sqrt(betx[xidx]*emitx[xidx])
-            sigy1[yidx]=np.sqrt(bety[yidx]*emity[yidx])
-            iel=inp.size-1
-            rat=0
-
-            if sigx1[0]>0:
-                rat=sigy1[0]**2*betx[0]/(sigx1[0]**2*bety[0])
-            if sigx1[0]**2*bety[0]<sigy1[0]**2*betx[0]:
-                rat=2
-            if emity[0]>emitx[0]:
+                zero = 1e-10
+                xidx=(betx>zero) & (emitx>zero)
+                yidx=(bety>zero) & (emity>zero)
+                sigx1[xidx]=np.sqrt(betx[xidx]*emitx[xidx])
+                sigy1[yidx]=np.sqrt(bety[yidx]*emity[yidx])
+                iel=inp.size-1
                 rat=0
-                dummy=np.copy(betx)
-                betx=bety
-                bety=dummy
-                dummy=np.copy(betx2)
-                betx2=bety2
-                bety2=dummy
-                dummy=np.copy(sigx1)
-                sigx1=sigy1
-                sigy1=dummy
-                dummy=np.copy(sigxavgnld)
-                sigxavgnld=sigyavgnld
-                sigyavgnld=dummy
-                dummy=np.copy(emitx)
-                emitx=emity
-                emity=dummy
 
-            sigma=np.sqrt(betx[0]*Elhc/Einj)
-            if abs(emity[0])>0 and abs(sigx1[0])>0:
-                if abs(emitx[0])<zero :
-                    rad=np.sqrt(1+(sigy1[0]**2*betx[0])/(sigx1[0]**2*bety[0]))/sigma
-                else:
-                    rad=np.sqrt((emitx[0]+emity[0])/emitx[0])/sigma
-            else:
-                rad=1
-            if abs(sigxavgnld[0])>zero and abs(bety[0])>zero and sigma > 0:
-                if abs(emitx[0]) < zero :
-                    rad1=np.sqrt(1+(pow(sigyavgnld[0],2)*betx[0])/(pow(sigxavgnld[0],2)*bety[0]))/sigma
-                else:
-                    rad1=(sigyavgnld[0]*np.sqrt(betx[0])-sigxavgnld[0]*np.sqrt(bety2[0]))/(sigxavgnld[0]*np.sqrt(bety[0])-sigyavgnld[0]*np.sqrt(betx2[0]))
-                    rad1=np.sqrt(1+rad1*rad1)/sigma
-            else:
-                rad1 = 1
-            chaostest=np.where((distp>2.)|(distp<=0.5))[0]
-            if len(chaostest)>0:
-                iin=chaostest[0]
-                achaos=rad*sigx1[iin]
-            else:
-                iin=iel
-            chaos1test=np.where(dist > 1e-2)[0]
-            if len(chaos1test)>0:
-                iend=chaos1test[0]
-                achaos1=rad*sigx1[iend]
-            else:
-                iend=iel
-            alost2test=np.where( (sturns1<turn_max) | (sturns2<turn_max))[0]
-            if len(alost2test)>0:
-                ialost2=alost2test[0]
-                alost2=rad*sigx1[ialost2]
-            icount=1.
-            if iin != -999 and iend == -999 : iend=iel
-            if iin != -999 and iend > iin :
-                for i in range(iin,iend+1) :
-                    if(abs(rad*sigx1[i])>zero):
-                        alost1 += rad1 * sigxavgnld[i]/rad/sigx1[i]
-                    if(i!=iend):
-                        icount+=1.
-                alost1 = alost1/icount
-                if alost1 >= 1.1 or alost1 <= 0.9:  alost1= -1. * alost1
-            else:
-                alost1 = 1.0
+                if sigx1[0]>0:
+                    rat=sigy1[0]**2*betx[0]/(sigx1[0]**2*bety[0])
+                if sigx1[0]**2*bety[0]<sigy1[0]**2*betx[0]:
+                    rat=2
+                if emity[0]>emitx[0]:
+                    rat=0
+                    dummy=np.copy(betx)
+                    betx=bety
+                    bety=dummy
+                    dummy=np.copy(betx2)
+                    betx2=bety2
+                    bety2=dummy
+                    dummy=np.copy(sigx1)
+                    sigx1=sigy1
+                    sigy1=dummy
+                    dummy=np.copy(sigxavgnld)
+                    sigxavgnld=sigyavgnld
+                    sigyavgnld=dummy
+                    dummy=np.copy(emitx)
+                    emitx=emity
+                    emity=dummy
 
-            alost1=alost1*alost2
-            name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
-            name1= '%s%ss%s%s-%s%s.%d'%(self.LHCDescrip,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
-            if(seed<10):
-                name1+=" "
-            if(anumber<10):
-                name1+=" "
-            fmt=' %-39s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
-            fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*sigx1[0],rad*sigx1[iel]))
-            final.append([name2, tunex, tuney, int(seed),
-                           angle,achaos,achaos1,alost1,alost2,
-                           rad*sigx1[0],rad*sigx1[iel],mtime])
-        anumber+=1
-        fhdot.close()
-        print fndot
+                sigma=np.sqrt(betx[0]*Elhc/Einj)
+                if abs(emity[0])>0 and abs(sigx1[0])>0:
+                    if abs(emitx[0])>=zero :
+                        eex=emitx[0]
+                        eey=emity[0]
+                    else:
+                        eey=sigy1[0]**2/bety[0]
+                        eex=sigx1[0]**2/betx[0]
+                    rad=np.sqrt(1+eey/eex)/sigma
+                else:
+                    rad=1
+                if abs(sigxavgnld[0])>zero and abs(bety[0])>zero and sigma > 0:
+                    if abs(emitx[0]) < zero:
+                        eey=sigyavgnld[0]**2/bety[0]
+                        eex=sigxavgnld[0]**2/betx[0]
+                        rad1=np.sqrt(1+eey/eex)/sigma
+                    else:
+                        rad1=(sigyavgnld[0]*np.sqrt(betx[0])-sigxavgnld[0]*np.sqrt(bety2[0]))/(sigxavgnld[0]*np.sqrt(bety[0])-sigyavgnld[0]*np.sqrt(betx2[0]))
+                        rad1=np.sqrt(1+rad1*rad1)/sigma
+                else:
+                    rad1 = 1
+                chaostest=np.where((distp>2.)|(distp<=0.5))[0]
+                if len(chaostest)>0:
+                    iin=chaostest[0]
+                    achaos=rad*sigx1[iin]
+                else:
+                    iin=iel
+                chaos1test=np.where(dist > 1e-2)[0]
+                if len(chaos1test)>0:
+                    iend=chaos1test[0]
+                    achaos1=rad*sigx1[iend]
+                else:
+                    iend=iel
+                alost2test=np.where((sturns1<turn_max)|(sturns2<turn_max))[0]
+                if len(alost2test)>0:
+                    ialost2=alost2test[0]
+                    alost2=rad*sigx1[ialost2]
+                icount=1.
+                if iin != -999 and iend == -999 : iend=iel
+                if iin != -999 and iend > iin :
+                    for i in range(iin,iend+1) :
+                        if(abs(rad*sigx1[i])>zero):
+                            alost1 += rad1 * sigxavgnld[i]/rad/sigx1[i]
+                        if(i!=iend):
+                            icount+=1.
+                    alost1 = alost1/icount
+                    if alost1 >= 1.1 or alost1 <= 0.9:  alost1= -1. * alost1
+                else:
+                    alost1 = 1.0
+
+                alost1=alost1*alost2
+                name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
+                name1= '%s%ss%s%s-%s%s.%d'%(self.LHCDescrip,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
+                if(seed<10):
+                    name1+=" "
+                if(anumber<10):
+                    name1+=" "
+                fmt=' %-39s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
+                fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*sigx1[0],rad*sigx1[iel]))
+                final.append([name2, turnsl,tunex, tuney, int(seed),
+                               angle,achaos,achaos1,alost1,alost2,
+                               rad*sigx1[0],rad*sigx1[iel],mtime])
+            anumber+=1
+            fhdot.close()
+            print fndot
     cols=SQLTable.cols_from_fields(tables.Da_Post.fields)
-    datab=SQLTable(self.conn,'da_post',cols)
+    datab=SQLTable(self.conn,'da_post',cols,tables.Da_Post.key,recreate=True)
     datab.insertl(final)
 
   def mk_da(self,force=False,nostd=False):
     dirname=self.mk_analysis_dir()
     cols=SQLTable.cols_from_fields(tables.Da_Post.fields)
     datab=SQLTable(self.conn,'da_post',cols)
-    final=datab.select(orderby='angle,seed')
+    turnsl=self.env_var['turnsl']
     turnse=self.env_var['turnse']
-    tunex=float(self.env_var['tunex'])
-    tuney=float(self.env_var['tuney'])
-    sixdesktunes="%g_%g"%(tunex,tuney)
-    ns1l=self.env_var['ns1l']
-    ns2l=self.env_var['ns2l']
-    if len(final)>0:
-        an_mtime=final['mtime'].min()
-        res_mtime=self.execute('SELECT max(mtime) FROM six_results')[0][0]
-        if res_mtime>an_mtime or force is True:
-            self.read10b()
-            final=datab.select(orderby='angle,seed')
-    else:
-      self.read10b()
-      final=datab.select(orderby='angle,seed')
+    for tunex,tuney in self.get_tunes():
+        sixdesktunes="%g_%g"%(tunex,tuney)
+        wh="turnsl=%d AND tunex=%g AND tuney=%g"%(turnsl,tunex,tuney)
+        final=datab.select(where=wh,orderby='angle,seed')
+        if len(final)>0:
+            an_mtime=final['mtime'].min()
+            res_mtime=self.execute('SELECT max(mtime) FROM six_results')[0][0]
+            if res_mtime>an_mtime or force is True:
+                self.read10b()
+                final=datab.select(where=wh,orderby='angle,seed')
+        else:
+          self.read10b()
+          final=datab.select(where=wh,orderby='angle,seed')
 
-    #print final['mtime']
-    #print self.execute('SELECT max(mtime) FROM six_results')[0][0]
+        ns1l=self.env_var['ns1l']
+        ns2l=self.env_var['ns2l']
+        #print final['mtime']
+        #print self.execute('SELECT max(mtime) FROM six_results')[0][0]
 
-    fnplot='DAres.%s.%s.%s.plot'%(self.LHCDescrip,sixdesktunes,turnse)
-    fnplot= os.path.join(dirname,fnplot)
-    fhplot = open(fnplot, 'w')
-    fn=0
-    for angle in np.unique(final['angle']):
-        fn+=1
-        study= final['name'][0]
-        idxangle=final['angle']==angle
-        idx     =idxangle&(final['alost1']!=0)
-        idxneg  =idxangle&(final['alost1']<0)
-        mini, smini = np.min(np.abs(final['alost1'][idx])), np.argmin(np.abs(final['alost1'][idx]))
-        maxi, smaxi = np.max(np.abs(final['alost1'][idx])), np.argmax(np.abs(final['alost1'][idx]))
-        toAvg = np.abs(final['alost1'][idx])
-        i = len(toAvg)
-        mean = np.mean(toAvg)
-        std = np.sqrt(np.mean(toAvg*toAvg)-mean**2)
-        idxneg = (final['angle']==angle)&(final['alost1']<0)
-        eqaper = np.where((final['alost2'] == final['Amin']))[0]
-        nega = len(final['alost1'][idxneg])
-        Amin = np.min(final['Amin'][idxangle])
-        Amax = np.max(final['Amax'][idxangle])
-
+        fnplot='DAres.%s.%s.%s.plot'%(self.LHCDescrip,sixdesktunes,turnse)
+        fnplot= os.path.join(dirname,fnplot)
+        fhplot = open(fnplot, 'w')
+        fn=0
         #for k in eqaper:
-        #  msg="Angle %d, Seed %d: Dynamic Aperture below:  %.2f Sigma"
+        #  msg="Angle %-4g, Seed %2d: Dynamic Aperture below:  %.2f Sigma"
         #  print msg %( final['angle'][k],final['seed'][k], final['Amin'][k])
+        for angle in np.unique(final['angle']):
+            fn+=1
+            study= final['name'][0]
+            idxangle=final['angle']==angle
+            idx     =idxangle&(final['alost1']!=0)
+            idxneg  =idxangle&(final['alost1']<0)
+            finalalost=np.abs(final['alost1'][idx])
+            imini=np.argmin(finalalost)
+            mini=finalalost[imini]
+            smini=final['seed'][idx][imini]
+            imaxi=np.argmax(finalalost)
+            maxi=finalalost[imaxi]
+            eqaper = np.where((final['alost2'] == final['Amin']))[0]
+            smaxi=final['seed'][idx][imaxi]
+            toAvg = np.abs(final['alost1'][idx])
+            i = len(toAvg)
+            mean = np.mean(toAvg)
+            std = np.sqrt(np.mean(toAvg*toAvg)-mean**2)
+            idxneg = (final['angle']==angle)&(final['alost1']<0)
+            nega = len(final['alost1'][idxneg])
+            Amin = np.min(final['Amin'][idxangle])
+            Amax = np.max(final['Amax'][idxangle])
 
-        if i == 0:
-          mini  = -Amax
-          maxi  = -Amax
-          mean  = -Amax
-        else:
-          if i < int(self.env_var['iend']):
-            maxi = -Amax
-          elif len(eqaper)>0:
-            mini = -Amin
-          print "Minimum:  %.2f  Sigma at Seed #: %d" %(mini, smini)
-          print "Maximum:  %.2f  Sigma at Seed #: %d" %(maxi, smaxi)
-          print "Average: %.2f Sigma" %(mean)
-        print "# of (Aav-A0)/A0 >10%%:  %d"  %nega
-        name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
-        if nostd:
-          fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
-        else:
-          fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax, std))
-    fhplot.close()
+            print "Angle:    %.2f"%angle
+            if i == 0:
+              print "Dynamic Aperture below:  %.2f Sigma"%Amax
+              mini  = -Amax
+              maxi  = -Amax
+              mean  = -Amax
+            else:
+              if i < int(self.env_var['iend']):
+                maxi = -Amax
+              elif len(eqaper)>0:
+                mini = -Amin
+              print "Minimum:  %.2f  Sigma at Seed #: %d" %(mini, smini)
+              print "Maximum:  %.2f  Sigma at Seed #: %d" %(maxi, smaxi)
+              print "Average: %.2f Sigma" %(mean)
+            print "# of (Aav-A0)/A0 >10%%:  %d"  %nega
+            name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
+            if nostd:
+              fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
+            else:
+              fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax, std))
+        fhplot.close()
+        print fnplot
 
 # -------------------------------- da_vs_turns -----------------------------------------------------------
-  def st_da_vst(self,data):
-    ''' store da vs turns data '''
+  def st_da_vst(self,data,recreate=False):
+    ''' store da vs turns data in database'''
     cols  = SQLTable.cols_from_dtype(data.dtype)
-    tab   = SQLTable(self.conn,'da_vsturn',cols,tables.Da_Vst.key)
+    tab   = SQLTable(self.conn,'da_vst',cols,tables.Da_Vst.key,recreate)
+    tab.insert(data)
+  def st_da_vst_fit(self,data,recreate=False):
+    ''' store da vs turns fit data in database'''
+    cols  = SQLTable.cols_from_dtype(data.dtype)
+    tab   = SQLTable(self.conn,'da_vst_fit',cols,tables.Da_Vst_Fit.key,recreate=False)
     tab.insert(data)
   def get_da_vst(self,seed,tune):
     '''get da vs turns data from DB'''
-    #change for new db version
+    turnsl=self.env_var['turnsl']
     (tunex,tuney)=tune
-    cmd="""SELECT *
-         FROM da_vsturn WHERE seed=%s and tunex=%s and tuney=%s
-         ORDER BY nturn"""
-    cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
-    ftype=[('seed',int),('tunex',float),('tuney',float),('DAwtrap',float),('DAstrap',float),('DAwsimp',float),('DAssimp',float),('DAstraperr',float),('DAstraperrang',float),('DAstraperramp',float),('nturn',float),('tlossmin',float),('mtime',float)]
-    data=np.fromiter(cur,dtype=ftype)
+    #check if table da_vst exists in database
+    if(self.check_table('da_vst')):
+      ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+      cmd="""SELECT *
+           FROM da_vst WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%d
+           ORDER BY nturn"""
+      cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
+      data=np.fromiter(cur,dtype=ftype)
+    else:
+      #02/11/2014 remaned table da_vsturn to da_vst - keep da_vsturn for backward compatibility - note this table did not include the turn_max!!!
+      #check if table da_vsturn exists in database
+      if(self.check_table('da_vsturn')):
+        ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+        cmd="""SELECT *
+             FROM da_vsturn WHERE seed=%s AND tunex=%s AND tuney=%s
+             ORDER BY nturn"""
+        cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
+        data=np.fromiter(cur,dtype=ftype)
+      #if tables da_vst and da_vsturn do not exist, return an empty list
+      else:      
+        data=[]
     return data
+  def get_da_vst_fit(self,seed,tune):
+    '''get da vs turns data from DB'''
+    turnsl=self.env_var['turnsl']
+    (tunex,tuney)=tune
+    if(self.check_table('da_vst_fit')):
+      ftype=[('seed',float),('tunex',float),('tuney',float),('turn_max',int),('fitdat',np.str_, 30),('fitdaterr',np.str_, 30),('fitndrop',float),('kappa',float),('dkappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float),('b1mean',float),('b1meanerr',float),('b1std',float),('mtime',float)]
+      cmd="""SELECT *
+           FROM da_vst_fit WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%d
+           ORDER BY fitdat,fitdaterr,fitndrop"""
+      cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
+      data=np.fromiter(cur,dtype=ftype)
+    #if tables da_vst_fit does not exist, return an empty list
+    else:      
+      data=[]
+    return data
+  def mk_da_vst_ang(self,seed,tune,turnstep):
+    """Da vs turns -- calculate da vs turns for divisors of angmax, 
+    e.g. for angmax=29+1 for divisors [1, 2, 3, 5, 6, 10]"""
+    RunDaVsTurnsAng(self,seed,tune,turnstep)
   def get_surv(self,seed,tune):
     '''get survival turns from DB calculated from emitI and emitII'''
     #change for new db version
     (tunex,tuney)=tune
     emit=float(self.env_var['emit'])
     gamma=float(self.env_var['gamma'])
+    turnsl=self.env_var['turnsl']
     cmd="""SELECT angle,emitx+emity,
          CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
-         FROM results WHERE seed=%s
+         FROM results WHERE seed=%s AND tunex=%g AND tuney=%g AND turn_max=%d
          ORDER BY angle,emitx+emity"""
-    cur=self.conn.cursor().execute(cmd%(seed))
+    cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
     ftype=[('angle',float),('sigma',float),('sturn',float)]
     data=np.fromiter(cur,dtype=ftype)
     data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
     angles=len(set(data['angle']))
     return data.reshape(angles,-1)
 
-  def plot_da_vst(self,seed,tune,ampmin,ampmax,tmax,slog):
-    """dynamic aperture vs number of turns, blue=simple average, red=weighted average"""
+  def plot_da_vst(self,seed,tune,fitdat,fitdaterr,ampmin,ampmax,tmax,slog,sfit,fitndrop):
+    """plot dynamic aperture vs number of turns where fitdat,fitdaterr (='dawsimp','dawsimperr') is the data
+    to be plotted. The data is plotted in blue and the fit in red"""
     data=self.get_da_vst(seed,tune)
     pl.close('all')
     pl.figure(figsize=(6,6))
-    pl.errorbar(data['DAstrap'],data['tlossmin'],xerr=data['DAstraperr'],fmt='bo',markersize=2,label='simple average')
-    pl.plot(data['DAwtrap'],data['tlossmin'],'ro',markersize=3,label='weighted average')
+    pl.errorbar(data[fitdat],data['tlossmin'],xerr=data[fitdaterr],fmt='bo',markersize=2,label=fitdat)
+    if(sfit):
+      fitdata=self.get_da_vst_fit(seed,tune)
+      fitdata=fitdata[fitdata['fitdat']==fitdat]
+      fitdata=fitdata[fitdata['fitdaterr']==fitdaterr]
+      fitdata=fitdata[np.abs(fitdata['fitndrop']-float(fitndrop))<1.e-6]
+      if(len(fitdata)==1):
+        pl.plot(fitdata['dinf']+fitdata['b0']/(np.log(data['tlossmin']**np.exp(-fitdata['b1mean']))**fitdata['kappa']),data['tlossmin'],'r-')
+      else:
+        print('Warning: no fit data available or data ambigious!')
     pl.title('seed '+str(seed))
     pl.xlim([ampmin,ampmax])
     pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)
