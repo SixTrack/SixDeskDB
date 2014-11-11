@@ -17,6 +17,7 @@
 import sqlite3, time, os, re, gzip, sys, glob
 from cStringIO import StringIO
 import copy
+from castor_script import downloader
 
 try:
   import numpy as np
@@ -87,6 +88,23 @@ def obj2num(s):
 def tune_dir(tune):
   """converts the list of tuples into the standard directory name, e.g. (62.31, 60.32) -> 62.31_60.32"""
   return str(tune[0])+'_'+str(tune[1])
+
+def amp_dir(amps):
+  """converts the list of tuples into the standard directory name, e.g. (2.0, 4.0) -> 2_4"""
+  ampdirs=[]
+  for aa in amps:
+    ampdirs.append('%s_%s'%(int(aa[0]),int(aa[1])))
+  return ampdirs
+
+def ang_dir(angs):
+  """converts the list of angle into the standard directory name, e.g. (85.5,87.0) -> ('85.5','87')"""
+  angdirs=[]
+  for aa in angs:
+    if(aa%1<1.e-8):
+      angdirs.append('%s'%(int(aa)))
+    else:
+      angdirs.append('%s'%(aa))
+  return angdirs
 
 def col_count(cur, table):
   sql = 'pragma table_info(%s)' % (table)
@@ -1603,6 +1621,22 @@ class SixDeskDB(object):
         fhplot.close()
         print fnplot
 
+# -------------------------------- turn by turn data -----------------------------------------------------------
+  def download_tbt(self,seed=None):
+    '''routine that downloads all the data and saves it in the sqltable sixtrack_tbt'''
+    studio     = self.LHCDescrip
+    if(seeds==None):
+      seeds    = self.get_db_seeds()
+    if(type(seeds) is int):
+      seeds=[seeds]
+    ampls      = amp_dir(self.get_amplitudes())
+    angles     = ang_dir(self.get_db_angles())
+    tunes      = '%s_%s'%(self.env_var['tunex'],self.env_var['tuney'])
+    exp_turns  = self.env_var['turnse']
+    np         = 2*self.env_var['sixdeskpairs']
+    tbt_data=downloader(studio, seeds, ampls, angles, tunes, exp_turns,np,setenv=True)
+    dbname=create_db(tbt_data,studio,seedinit,seedend,nsi,nsf,angles)
+    print ('Turn by turn tracking data successfully stored in %s.db' %dbname)
 # -------------------------------- da_vs_turns -----------------------------------------------------------
   def st_da_vst(self,data,recreate=False):
     ''' store da vs turns data in database'''
