@@ -88,6 +88,13 @@ def tune_dir(tune):
   """converts the list of tuples into the standard directory name, e.g. (62.31, 60.32) -> 62.31_60.32"""
   return str(tune[0])+'_'+str(tune[1])
 
+def amp_dir(amps):
+  """converts the list of tuples into the standard directory name, e.g. (2.0, 4.0) -> 2_4"""
+  ampdirs=[]
+  for aa in amps:
+    ampdirs.append('%s_%s'%(int(aa[0]),int(aa[1])))
+  return ampdirs
+
 def col_count(cur, table):
   sql = 'pragma table_info(%s)' % (table)
   cur.execute(sql)

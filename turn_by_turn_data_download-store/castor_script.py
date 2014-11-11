@@ -17,6 +17,7 @@ from read_fortbin import read_allfortbin
 import subprocess
 import time
 import string
+from deskdb import amp_dir
 
 def	pre_stage_castor(CASTOR_HOME,studio, seeds, ampls, angles, tunes, exp_turns):
 	'''prestages the files to be downloaded from CASTOR'''
@@ -121,3 +122,17 @@ def downloader(studio, seeds, ampls, angles, tunes, exp_turns,np):
 		tbt_data[mad_seed]=bunch
 	
 	return tbt_data
+
+# THE FOLLOWING FUNCTION CALLS ALL OF THE ABOVE ONES
+def db_downloader(db): 
+	'''routine that downloads all the data and stacks it up in a dedicated dictionary'''
+  #get env variables
+  studio     = db.LHCDescrip
+  seeds      = db.get_db_seeds()
+  ampls      = amp_dir(db.get_amplitudes())
+  angles     = db.get_angles()
+  tunes      = '%s_%s'%(db.env_var['tunex'],db.env_var['tuney'])
+  exp_turns  = db.env_var['turnse']
+  np         = 2*db.env_var['sixdeskpairs']
+
+  return downloader(studio, seeds, ampls, angles, tunes, exp_turns,np)

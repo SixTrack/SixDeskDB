@@ -16,10 +16,9 @@ tracking_parameters, castor_script, data_to_db, distribution, plot_results_modul
 '''
 
 from numpy import *
-from tracking_parameters import seeds_calc,amplitudes_calc,angles_calc
-from castor_script import downloader, remove_data
+from castor_script import db_downloader, remove_data
 from data_to_db import create_db
-
+                           
 '''The user should insert some a priori data (from sixdeskenv) about the simulation output that has to be analysed,
 in particular the following values:
 studio name, initial and end seeds for madx, normalised emittance, relative gamma factor,
@@ -30,44 +29,30 @@ relative momentum spread, particles number'''
 # USER INPUT BLOCK
 # --------------------------------------------------------------------------------------------------------------
 
-studio= LHCDescrip 			# study name
-tunes=  'tunex_tuney' 				    # tunes 											                      []
-exp_turns= turnsle  						        # order of magnitude of the number of turns tracked []
-seedinit=  istamad			        # initial seed for madx 							              []
-seedend=  iendmad 						        # end seed for madx 								                []
-emit= emit 							          # normalised emittance 								              [mm-rad]
-gamma_rel= gamma 					    # relative gamma factor 							              []
-nsi= ns1l 								          # initial amplitude in units of sigma 				      []
-nsf= ns2l 							          # end amplitude in units of sigma 					        []
-nstep= nsincl 							          # amplitude interval 								                []
-ki= kini; 								          # initial angle 									                  [deg]
-kmax= kmaxl 							          # end angle 										                    [deg]
-kend= kendl 							          # angles number 									                  []
-delta0= dpini 						      # relative momentum deviation amplitude 			      []
-np= sixdeskpairs								          # particles number 									                []
+#studio= LHCDescrip 			# study name
+#tunes=  'tunex_tuney'   # tunes 											                      []
+#exp_turns= turnsle  	  # order of magnitude of the number of turns tracked []
+#seedinit=  istamad		  # initial seed for madx 							              []
+#seedend=  iendmad 		  # end seed for madx 								                []
+#emit= emit 						  # normalised emittance 								              [mm-rad]
+#gamma_rel= gamma 			  # relative gamma factor 							              []
+#nsi= ns1l 						  # initial amplitude in units of sigma 				      []
+#nsf= ns2l 						  # end amplitude in units of sigma 					        []
+#nstep= nsincl 				  # amplitude interval 								                []
+#ki= kini; 						  # initial angle 									                  [deg]
+#kmax= kmaxl 					  # end angle 										                    [deg]
+#kend= kendl 					  # angles number 									                  []
+#delta0= dpini 				  # relative momentum deviation amplitude 			      []
+#np= sixdeskpairs				# particles number 									                []
 
-# --------------------------------------------------------------------------------------------------------------
-# END OF USER INPUT BLOCK
-# --------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
+db=SixDeskDB('job_tracking_bb_2.db')
 
 # --------------------------------------------------------------------------------------------------------------
 # DOWLOAD DATA BLOCK
 # --------------------------------------------------------------------------------------------------------------
 
-np=2*np
-
-seeds=seeds_calc(seedinit,seedend)
-ampls=amplitudes_calc(nsi,nstep,nsf)
-angles=angles_calc(ki,kmax,kend)
-
-tbt_data=downloader(studio, seeds, ampls, angles, tunes, exp_turns,np)
-remove_data(studio)
+tbt_data=db_downloader(db)
+#remove_data(studio)
 
 print ('Download of the data from CASTOR completed')
 
