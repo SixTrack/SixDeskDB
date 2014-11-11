@@ -19,6 +19,7 @@ from numpy import *
 from castor_script import db_downloader, remove_data
 from data_to_db import create_db
 from deskdb import SixDeskDB                           
+
 '''The user should insert some a priori data (from sixdeskenv) about the simulation output that has to be analysed,
 in particular the following values:
 studio name, initial and end seeds for madx, normalised emittance, relative gamma factor,
@@ -46,7 +47,24 @@ relative momentum spread, particles number'''
 #np= sixdeskpairs       # particles number                                  []
 
 db=SixDeskDB('job_fma_bb_2_2e4.db')
+=======
+#studio= LHCDescrip 			# study name
+#tunes=  'tunex_tuney'   # tunes 											                      []
+#exp_turns= turnsle  	  # order of magnitude of the number of turns tracked []
+#seedinit=  istamad		  # initial seed for madx 							              []
+#seedend=  iendmad 		  # end seed for madx 								                []
+#emit= emit 						  # normalised emittance 								              [mm-rad]
+#gamma_rel= gamma 			  # relative gamma factor 							              []
+#nsi= ns1l 						  # initial amplitude in units of sigma 				      []
+#nsf= ns2l 						  # end amplitude in units of sigma 					        []
+#nstep= nsincl 				  # amplitude interval 								                []
+#ki= kini; 						  # initial angle 									                  [deg]
+#kmax= kmaxl 					  # end angle 										                    [deg]
+#kend= kendl 					  # angles number 									                  []
+#delta0= dpini 				  # relative momentum deviation amplitude 			      []
+#np= sixdeskpairs				# particles number 									                []
 
+db=SixDeskDB('job_tracking_bb_2.db')
 # --------------------------------------------------------------------------------------------------------------
 # DOWLOAD DATA BLOCK
 # --------------------------------------------------------------------------------------------------------------
