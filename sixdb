@@ -62,7 +62,7 @@ class SixDB(object):
         """Obtain help on commands
 Usage: sixdb <cmd> <help>
         """
-        cmds="load_dir info da  da_vs_turns plot_da_vs_turns plot_comp_da_vs_turns mad interactive".split()
+        cmds="load_dir info da  da_vs_turns plot_da_vs_turns mad interactive".split()
         msg="""sixdb: command line interface of SixDeskDB
 Usage: sixdb <study> <cmd> <options> or sixdb <cmd> to get additional help
         """
