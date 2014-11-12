@@ -17,7 +17,6 @@
 import sqlite3, time, os, re, gzip, sys, glob
 from cStringIO import StringIO
 import copy
-from castor_script import downloader
 
 try:
   import numpy as np
