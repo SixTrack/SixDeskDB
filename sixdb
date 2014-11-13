@@ -62,7 +62,8 @@ class SixDB(object):
         """Obtain help on commands
 Usage: sixdb <cmd> <help>
         """
-        cmds="load_dir info da da_vs_turns plot_da_vs_turns mad interactive".split()
+        cmds=['load_dir', 'info', 'da', 'da_vs_turns', 'plot_da_vs_turns',
+               'mad', 'interactive','set']
         msg="""sixdb: command line interface of SixDeskDB
 Usage: sixdb <study> <cmd> <options> or sixdb <cmd> to get additional help
         """
@@ -269,7 +270,7 @@ db.plot_polar_col('sturns1',1)
         values=self.args[3::2]
         if len(keys)==len(values):
              lst=zip(keys,values)
-             SixDeskDB(study).set_variable(lst,time.time())
+             SixDeskDB(study).set_variables(lst,time.time())
         else:
              print "Error: Unmatched name value arguments"
     def missing_jobs(self,study):

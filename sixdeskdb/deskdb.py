@@ -293,17 +293,21 @@ class SixDeskDB(object):
 
   def info(self):
     ''' provide info of study'''
-    var = ['LHCDescrip', 'platform', 'madlsfq', 'lsfq', 'runtype', 'e0',
-    'gamma', 'beam', 'dpini', 'istamad', 'iendmad', 'ns1l', 'ns2l', 'nsincl', 
-    'sixdeskpairs', 'turnsl', 'turnsle', 'writebinl',
-    'kstep', 'kendl', 'kmaxl',
-    'trackdir', 'sixtrack_input']
+    var = [['LHCDescrip'], ['platform', 'madlsfq', 'lsfq'],
+           ['runtype', 'e0', 'gamma'], ['beam', 'dpini',],
+           ['istamad', 'iendmad'],
+           ['ns1l', 'ns2l', 'nsincl', 'sixdeskpairs'],
+           ['tunex','tunex1','deltax'],
+           ['tuney','tuney1','deltay'],
+           ['turnsl', 'turnsle', 'writebinl',],
+           ['kstep', 'kendl', 'kmaxl',],
+           ['trackdir'], ['sixtrack_input']]
     env_var = self.env_var
-    for keys in var:
-      val=env_var[keys]
-      if isfloat(val):
-          val="%6g"%float(val)
-      print '%-15s %s'%(keys,val)
+    for vl in var:
+      for keys in vl:
+         val=env_var[keys]
+         print '%-15s'%('%s=%s;'%(keys,repr(val))),
+      print
 
   def st_mad6t_run(self):
     ''' store mad run files'''
@@ -985,7 +989,14 @@ class SixDeskDB(object):
 
   def get_db_seeds(self):
     ''' get seeds from DB'''
-    out=zip(*self.execute('SELECT DISTINCT seed FROM six_input'))[0]
+    sql='SELECT DISTINCT seed FROM six_input ORDER BY seed'
+    out=zip(*self.execute(sql))[0]
+    return out
+
+  def get_db_tunes(self):
+    ''' get tunes from DB'''
+    sql='SELECT DISTINCT tunex,tuney FROM six_input ORDER BY tunex,tuney'
+    out=self.execute(sql)
     return out
 
   def check_seeds(self):
@@ -1018,7 +1029,7 @@ class SixDeskDB(object):
 
   def get_db_angles(self):
     '''get angles from DB'''
-    out=zip(*self.execute('SELECT DISTINCT angle FROM six_input'))[0]
+    out=zip(*self.execute('SELECT DISTINCT angle FROM six_input ORDER by ANGLE'))[0]
     return out
 
   def get_amplitudes(self):
@@ -1384,9 +1395,9 @@ class SixDeskDB(object):
     final=[]
     sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 AND turn_max=%d'%(names,turnsl)
     LHCDescrip=self.LHCDescrip
-    for tunex,tuney in self.get_tunes():
+    for tunex,tuney in self.get_db_tunes():
         sixdesktunes="%s_%s"%(tunex,tuney)
-        sql1+=' AND tunex=%s AND tuney=%s'%(tunex,tuney)
+        sql1+=' AND tunex=%s AND tuney=%s '%(tunex,tuney)
         for angle in angles:
             fndot='DAres.%s.%s.%s.%d'%(LHCDescrip,sixdesktunes,turnse,anumber)
             fndot=os.path.join(dirname,fndot)
@@ -1402,7 +1413,10 @@ class SixDeskDB(object):
                 alost2 = 0.
                 achaos = 0
                 achaos1 = 0
-                sql=sql1+' AND seed=%s AND angle=%s ORDER BY amp1'%(seed,angle)
+                sql=sql1+' AND seed=%s '%seed
+                #sql+=' AND ROUND(angle,5)=ROUND(%s,5) '%angle
+                sql+=' AND angle=%s '%angle
+                sql+=' ORDER BY amp1 '
                 if self.debug:
                     print sql
                 inp=np.array(self.execute(sql),dtype=rectype)
@@ -1531,7 +1545,7 @@ class SixDeskDB(object):
     datab=SQLTable(self.conn,'da_post',cols)
     turnsl=self.env_var['turnsl']
     turnse=self.env_var['turnse']
-    for tunex,tuney in self.get_tunes():
+    for tunex,tuney in self.get_db_tunes():
         sixdesktunes="%s_%s"%(tunex,tuney)
         wh="turnsl=%s AND tunex=%s AND tuney=%s"%(turnsl,tunex,tuney)
         final=datab.select(where=wh,orderby='angle,seed')
