@@ -1621,21 +1621,21 @@ class SixDeskDB(object):
         print fnplot
 
 # -------------------------------- turn by turn data -----------------------------------------------------------
-  def download_tbt(self,seed=None):
-    '''routine that downloads all the data and saves it in the sqltable sixtrack_tbt'''
-    studio     = self.LHCDescrip
-    if(seeds==None):
-      seeds    = self.get_db_seeds()
-    if(type(seeds) is int):
-      seeds=[seeds]
-    ampls      = amp_dir(self.get_amplitudes())
-    angles     = ang_dir(self.get_db_angles())
-    tunes      = '%s_%s'%(self.env_var['tunex'],self.env_var['tuney'])
-    exp_turns  = self.env_var['turnse']
-    np         = 2*self.env_var['sixdeskpairs']
-    tbt_data=downloader(studio, seeds, ampls, angles, tunes, exp_turns,np,setenv=True)
-    dbname=create_db(tbt_data,studio,seedinit,seedend,nsi,nsf,angles)
-    print ('Turn by turn tracking data successfully stored in %s.db' %dbname)
+#  def download_tbt(self,seed=None):
+#    '''routine that downloads all the data and saves it in the sqltable sixtrack_tbt'''
+#    studio     = self.LHCDescrip
+#    if(seeds==None):
+#      seeds    = self.get_db_seeds()
+#    if(type(seeds) is int):
+#      seeds=[seeds]
+#    ampls      = amp_dir(self.get_amplitudes())
+#    angles     = ang_dir(self.get_db_angles())
+#    tunes      = '%s_%s'%(self.env_var['tunex'],self.env_var['tuney'])
+#    exp_turns  = self.env_var['turnse']
+#    np         = 2*self.env_var['sixdeskpairs']
+#    tbt_data=downloader(studio, seeds, ampls, angles, tunes, exp_turns,np,setenv=True)
+#    dbname=create_db(tbt_data,studio,seedinit,seedend,nsi,nsf,angles)
+#    print ('Turn by turn tracking data successfully stored in %s.db' %dbname)
 # -------------------------------- da_vs_turns -----------------------------------------------------------
   def st_da_vst(self,data,recreate=False):
     ''' store da vs turns data in database'''
