@@ -1763,7 +1763,6 @@ class SixDeskDB(object):
     sy=s*np.sin(a*np.pi/180)
     sxstab=s[t==tmax]*np.cos(a[t==tmax]*np.pi/180)
     systab=s[t==tmax]*np.sin(a[t==tmax]*np.pi/180)
-    pl.figure(figsize=(6,6))
     pl.scatter(sx,sy,20*t/tmax,marker='o',color='b',edgecolor='none')
     pl.scatter(sxstab,systab,4,marker='o',color='r',edgecolor='none')
     pl.title('seed '+str(seed),fontsize=12)

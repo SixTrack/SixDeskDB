@@ -498,6 +498,7 @@ def PlotDaVsTurns(db,ldat,ldaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlo
     for tune in db.get_tunes():
       dirname=db.mk_analysis_dir(seed,tune)#directory struct already created in clean_dir_da_vst, only get dir name (string) here
       pl.close('all')
+      pl.figure(figsize=(6,6))
       db.plot_surv_2d(seed,tune,ampmaxsurv)#suvival plot
       pl.savefig('%s/DAsurv.%s.png'%(dirname,turnse))
       print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
