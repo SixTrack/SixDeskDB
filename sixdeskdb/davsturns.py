@@ -337,7 +337,7 @@ def plot_comp_da_vst(db,dbcomp,ldat,ldaterr,lblname,complblname,seed,tune,ampmin
 def clean_dir_da_vst(db,files):
   '''create directory structure and if force=true delete old files of da vs turns analysis'''
   for seed in db.get_seeds():
-    for tune in db.get_tunes():
+    for tune in db.get_db_tunes():
       pp=db.mk_analysis_dir(seed,tune)# create directory
       if(len(files)>0):#delete old plots and files
         for filename in files:
@@ -359,7 +359,7 @@ def RunDaVsTurnsAng(db,seed,tune,turnstep):
   if(seed not in db.get_db_seeds()):
     print('WARNING: Seed %s is missing in database !!!'%seed)
     sys.exit(0)
-  if(tune not in db.get_tunes()):
+  if(tune not in db.get_db_tunes()):
     print('WARNING: tune %s is missing in database !!!'%tune)
     sys.exit(0)
   turnsl=db.env_var['turnsl']#get turnsl for outputfile names
@@ -399,7 +399,7 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
   for seed in db.get_db_seeds():
     seed=int(seed)
     print('analyzing seed {0} ...').format(str(seed))
-    for tune in db.get_tunes():
+    for tune in db.get_db_tunes():
       print('analyzing tune {0} ...').format(str(tune))
       dirname=db.mk_analysis_dir(seed,tune)#directory struct already created in clean_dir_da_vst, only get dir name (string) here
       print('... get survival data')
@@ -453,7 +453,7 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
           print('Error in RunDaVsTurns: fitskap,fitekap and fitdkap must be an float values! - Aborting!')
           sys.exit(0)
         if((np.arange(fitskap,fitekap+fitdkap,fitdkap)).any()):
-          for tune in db.get_tunes():
+          for tune in db.get_db_tunes():
             print('fit da vs turns for tune {0} ...').format(str(tune))
             fitdaout=mk_da_vst_fit(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap)
             print('.... save fitdata in database')
@@ -495,7 +495,7 @@ def PlotDaVsTurns(db,ldat,ldaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlo
     print('!!! Seeds are missing in database !!!')
   for seed in db.get_db_seeds():
     seed=int(seed)
-    for tune in db.get_tunes():
+    for tune in db.get_db_tunes():
       dirname=db.mk_analysis_dir(seed,tune)#directory struct already created in clean_dir_da_vst, only get dir name (string) here
       pl.close('all')
       db.plot_surv_2d(seed,tune,ampmaxsurv)#suvival plot
@@ -536,8 +536,8 @@ def PlotCompDaVsTurns(db,dbcomp,ldat,ldaterr,lblname,complblname,ampmaxsurv,ampm
     print('Seeds are missing in database!')
   for seed in db.get_db_seeds():
     seed=int(seed)
-    for tune in db.get_tunes():
-      if(seed in dbcomp.get_db_seeds() and tune in db.get_tunes()):
+    for tune in db.get_db_tunes():
+      if(seed in dbcomp.get_db_seeds() and tune in db.get_db_tunes()):
         dirname=db.mk_analysis_dir(seed,tune)#directories already created with 
         pl.close('all')
         plot_surv_2d_comp(db,dbcomp,lblname,complblname,seed,tune,ampmaxsurv)
