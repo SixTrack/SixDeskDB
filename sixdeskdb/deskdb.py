@@ -290,6 +290,9 @@ class SixDeskDB(object):
     print "Inserting or updating %d variables"%(len(toupdate))
     tab.insertl(toupdate)
     self.load_env()
+  def get_result_colums(self):
+    cols=zip(*self.execute('pragma table_info(results)'))[1]
+    return [l.split(':')[0] for l in cols]
 
   def info(self):
     ''' provide info of study'''
@@ -1389,8 +1392,8 @@ class SixDeskDB(object):
     ns2l=self.env_var['ns2l']
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     anumber=1
-    angles=self.get_angles()
-    seeds=self.get_seeds()
+    angles=self.get_db_angles()
+    seeds=self.get_db_seeds()
     mtime=self.execute('SELECT max(mtime) from results')[0][0]
     final=[]
     sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 AND turn_max=%d'%(names,turnsl)
