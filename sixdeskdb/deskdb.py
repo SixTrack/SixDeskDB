@@ -1556,10 +1556,12 @@ class SixDeskDB(object):
             an_mtime=final['mtime'].min()
             res_mtime=self.execute('SELECT max(mtime) FROM six_results')[0][0]
             if res_mtime>an_mtime or force is True:
-                self.read10b()
+                # self.read10b()
+                postProcessing.readplotb(self)
                 final=datab.select(where=wh,orderby='angle,seed')
         else:
-          self.read10b()
+          # self.read10b()
+          postProcessing.readplotb(self)
           final=datab.select(where=wh,orderby='angle,seed')
           if len(final)==0:
               print "Error: No data available for analysis for `%s`"%wh
