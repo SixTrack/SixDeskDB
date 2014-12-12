@@ -509,7 +509,7 @@ class SixDeskDB(object):
            if mtime10 > mtime10_old and os.path.getsize(f10)>0:
              countl = 1
              for lines in gzip.open(f10,"r"):
-                rows10.append([six_id,countl]+lines.split()+[mtime10])
+                rows10.append([six_id,countl]+lines.split()+[mtime10]+[0]*10+[""])
                 countl += 1
              count10 += 1
         if len(rows3) == 6000:
