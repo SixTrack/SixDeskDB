@@ -31,6 +31,7 @@ except ImportError:
 
 import tables
 import lsfqueue
+import postProcessing
 import madout
 from sqltable import SQLTable
 for t in (np.int8, np.int16, np.int32, np.int64,np.uint8, np.uint16, np.uint32, np.uint64):

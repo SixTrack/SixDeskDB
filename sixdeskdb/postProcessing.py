@@ -10,17 +10,11 @@ import numpy as np
 import os
 from plots import *
 import sqlite3
+from sqltable import SQLTable
 
 
 
-def readplotb(studyName):
-    database='%s.db'%(studyName)
-    if os.path.isfile(database):
-        sd=SixDeskDB(studyName)
-    else:
-        print "ERROR: file  %s does not exists!" %(database)
-        sys.exit()
-
+def readplotb(sd):
     dirname=sd.mk_analysis_dir()
     rectype=[('six_input_id','int'), ('row_num','int'),
              ('seed','int'), ('qx','float'),('qy','float'),
@@ -152,7 +146,6 @@ def readplotb(studyName):
 
                 sigma=np.sqrt(betx[0]*Elhc/Einj)
 
-                
                 xidx=(betx>zero) & (emitx>zero)
                 yidx=(bety>zero) & (emity>zero)
                 # xidx, yidx = len(betx), len(bety)
@@ -162,12 +155,7 @@ def readplotb(studyName):
                 # itest = len(betx)
                 iel=itest-1    
                 rat=0
-    #############################################
-                # if sigx1[0]>0:
-                #     rat=sigy1[0]**2*betx[0]/(sigx1[0]**2*bety[0])
-                # if sigx1[0]**2*bety[0]<sigy1[0]**2*betx[0]:
-                #     rat=2
-    #############################################
+
                 if abs(emitx[0]) < epsilon and abs(sigx1[0])>epsilon and bety > epsilon:  
                     rat=sigy1[0]**2*betx[0]/(sigx1[0]**2*bety[0])
                 if abs(emity[0]) > abs(emitx[0]) or rat > 1e-10:
@@ -217,12 +205,8 @@ def readplotb(studyName):
 
                 amin, amax = 1/epsilon, zero
                 achaosPlot, achaos1Plot = achaos, achaos1
-                # f30 = open('fort.30.%d.%d' %(nSeed,anumber),'a')                
-                for i in range(0,iel+1):
-                    # if i==0:
-                    #     achaos=rad*sigx1[i] #OJO, NOMES PER READ10B
-                    #     achaos1 =achaos
 
+                for i in range(0,iel+1):
                     if abs(sigx1[i]) > epsilon and sigx1[i]<amin:
                             amin = sigx1[i]
                     if abs(sigx1[i]) > epsilon and sigx1[i]>amax:
@@ -244,8 +228,6 @@ def readplotb(studyName):
                           al[j-1] = rad*sigx1[i]
                     if i>0:
                       achaosPlot, achaos1Plot = achaos, achaos1
-                #     f30.write("%s\t%f %f %f %f %f\n"%( name1[:39],rad*sigx1[i],distp[i],achaosPlot,alost2,rad1*sigxavgnld[i]))
-                # f30.close()
 
                 if iin != -999 and iend == -999 : iend=iel  
                 if iin != -999 and iend > iin :    
@@ -313,111 +295,3 @@ def readplotb(studyName):
     # datab=SQLTable(sd.conn,'da_post',cols,tables.Da_Post.key,recreate=True)
     datab=SQLTable(sd.conn,'da_post',cols)
     datab.insertl(final)
-
-def mk_da(studyName,force=False,nostd=False):
-    database='%s.db'%(studyName)
-    if os.path.isfile(database):
-        sd=SixDeskDB(studyName)
-    else:
-        print "ERROR: file  %s does not exists!" %(database)
-        sys.exit()
-
-    dirname=sd.mk_analysis_dir()
-    cols=SQLTable.cols_from_fields(tables.Da_Post.fields)
-    datab=SQLTable(sd.conn,'da_post',cols)
-    final=datab.select(orderby='angle,seed')
-    turnse=sd.env_var['turnse']
-    tunex=float(sd.env_var['tunex'])
-    tuney=float(sd.env_var['tuney'])
-    sixdesktunes="%g_%g"%(tunex,tuney)
-    ns1l=sd.env_var['ns1l']
-    ns2l=sd.env_var['ns2l']
-    if len(final)>0:
-        an_mtime=final['mtime'].min()
-        res_mtime=sd.execute('SELECT max(mtime) FROM six_results')[0][0]
-        if res_mtime>an_mtime or force is True:
-            readplotb(studyName)
-            final=datab.select(orderby='angle,seed')
-    else:
-      readplotb(studyName)
-      final=datab.select(orderby='angle,seed')
-
-    fnplot='DAres.%s.%s.%s.plot'%(sd.LHCDescrip,sixdesktunes,turnse)
-    fnplot= os.path.join(dirname,fnplot)
-    fhplot = open(fnplot, 'w')
-    fn=0
-
-    for angle in np.unique(final['angle']):
-        fn+=1
-        study= final['name'][0]
-        idxangle=final['angle']==angle
-        idx     =idxangle&(final['alost1']!=0)
-        idxneg  =idxangle&(final['alost1']<0)
-        mini, smini = np.min(np.abs(final['alost1'][idx])), np.argmin(np.abs(final['alost1'][idx]))
-        maxi, smaxi = np.max(np.abs(final['alost1'][idx])), np.argmax(np.abs(final['alost1'][idx]))
-        toAvg = np.abs(final['alost1'][idx])
-        i = len(toAvg)
-        mean = np.mean(toAvg)
-        std = np.sqrt(np.mean(toAvg*toAvg)-mean**2)
-        idxneg = (final['angle']==angle)&(final['alost1']<0)
-        eqaper = np.where((final['alost2'] == final['Amin']))[0]
-        nega = len(final['alost1'][idxneg])
-        Amin = np.min(final['Amin'][idxangle])
-        Amax = np.max(final['Amax'][idxangle])
-
-        #for k in eqaper:
-        #  msg="Angle %d, Seed %d: Dynamic Aperture below:  %.2f Sigma"
-        #  print msg %( final['angle'][k],final['seed'][k], final['Amin'][k])
-
-        if i == 0:
-          mini  = -Amax
-          maxi  = -Amax
-          mean  = -Amax
-        else:
-          if i < int(sd.env_var['iend']):
-            maxi = -Amax
-          elif len(eqaper)>0:
-            mini = -Amin
-          print "Minimum:  %.2f  Sigma at Seed #: %d" %(mini, smini)
-          print "Maximum:  %.2f  Sigma at Seed #: %d" %(maxi, smaxi)
-          print "Average: %.2f Sigma" %(mean)
-        print "# of (Aav-A0)/A0 >10%%:  %d" %nega
-        name2 = "DAres.%s.%s.%s"%(sd.LHCDescrip,sixdesktunes,turnse)
-        if nostd:
-          fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
-        else:
-          fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax, std))
-    fhplot.close()
-
-
-
-if __name__ == "__main__":
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
-    except getopt.error, msg:
-        print msg
-        print "for help use --help"
-        sys.exit(2)
-    for o, a in opts:
-        if o in ("-h", "--help"):
-            print "use: DA_FullStat_public <study_name>"
-            sys.exit(0)
-    if len(args)<1 :
-        print "too few options: please provide <study_name>"
-        sys.exit()
-    if len(args)>1 :
-        print "too many options: please provide only <study_name>"
-        sys.exit()
-    #mk_da(sys.argv[1], force=True)
-    readplotb(sys.argv[1])
-    path='job_tracking/1/simul/62.31_60.32/6-14/e5/.1'
-    nturns=100000
-    a0 = 6
-    a1 = 14
-    seed=3
-    angle=19
-    # plot_averem( '%s/fort10.tgz'%path,seed,angle,nturns,a0,a1)
-    # plot_distance( '%s/fort10.tgz'%path,seed,angle,nturns,a0,a1)
-    # plot_maxslope('%s/fort10.tgz'%path,seed,angle,nturns,a0,a1)
-    # plot_smear('%s/fort10.tgz'%path,seed,angle,nturns,a0,a1)
-    # plot_survival('%s/fort10.tgz'%path,seed,angle,nturns,a0,a1)
