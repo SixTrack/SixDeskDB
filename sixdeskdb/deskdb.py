@@ -307,20 +307,27 @@ class SixDeskDB(object):
     print "Inserting or updating %d variables"%(len(toupdate))
     tab.insertl(toupdate)
     self.load_env()
+  def get_result_colums(self):
+    cols=zip(*self.execute('pragma table_info(results)'))[1]
+    return [l.split(':')[0] for l in cols]
 
   def info(self):
     ''' provide info of study'''
-    var = ['LHCDescrip', 'platform', 'madlsfq', 'lsfq', 'runtype', 'e0',
-    'gamma', 'beam', 'dpini', 'istamad', 'iendmad', 'ns1l', 'ns2l', 'nsincl', 
-    'sixdeskpairs', 'turnsl', 'turnsle', 'writebinl',
-    'kstep', 'kendl', 'kmaxl',
-    'trackdir', 'sixtrack_input']
+    var = [['LHCDescrip'], ['platform', 'madlsfq', 'lsfq'],
+           ['runtype', 'e0', 'gamma'], ['beam', 'dpini',],
+           ['istamad', 'iendmad'],
+           ['ns1l', 'ns2l', 'nsincl', 'sixdeskpairs'],
+           ['tunex','tunex1','deltax'],
+           ['tuney','tuney1','deltay'],
+           ['turnsl', 'turnsle', 'writebinl',],
+           ['kstep', 'kendl', 'kmaxl',],
+           ['trackdir'], ['sixtrack_input']]
     env_var = self.env_var
-    for keys in var:
-      val=env_var[keys]
-      if isfloat(val):
-          val="%6g"%float(val)
-      print '%-15s %s'%(keys,val)
+    for vl in var:
+      for keys in vl:
+         val=env_var[keys]
+         print '%-15s'%('%s=%s;'%(keys,repr(val))),
+      print
 
   def st_mad6t_run(self):
     ''' store mad run files'''
@@ -1002,7 +1009,14 @@ class SixDeskDB(object):
 
   def get_db_seeds(self):
     ''' get seeds from DB'''
-    out=zip(*self.execute('SELECT DISTINCT seed FROM six_input'))[0]
+    sql='SELECT DISTINCT seed FROM six_input ORDER BY seed'
+    out=zip(*self.execute(sql))[0]
+    return out
+
+  def get_db_tunes(self):
+    ''' get tunes from DB'''
+    sql='SELECT DISTINCT tunex,tuney FROM six_input ORDER BY tunex,tuney'
+    out=self.execute(sql)
     return out
 
   def check_seeds(self):
@@ -1035,7 +1049,7 @@ class SixDeskDB(object):
 
   def get_db_angles(self):
     '''get angles from DB'''
-    out=zip(*self.execute('SELECT DISTINCT angle FROM six_input'))[0]
+    out=zip(*self.execute('SELECT DISTINCT angle FROM six_input ORDER by ANGLE'))[0]
     return out
 
   def get_amplitudes(self):
@@ -1110,7 +1124,7 @@ class SixDeskDB(object):
     for job in self.get_missing_jobs():
        seed,simul,tunex,tuney,amp1,amp2,turns,angle=job
        tmp="%s%%%s%%s%%%s%%%s%%%s%%%s"
-       ranges="%g_%g"%(amp1,amp2)
+       ranges="%s_%s"%(amp1,amp2)
        tunes="%s_%s"%(tunex,tuney)
        missing.add(tmp%(name,seed,tunes,ranges,turns,angle))
     if len(missing)==0:
@@ -1395,15 +1409,15 @@ class SixDeskDB(object):
     ns2l=self.env_var['ns2l']
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     anumber=1
-    angles=self.get_angles()
-    seeds=self.get_seeds()
+    angles=self.get_db_angles()
+    seeds=self.get_db_seeds()
     mtime=self.execute('SELECT max(mtime) from results')[0][0]
     final=[]
     sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 AND turn_max=%d'%(names,turnsl)
     LHCDescrip=self.LHCDescrip
-    for tunex,tuney in self.get_tunes():
-        sixdesktunes="%g_%g"%(tunex,tuney)
-        sql1+=' AND tunex=%g AND tuney=%g'%(tunex,tuney)
+    for tunex,tuney in self.get_db_tunes():
+        sixdesktunes="%s_%s"%(tunex,tuney)
+        sql1+=' AND tunex=%s AND tuney=%s '%(tunex,tuney)
         for angle in angles:
             fndot='DAres.%s.%s.%s.%d'%(LHCDescrip,sixdesktunes,turnse,anumber)
             fndot=os.path.join(dirname,fndot)
@@ -1419,7 +1433,10 @@ class SixDeskDB(object):
                 alost2 = 0.
                 achaos = 0
                 achaos1 = 0
-                sql=sql1+' AND seed=%g AND angle=%g ORDER BY amp1'%(seed,angle)
+                sql=sql1+' AND seed=%s '%seed
+                #sql+=' AND ROUND(angle,5)=ROUND(%s,5) '%angle
+                sql+=' AND angle=%s '%angle
+                sql+=' ORDER BY amp1 '
                 if self.debug:
                     print sql
                 inp=np.array(self.execute(sql),dtype=rectype)
@@ -1548,9 +1565,9 @@ class SixDeskDB(object):
     datab=SQLTable(self.conn,'da_post',cols)
     turnsl=self.env_var['turnsl']
     turnse=self.env_var['turnse']
-    for tunex,tuney in self.get_tunes():
-        sixdesktunes="%g_%g"%(tunex,tuney)
-        wh="turnsl=%d AND tunex=%g AND tuney=%g"%(turnsl,tunex,tuney)
+    for tunex,tuney in self.get_db_tunes():
+        sixdesktunes="%s_%s"%(tunex,tuney)
+        wh="turnsl=%s AND tunex=%s AND tuney=%s"%(turnsl,tunex,tuney)
         final=datab.select(where=wh,orderby='angle,seed')
         if len(final)>0:
             an_mtime=final['mtime'].min()
@@ -1561,6 +1578,9 @@ class SixDeskDB(object):
         else:
           self.read10b()
           final=datab.select(where=wh,orderby='angle,seed')
+          if len(final)==0:
+              print "Error: No data available for analysis for `%s`"%wh
+              continue
 
         ns1l=self.env_var['ns1l']
         ns2l=self.env_var['ns2l']
@@ -1701,7 +1721,7 @@ class SixDeskDB(object):
     turnsl=self.env_var['turnsl']
     cmd="""SELECT angle,emitx+emity,
          CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
-         FROM results WHERE seed=%s AND tunex=%g AND tuney=%g AND turn_max=%d
+         FROM results WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%s
          ORDER BY angle,emitx+emity"""
     cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
     ftype=[('angle',float),('sigma',float),('sturn',float)]
