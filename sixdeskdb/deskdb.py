@@ -1099,7 +1099,36 @@ class SixDeskDB(object):
               else:
                 data[(seed,name)][anbn[canbn]]=[float(ab)]
               canbn=canbn+1
-    return data 
+    return data
+
+  def get_anbn_fort3mad(self):
+    '''returns a dictionary of which multipolar errors are turned on
+       for each element based on fort.3.mad. E.g to get the 'a1' 
+       errors of element 'mb.a8r3.b1..1': dict['mb.a8r3.b1']['a1']'''
+    cmd="""SELECT path,content FROM files
+            WHERE path='sixtrack_input/w8/job_tracking_bb_2/fort.3.mad'
+            ORDER BY path"""
+    [(fn,fb3)]=self.execute(cmd)
+    name,data='',{}
+    anbn=[]
+    for n in range(20): anbn.extend(['b'+str(n+1)+'rms','b'+str(n+1),'a'+str(n+1)+'rms','a'+str(n+1)])
+    f3=gzip.GzipFile(fileobj=StringIO(fb3))
+    for line in f3:
+      ll=line.split()
+      if len(ll)==3:#condition for line=name
+        name=ll[0]
+        if name!='':
+          canbn=0#counts the lines after each name
+        if name not in data: data[name]={}
+      if len(ll)==4:
+          for ab in ll:
+            if anbn[canbn] in data[name]:
+              data[name][anbn[canbn]].append(float(ab))
+            else:
+              data[name][anbn[canbn]]=[float(ab)]
+            canbn=canbn+1
+    return data
+ 
   def gen_job_params(self):
     '''generate jobparams based on values '''
     if self.env_var['long']==1:
