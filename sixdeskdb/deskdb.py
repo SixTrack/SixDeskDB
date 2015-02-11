@@ -1074,6 +1074,32 @@ class SixDeskDB(object):
     '''get tunes from env variables'''
     return list(self.iter_tunes())
 
+  def get_anbn_fort16(self):
+    '''returns a dictionary of the multipolar errors asigned to each element
+    based on fort.16. E.g to get the 'a1' errors of element 'mb.a8r3.b1..1' 
+    in seed '1': dict[(1,'mb.a8r3.b1..1')]['a1']
+    As 'mb.a8r3.b1..1' can occur multiple times, dict[(1,'mb.a8r3.b1..1')]['a1']
+    returns a list of the values of all occurances.'''
+    lst=self.execute('SELECT seed,fort16 FROM mad6t_results ORDER by seed')
+    data,name={},''
+    anbn=['b'+str(n+1) for n in range(20)]+['a'+str(n+1) for n in range(20)]
+    for seed,fb16 in lst:
+      f16=gzip.GzipFile(fileobj=StringIO(fb16))
+      for line in f16:
+        ll=line.split()
+        if len(ll)==1:#condition for line=name
+          name=ll[0]
+          if name!='':
+            canbn=0#counts the lines after each name
+          if (seed,name) not in data: data[(seed,name)]={}
+        if len(ll)>1:
+            for ab in ll:
+              if anbn[canbn] in data[(seed,name)]:
+                data[(seed,name)][anbn[canbn]].append(float(ab))
+              else:
+                data[(seed,name)][anbn[canbn]]=[float(ab)]
+              canbn=canbn+1
+    return data 
   def gen_job_params(self):
     '''generate jobparams based on values '''
     if self.env_var['long']==1:
