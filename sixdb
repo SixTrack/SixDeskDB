@@ -62,7 +62,8 @@ class SixDB(object):
         """Obtain help on commands
 Usage: sixdb <cmd> <help>
         """
-        cmds=['load_dir', 'info', 'da', 'da_vs_turns', 'plot_da_vs_turns',
+        cmds=['load_dir', 'update_dir', 'info',
+               'da', 'da_vs_turns', 'plot_da_vs_turns',
                'mad', 'interactive','set']
         msg="""sixdb: command line interface of SixDeskDB
 Usage: sixdb <study> <cmd> <options> or sixdb <cmd> to get additional help
@@ -109,6 +110,14 @@ Usage: sixdb <studydir> load_dir
 <studydir> is a directory that contains the sixdeskenv and sysenv
 files, e.g. ~/w1/sixjobs or ~/w1/sixjobs/studies/job_tracking."""
        SixDeskDB.from_dir(study)
+    def update_dir(self,study):
+       """Update results from directory tree"""
+       db=SixDeskDB(study)
+       db.st_mad6t_run()
+       db.st_mad6t_run2()
+       db.st_mad6t_results()
+       db.st_six_beta()
+       db.st_six_input()
     def mad(self,study):
        """Analyse the output of mad6t (HL-LHC specific)
 
