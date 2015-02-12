@@ -304,7 +304,7 @@ class SixDeskDB(object):
            ['tuney','tuney1','deltay'],
            ['turnsl', 'turnsle', 'writebinl',],
            ['kstep', 'kendl', 'kmaxl',],
-           ['trackdir'], ['sixtrack_input']]
+           ['sixdesktrack'], ['sixtrack_input']]
     env_var = self.env_var
     for vl in var:
       for keys in vl:
