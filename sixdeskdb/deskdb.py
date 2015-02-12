@@ -1105,8 +1105,10 @@ class SixDeskDB(object):
     '''returns a dictionary of which multipolar errors are turned on
        for each element based on fort.3.mad. E.g to get the 'a1' 
        errors of element 'mb.a8r3.b1..1': dict['mb.a8r3.b1']['a1']'''
+    [s,w,n]=self.env_var['sixtrack_input'].split('/')[-3:]
+    sixinput=os.path.join(s,w,n,'fort.3.mad')
     cmd="""SELECT path,content FROM files
-            WHERE path='sixtrack_input/w8/job_tracking_bb_2/fort.3.mad'
+            WHERE path='"""+sixinput+"""'
             ORDER BY path"""
     [(fn,fb3)]=self.execute(cmd)
     name,data='',{}
