@@ -24,12 +24,14 @@ class PostProcessing:
     def __init__(self, database):
         self.sd=database
         self.Elhc, self.Einj = self.sd.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
+        self.readplotb(self.sd)
 
     def checkInjection(self):
         if(np.abs(self.Einj)< epsilon):
                 print "ERROR: Injection energy too small"
         sys.exit()
-    def readplotb(self):
+
+    def readplotb(self, sd):
         dirname=sd.mk_analysis_dir()
         rectype=[('six_input_id','int'), ('row_num','int'),
                  ('seed','int'), ('qx','float'),('qy','float'),

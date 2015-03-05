@@ -31,7 +31,7 @@ except ImportError:
 
 import tables
 import lsfqueue
-import postProcessing
+from postProcessing import PostProcessing
 import madout
 from sqltable import SQLTable
 for t in (np.int8, np.int16, np.int32, np.int64,np.uint8, np.uint16, np.uint32, np.uint64):
@@ -1629,12 +1629,12 @@ class SixDeskDB(object):
             an_mtime=final['mtime'].min()
             res_mtime=self.execute('SELECT max(mtime) FROM six_results')[0][0]
             if res_mtime>an_mtime or force is True:
-                # self.read10b()
-                postProcessing.readplotb(self)
+                self.read10b()
+                #PostProcessing(self)
                 final=datab.select(where=wh,orderby='angle,seed')
         else:
-          # self.read10b()
-          postProcessing.readplotb(self)
+          self.read10b()
+          #PostProcessing(self)
           final=datab.select(where=wh,orderby='angle,seed')
           if len(final)==0:
               print "Error: No data available for analysis for `%s`"%wh
