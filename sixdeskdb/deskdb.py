@@ -89,6 +89,23 @@ def tune_dir(tune):
   """converts the list of tuples into the standard directory name, e.g. (62.31, 60.32) -> 62.31_60.32"""
   return str(tune[0])+'_'+str(tune[1])
 
+def amp_dir(amps):
+  """converts the list of tuples into the standard directory name, e.g. (2.0, 4.0) -> 2_4"""
+  ampdirs=[]
+  for aa in amps:
+    ampdirs.append('%s_%s'%(int(aa[0]),int(aa[1])))
+  return ampdirs
+
+def ang_dir(angs):
+  """converts the list of angle into the standard directory name, e.g. (85.5,87.0) -> ('85.5','87')"""
+  angdirs=[]
+  for aa in angs:
+    if(aa%1<1.e-8):
+      angdirs.append('%s'%(int(aa)))
+    else:
+      angdirs.append('%s'%(aa))
+  return angdirs
+
 def col_count(cur, table):
   sql = 'pragma table_info(%s)' % (table)
   cur.execute(sql)
@@ -305,7 +322,7 @@ class SixDeskDB(object):
            ['tuney','tuney1','deltay'],
            ['turnsl', 'turnsle', 'writebinl',],
            ['kstep', 'kendl', 'kmaxl',],
-           ['trackdir'], ['sixtrack_input']]
+           ['sixdesktrack'], ['sixtrack_input']]
     env_var = self.env_var
     for vl in var:
       for keys in vl:
@@ -1058,6 +1075,61 @@ class SixDeskDB(object):
     '''get tunes from env variables'''
     return list(self.iter_tunes())
 
+  def get_anbn_fort16(self):
+    '''returns a dictionary of the multipolar errors asigned to each element
+    based on fort.16. E.g to get the 'a1' errors of element 'mb.a8r3.b1..1' 
+    in seed '1': dict[(1,'mb.a8r3.b1..1')]['a1']
+    As 'mb.a8r3.b1..1' can occur multiple times, dict[(1,'mb.a8r3.b1..1')]['a1']
+    returns a list of the values of all occurances.'''
+    lst=self.execute('SELECT seed,fort16 FROM mad6t_results ORDER by seed')
+    data,name={},''
+    anbn=['b'+str(n+1) for n in range(20)]+['a'+str(n+1) for n in range(20)]
+    for seed,fb16 in lst:
+      f16=gzip.GzipFile(fileobj=StringIO(fb16))
+      for line in f16:
+        ll=line.split()
+        if len(ll)==1:#condition for line=name
+          name=ll[0]
+          if name!='':
+            canbn=0#counts the lines after each name
+          if (seed,name) not in data: data[(seed,name)]={}
+        if len(ll)>1:
+            for ab in ll:
+              if anbn[canbn] in data[(seed,name)]:
+                data[(seed,name)][anbn[canbn]].append(float(ab))
+              else:
+                data[(seed,name)][anbn[canbn]]=[float(ab)]
+              canbn=canbn+1
+    return data
+
+  def get_anbn_fort3mad(self):
+    '''returns a dictionary of which multipolar errors are turned on
+       for each element based on fort.3.mad. E.g to get the 'a1' 
+       errors of element 'mb.a8r3.b1..1': dict['mb.a8r3.b1']['a1']'''
+    cmd="""SELECT path,content FROM files
+            ORDER BY path"""
+    for fn,fb in self.execute(cmd):
+      if('fort.3.mad' in fn): fn3,fb3=fn,fb
+    name,data='',{}
+    anbn=[]
+    for n in range(20): anbn.extend(['b'+str(n+1)+'rms','b'+str(n+1),'a'+str(n+1)+'rms','a'+str(n+1)])
+    f3=gzip.GzipFile(fileobj=StringIO(fb3))
+    for line in f3:
+      ll=line.split()
+      if len(ll)==3:#condition for line=name
+        name=ll[0]
+        if name!='':
+          canbn=0#counts the lines after each name
+        if name not in data: data[name]={}
+      if len(ll)==4:
+          for ab in ll:
+            if anbn[canbn] in data[name]:
+              data[name][anbn[canbn]].append(float(ab))
+            else:
+              data[name][anbn[canbn]]=[float(ab)]
+            canbn=canbn+1
+    return data
+ 
   def gen_job_params(self):
     '''generate jobparams based on values '''
     if self.env_var['long']==1:
@@ -1626,6 +1698,22 @@ class SixDeskDB(object):
         fhplot.close()
         print fnplot
 
+# -------------------------------- turn by turn data -----------------------------------------------------------
+#  def download_tbt(self,seed=None):
+#    '''routine that downloads all the data and saves it in the sqltable sixtrack_tbt'''
+#    studio     = self.LHCDescrip
+#    if(seeds==None):
+#      seeds    = self.get_db_seeds()
+#    if(type(seeds) is int):
+#      seeds=[seeds]
+#    ampls      = amp_dir(self.get_amplitudes())
+#    angles     = ang_dir(self.get_db_angles())
+#    tunes      = '%s_%s'%(self.env_var['tunex'],self.env_var['tuney'])
+#    exp_turns  = self.env_var['turnse']
+#    np         = 2*self.env_var['sixdeskpairs']
+#    tbt_data=downloader(studio, seeds, ampls, angles, tunes, exp_turns,np,setenv=True)
+#    dbname=create_db(tbt_data,studio,seedinit,seedend,nsi,nsf,angles)
+#    print ('Turn by turn tracking data successfully stored in %s.db' %dbname)
 # -------------------------------- da_vs_turns -----------------------------------------------------------
   def st_da_vst(self,data,recreate=False):
     ''' store da vs turns data in database'''
@@ -1753,7 +1841,6 @@ class SixDeskDB(object):
     sy=s*np.sin(a*np.pi/180)
     sxstab=s[t==tmax]*np.cos(a[t==tmax]*np.pi/180)
     systab=s[t==tmax]*np.sin(a[t==tmax]*np.pi/180)
-    pl.figure(figsize=(6,6))
     pl.scatter(sx,sy,20*t/tmax,marker='o',color='b',edgecolor='none')
     pl.scatter(sxstab,systab,4,marker='o',color='r',edgecolor='none')
     pl.title('seed '+str(seed),fontsize=12)
