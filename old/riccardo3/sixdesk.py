@@ -316,10 +316,10 @@ class TrackOut(object):
       print "TrackOut make missing_jobs: no missing jobs"
     else:
       if force==False:
-        self.running=parse_bjobs()
-        if self.running is None:
-           print "Cannot check running jobs, use force=True"
-           return
+        try:
+          self.running=parse_bjobs()
+        except IOError:
+          print "Cannot check running jobs"
       else:
         self.running={}
       missingfn=os.path.join(self.sixdeskwork,'lsfjobs','missing_jobs')

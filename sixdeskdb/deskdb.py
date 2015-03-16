@@ -168,12 +168,7 @@ def split_job_params(dirname):
   #turns=10**int(turns[1])
   return seed,simul,tunex,tuney,amp1,amp2,turns,angle
 
-def get_job_dirname(seed,simul,tunex,tuney,amp1,amp2,turne,angle):
-  t='%s/%s/%s/%s/%s/%s/'
-  #turne=np.log10(turns)
-  rng="%s_%s"%(amp1,amp2)
-  tunes="%s_%s"%(tunex,tuney)
-  return t%(seed,simul,tunes,rng,turne,angle)
+
 
 
 
@@ -213,6 +208,22 @@ class SixDeskDB(object):
         del env_var[key]
     mtime=time.time()
     self.set_variables(env_var.items(),mtime)
+
+  def update_from_dir_all(self):
+    self.st_mad6t_run()
+    self.st_mad6t_run2()
+    self.st_mad6t_results()
+    self.st_six_beta()
+    self.st_six_input()
+
+  def vars_replace_all(self,old,new):
+    out=[]
+    for k,v in self.env_var.items():
+      if type(v) is str and old in v:
+        print k,v
+        out.append( (k,v.replace(old,new))  )
+    mtime=time.time()
+    self.set_variables(out,mtime)
 
   def add_files(self,files):
     """add files in  key,realpath list"""
@@ -270,6 +281,20 @@ class SixDeskDB(object):
           columms=[i[1] for i in self.execute("PRAGMA table_info(%s)"%tab)]
           print "%s(%d):\n  %s"%(tab,rows,', '.join(columms))
 
+  def get_mad_runs(self):
+      return [i[0] for i in self.execute('SELECT DISTINCT run_id FROM mad6t_run')]
+
+  def get_mad_out(self,seed):
+      sql="SELECT mad_out,run_id,mad_out_mtime FROM mad6t_run WHERE seed=%d ORDER BY mad_out_mtime "%seed
+      data=self.execute(sql)
+      data=[(decompressBuf(mad),ii,mt) for mad,ii,mt in data]
+      return data
+  def extract_mad_out(self,seed):
+      data=self.get_mad_out(seed)
+      out=[]
+      for mad,ii,mt in data:
+          out.append(madout.extract_mad_out(StringIO(mad)))
+      return out
   def mad_out(self):
       mad_runs=self.execute('SELECT DISTINCT run_id FROM mad6t_run')
       if len(mad_runs)==0:
@@ -278,7 +303,7 @@ class SixDeskDB(object):
           print "Checking %s"%run
           sql="SELECT seed,mad_out FROM mad6t_run WHERE run_id=='%s' ORDER BY seed"%run
           data=self.execute(sql)
-          data=[(seed,StringIO(decompressBuf(out))) for seed,out in data]
+          data=[(seed,decompressBuf(out)) for seed,out in data]
           resname=os.path.join(self.mk_analysis_dir(),run)+'.csv'
           madout.check_mad_out(data,resname)
           print resname
@@ -349,21 +374,21 @@ class SixDeskDB(object):
           if not (filename.endswith('.mask') or 'out' in filename
               or filename.endswith('log') or filename.endswith('lsf')):
             fnroot,seed=os.path.splitext(filename)
-            seed=int(seed[1:])
-            run_id = dirName.split('/')[-1]
-            mad_in = sqlite3.Binary(
-              compressBuf(os.path.join(dirName, filename))
-              )
-            out_file=os.path.join(dirName,fnroot+'.out.%d'%seed)
-            log_file=os.path.join(dirName,fnroot+'_mad6t_%d.log'%seed)
-            lsf_file=os.path.join(dirName,'mad6t_%d.lsf'%seed)
-            mad_out = sqlite3.Binary(compressBuf(out_file))
-            mad_lsf = sqlite3.Binary(compressBuf(lsf_file))
-            mad_log = sqlite3.Binary(compressBuf(log_file))
-            if os.path.isfile(out_file):
-              time = os.path.getmtime( out_file)
-            else:
-              time = None
+            time = None
+            if seed[1:].isdigit():
+                seed=int(seed[1:])
+                run_id = dirName.split('/')[-1]
+                mad_in = sqlite3.Binary(
+                  compressBuf(os.path.join(dirName, filename))
+                  )
+                out_file=os.path.join(dirName,fnroot+'.out.%d'%seed)
+                log_file=os.path.join(dirName,fnroot+'_mad6t_%d.log'%seed)
+                lsf_file=os.path.join(dirName,'mad6t_%d.lsf'%seed)
+                mad_out = sqlite3.Binary(compressBuf(out_file))
+                mad_lsf = sqlite3.Binary(compressBuf(lsf_file))
+                mad_log = sqlite3.Binary(compressBuf(log_file))
+                if os.path.isfile(out_file):
+                  time = os.path.getmtime( out_file)
             data.append([run_id, seed, mad_in, mad_out, mad_lsf,mad_log,time])
           if filename.endswith('.mask'):
             path = os.path.join(dirName, filename)
@@ -433,13 +458,13 @@ class SixDeskDB(object):
     tab = SQLTable(conn,'six_beta',cols,tables.Six_Be.key)
     workdir = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
     data=[]
-    print "Looking for sixdesktunes, betavalues in\n %s"%workdir
+    print "Looking for betavalues,sixdesktunes, general_input in\n %s"%workdir
     gen_input=os.path.join(workdir,'general_input')
     if not os.path.exists(gen_input):
       print "Warning: %s not found"%gen_input
       gen=[0,0]
     else:
-      content = sqlite3.Binary(compressBuf(gen_input))
+      #content = sqlite3.Binary(compressBuf(gen_input))
       gen=[float(i) for i in open(gen_input).read().split()]
     for dirName in glob.glob('%s/*/simul/*'%workdir):
       dirn = dirName.split('/')
@@ -457,10 +482,14 @@ class SixDeskDB(object):
         vals.extend(gen)
         vals.append(mtime)
         data.append(vals)
-      except ValueError:
+      except (ValueError,OSError):
         print "Error in %s"%fullname
     print " number of sixdesktunes, betavalues, mychrom inserted: %d"%len(data)
-    tab.insertl(data)
+    try:
+      tab.insertl(data)
+    except ProgrammingError:
+        print "Error in the data for %s:"%dirName
+        print data
 
   def st_six_input(self):
     ''' store input values (seed,tunes,amps,etc) along with fort.3 file'''
@@ -827,19 +856,10 @@ class SixDeskDB(object):
 
   def get_missing_fort10(self):
     '''get input values for which fort.10 is not present '''
-    # conn = self.conn
-    # newid = self.newid
     sql = """select seed,tunex,tuney,amp1,amp2,turns,angle from six_input
     where not exists(select 1 from six_results where id=six_input_id)"""
     a = self.execute(sql)
-    if a:
-      for rows in a:
-        print 'fort.10 missing at','/'.join([str(i) for i in rows])
-        print
-      return 1
-    else:
-      print ' no fort.10 files missing'
-      return 0
+    return a
 
   def get_incomplete_fort10(self):
     '''get input values for which fort.10 is incomplete '''
@@ -851,14 +871,14 @@ class SixDeskDB(object):
     where not exists(select 1 from six_results where id=six_input_id and 
     row_num=30)"""
     a = self.execute(sql)
-    if a:
-      for rows in a:
-        print 'fort.10 incomplete at','/'.join([str(i) for i in rows])
-        print
-      return 1
-    else:
-      print ' no fort.10 files incomplete'
-      return 0
+    return a
+  def make_job_trackdir(self,seed,simul,tunex,tuney,amp1,amp2,turns,angle):
+    sixdesktrack=self.env_var['sixdesktrack']
+    base=os.path.join(sixdesktrack,self.LHCDescrip)
+    t='%s/%d/simul/%s/%s/%s/%g/'
+    rng="%g_%g"%(amp1,amp2)
+    tunes="%g_%g"%(tunex,tuney)
+    return t%(base,seed,tunes,rng,turns,angle)
 
 #  def join10(self):
 #    '''re-implementation of run_join10'''
@@ -1013,6 +1033,12 @@ class SixDeskDB(object):
     out=zip(*self.execute(sql))[0]
     return out
 
+  def get_db_amplitudes(self):
+    ''' get seeds from DB'''
+    sql='SELECT DISTINCT amp1,amp2 FROM six_input ORDER BY seed'
+    out=zip(*self.execute(sql))[0]
+    return out
+
   def get_db_tunes(self):
     ''' get tunes from DB'''
     sql='SELECT DISTINCT tunex,tuney FROM six_input ORDER BY tunex,tuney'
@@ -1128,7 +1154,7 @@ class SixDeskDB(object):
               data[name][anbn[canbn]]=[float(ab)]
             canbn=canbn+1
     return data
- 
+
   def gen_job_params(self):
     '''generate jobparams based on values '''
     if self.env_var['long']==1:
@@ -1153,19 +1179,35 @@ class SixDeskDB(object):
 
   def get_missing_jobs(self):
     '''get missing jobs '''
-    turnsl = '%E'%(float(self.env_var['turnsl']))
-    turnsl = 'e'+str(int(turnsl.split('+')[1]))
-    existing = self.execute("""SELECT seed,simul,tunex,tuney,amp1,amp2,
-                               turns,angle from six_input""")
-    existing= set(existing)
+    existing=set(self.get_existing_results())
     needed=set(self.gen_job_params())
     #print sorted(existing)[0]
     #print sorted(needed)[0]
     return list(needed-existing)
 
+
+  def get_existing_input(self):
+    turnsl = '%E'%(float(self.env_var['turnsl']))
+    turnsl = 'e'+str(int(turnsl.split('+')[1]))
+    existing = self.execute("""SELECT seed,simul,tunex,tuney,amp1,amp2,
+                               turns,angle from six_input""")
+    return existing
+
+  def get_existing_results(self):
+    turnsl = '%E'%(float(self.env_var['turnsl']))
+    turnsl = 'e'+str(int(turnsl.split('+')[1]))
+    existing = self.execute("""SELECT seed,simul,tunex,tuney,amp1,amp2,
+                               turns,angle from results where row_num=1""")
+    return existing
+
   def get_running_jobs(self,missing,threshold=7*24*3600):
     running=set()
-    for lsfjob in lsfqueue.parse_bjobs():
+    try:
+        bjobs=lsfqueue.parse_bjobs()
+    except IOError:
+        print "Cannot check running jobs"
+        return running
+    for lsfjob in bjobs:
         if lsfjob in missing:
           job=self.running[lsfjob]
           if job.stat in ('PEND','RUN'):
@@ -1176,19 +1218,31 @@ class SixDeskDB(object):
     return running
 
   def make_lsf_missing_jobs(self):
+    tmp="%s%%%s%%s%%%s%%%s%%%s%%%s"
+    missing=set()
+    name=self.LHCDescrip
     for job in self.get_missing_jobs():
        seed,simul,tunex,tuney,amp1,amp2,turns,angle=job
-       tmp="%s%%%s%%s%%%s%%%s%%%s%%%s"
        ranges="%s_%s"%(amp1,amp2)
        tunes="%s_%s"%(tunex,tuney)
        missing.add(tmp%(name,seed,tunes,ranges,turns,angle))
     if len(missing)==0:
         print "No missing jobs"
-    running=self.get_running_jobs(missing)
-    if len(running)>0:
-        print "%d job running"
-    for job in missing-running:
-        print job
+    else:
+       running=self.get_running_jobs(missing)
+       if len(running)>0:
+          print "%d job running"
+       rerun=missing-running
+       workdir=os.path.join(self.env_var['sixdeskwork'],'lsfjobs')
+       if not os.path.isdir(workdir):
+           os.mkdir(workdir)
+       fn=os.path.join(workdir,'missing_jobs')
+       open(fn,'w').write('\n'.join(rerun))
+       print "Writing %s"%fn
+       if len(rerun)>0:
+           print 'To launch jobs do:'
+           home=self.env_var['sixdeskhome']
+           print 'cd %s;set_env %s; run_missing_jobs' %(home,name)
 
   def inspect_jobparams(self):
     data=list(self.iter_job_params())
@@ -1486,8 +1540,8 @@ class SixDeskDB(object):
                 iend = -999
                 alost1 = 0.
                 alost2 = 0.
-                achaos = 0
-                achaos1 = 0
+                achaos = 0.
+                achaos1 = 0.
                 sql=sql1+' AND seed=%s '%seed
                 #sql+=' AND ROUND(angle,5)=ROUND(%s,5) '%angle
                 sql+=' AND angle=%s '%angle
@@ -1514,7 +1568,11 @@ class SixDeskDB(object):
                 sturns1=inp['sturns1']
                 sturns2=inp['sturns2']
                 turn_max=inp['turn_max'].max()
-
+                amp2=inp['amp2']
+                if amp2[-1]<ns2l:
+                    truncated=True
+                else:
+                    truncated=False
                 zero = 1e-10
                 xidx=(betx>zero) & (emitx>zero)
                 yidx=(bety>zero) & (emity>zero)
@@ -1596,6 +1654,11 @@ class SixDeskDB(object):
                     alost1 = 1.0
 
                 alost1=alost1*alost2
+                firstamp=rad*sigx1[0]
+                lastamp=rad*sigx1[iel]
+                #if alost1==0. and alost2==0. and truncated:
+                #     alost1=rad*sigx1[-1]
+                #     alost2=rad*sigx1[-1]
                 name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
                 name1= '%s%ss%s%s-%s%s.%d'%(self.LHCDescrip,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
                 if(seed<10):
@@ -1603,7 +1666,7 @@ class SixDeskDB(object):
                 if(anumber<10):
                     name1+=" "
                 fmt=' %-39s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
-                fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,rad*sigx1[0],rad*sigx1[iel]))
+                fhdot.write(fmt%( name1[:39],achaos,achaos1,alost1,alost2,firstamp,lastamp))
                 final.append([name2, turnsl,tunex, tuney, int(seed),
                                angle,achaos,achaos1,alost1,alost2,
                                rad*sigx1[0],rad*sigx1[iel],mtime])
@@ -1767,9 +1830,11 @@ class SixDeskDB(object):
     """Da vs turns -- calculate da vs turns for divisors of angmax, 
     e.g. for angmax=29+1 for divisors [1, 2, 3, 5, 6, 10]"""
     RunDaVsTurnsAng(self,seed,tune,turnstep)
-  def get_surv(self,seed,tune):
+  def get_surv(self,seed,tune=None):
     '''get survival turns from DB calculated from emitI and emitII'''
     #change for new db version
+    if tune is None:
+        tune=self.get_db_tunes()[0]
     (tunex,tuney)=tune
     emit=float(self.env_var['emit'])
     gamma=float(self.env_var['gamma'])
@@ -1828,8 +1893,10 @@ class SixDeskDB(object):
     else:
       pl.ylim([0,float(tmax)])
       pl.gca().ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-  def plot_surv_2d(self,seed,tune,ampmax=14):
+  def plot_surv_2d(self,seed,tune=None,ampmax=14):
     '''survival plot, blue=all particles, red=stable particles'''
+    if tune is None:
+        tune=self.get_db_tunes()[0]
     data=self.get_surv(seed,tune)
     s,a,t=data['sigma'],data['angle'],data['sturn']
     s,a,t=s[s>0],a[s>0],t[s>0]#delete 0 values
@@ -1845,4 +1912,31 @@ class SixDeskDB(object):
     pl.ylim([0,ampmax])
     pl.xlabel(r'Horizontal amplitude [$\sigma$]',labelpad=10,fontsize=12)
     pl.ylabel(r'Vertical amplitude [$\sigma$]',labelpad=10,fontsize=12)
-
+  def get_da_angle(self):
+    angles=self.get_db_angles()
+    seeds=self.get_db_seeds()
+    sql="SELECT seed,angle,alost1 FROM da_post ORDER by seed,angle"
+    data=np.array(self.execute(sql)).reshape(len(seeds),len(angles),-1)
+    return data
+  def plot_da_angle(self,label=None,color='r',ashift=0,marker='o',
+                    alpha=0.1,mec='none'):
+    data=self.get_da_angle()
+    for ddd in data:
+        s,angle,sig=ddd.T
+        angle=(angle+ashift)*np.pi/180
+        x=abs(sig)*np.cos(angle)
+        y=abs(sig)*np.sin(angle)
+        if label is None:
+          pl.plot(x,y,marker,mfc=color,mec=mec,alpha=alpha)
+        else:
+          pl.plot(x,y,marker,mfc=color,mec=mec,alpha=alpha,label=label)
+          label=None
+    #pl.xlabel(r'angle')
+    #xa,xb=pl.xlim()
+    #ya,yb=pl.xlim()
+    #t=np.linspace(0,90,30)*np.pi/180
+    #for ss in np.arange(2,min(xb,yb),2):
+    #    pl.plot(ss*np.cos(t),ss*np.sin(t),'k-')
+    pl.xlabel(r'$\sigma_x$')
+    pl.ylabel(r'$\sigma_y$')
+    return self

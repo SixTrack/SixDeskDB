@@ -3,16 +3,12 @@ import time
 
 def parse_bjobs():
   cmd='/usr/bin/bjobs'
-  if os.path.exists(cmd):
-    out={}
-    fh=os.popen('%s -W -a' %cmd)
-    fh.readline()
-    for l in fh:
-      job=LSFJob(l.split())
-      out[job.job_name]=job
-  else:
-    print "Error: %s not found" % cmd
-    out=None
+  out={}
+  fh=os.popen('%s -W -a' %cmd)
+  fh.readline()
+  for l in fh:
+    job=LSFJob(l.split())
+    out[job.job_name]=job
   return out
 
 def jobs_stats(jobs):
