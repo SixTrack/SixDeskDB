@@ -485,11 +485,7 @@ class SixDeskDB(object):
       except (ValueError,OSError):
         print "Error in %s"%fullname
     print " number of sixdesktunes, betavalues, mychrom inserted: %d"%len(data)
-    try:
-      tab.insertl(data)
-    except ProgrammingError:
-        print "Error in the data for %s:"%dirName
-        print data
+    tab.insertl(data)
 
   def st_six_input(self):
     ''' store input values (seed,tunes,amps,etc) along with fort.3 file'''
