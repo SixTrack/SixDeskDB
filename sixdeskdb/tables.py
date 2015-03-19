@@ -142,21 +142,25 @@ class Six_Res(object):
   ('delta', 'float', 'Dummy7'),
   ('dnms', 'float', 'Internal1'),
   ('trttime', 'float', 'Internal2'),
-  ('mtime','float','last modification time'),
-  ('rad', 'float', 'radius of the aperture'),
-  ('rad1', 'float', 'radius1 of the aperture'),
-  ('alost1', 'float', 'particles lost 1'),
-  ('alost2', 'float', 'particles lost 2'),
-  ('alost3', 'float', 'particles lost 3'),
-  ('achaos', 'float', ''),
-  ('achaos1', 'float', ''),
-  ('amin', 'float', ''),
-  ('amax', 'float', ''),
-  ('f14', 'int', 'flag to produce the fort.14 file'),
-  ('al', 'blob', 'array'),
+  ('mtime','float','last modification time')
   ]
   key=['six_input_id','row_num']
 
+class Six_Post(object):
+  fields=[('six_input_id','int','unique id for each fort10 file'),
+          ('row_num','int','row number'),
+          ('rad', 'float', 'radius of the aperture'),
+          ('rad1', 'float', 'radius1 of the aperture'),
+          ('alost1', 'float', 'particles lost 1'),
+          ('alost2', 'float', 'particles lost 2'),
+          ('alost3', 'float', 'particles lost 3'),
+          ('achaos', 'float', ''),
+          ('achaos1', 'float', ''),
+          ('amin', 'float', ''),
+          ('amax', 'float', ''),
+          ('f14', 'int', 'flag to produce the fort.14 file'),
+          ('al', 'blob', 'array')]
+  key=['six_input_id','row_num']
 
 class Da_Post(object):
   fields=[('name', 'str',''),

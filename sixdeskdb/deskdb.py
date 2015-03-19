@@ -527,7 +527,7 @@ class SixDeskDB(object):
            if mtime10 > mtime10_old and os.path.getsize(f10)>0:
              countl = 1
              for lines in gzip.open(f10,"r"):
-                rows10.append([six_id,countl]+lines.split()+[mtime10]+[0]*10+[""])
+                rows10.append([six_id,countl]+lines.split()+[mtime10])
                 countl += 1
              count10 += 1
         if len(rows3) == 6000:
@@ -1629,12 +1629,12 @@ class SixDeskDB(object):
             an_mtime=final['mtime'].min()
             res_mtime=self.execute('SELECT max(mtime) FROM six_results')[0][0]
             if res_mtime>an_mtime or force is True:
-                self.read10b()
-                #PostProcessing(self)
+                #self.read10b()
+                PostProcessing(self)
                 final=datab.select(where=wh,orderby='angle,seed')
         else:
-          self.read10b()
-          #PostProcessing(self)
+          #self.read10b()
+          PostProcessing(self)
           final=datab.select(where=wh,orderby='angle,seed')
           if len(final)==0:
               print "Error: No data available for analysis for `%s`"%wh

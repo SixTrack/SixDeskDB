@@ -27,9 +27,11 @@ class PostProcessing:
         self.readplotb(self.sd)
 
     def checkInjection(self):
+        print np.abs(self.Einj)
+        print epsilon
         if(np.abs(self.Einj)< epsilon):
                 print "ERROR: Injection energy too small"
-        sys.exit()
+                sys.exit()
 
     def readplotb(self, sd):
         dirname=sd.mk_analysis_dir()
@@ -59,6 +61,7 @@ class PostProcessing:
         seeds, angles= sd.get_seeds(), sd.get_angles()
         mtime=sd.execute('SELECT max(mtime) from results')[0][0]
         final=[]
+        post_data=[]
         ftot = []
         sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 AND turn_max=%d '%(names,turnsl)
         nPlotSeeds = sd.env_var["iend"]
@@ -106,10 +109,10 @@ class PostProcessing:
                     # inp = np.array(sd.execute(sql),dtype=rectype)
                     inp = Fort(10, self.sd)
                     
-                    if len(inp)==0:
-                        msg="all particle lost for angle = %s and seed = %s"
-                        print msg%(angle,seed)
-                        continue
+                    # if len(inp)==0:
+                    #     msg="all particle lost for angle = %s and seed = %s"
+                    #     print msg%(angle,seed)
+                    #     continue
                     
                     six_id = inp['six_input_id']
                     row  = inp['row_num']
@@ -315,17 +318,20 @@ class PostProcessing:
                         f14.close()
 
                     if abs(alost1) < epsilon: alost1=amax
-
+                    print "HOH"
                     if nSeed != (nPlotSeeds +1):
                         for i in range(0, iel+1):
-                            tbl="six_results"
-                            sql=("UPDATE {0} SET {1}={2}, {3}={4}, {5}={6}, {7}={8}, {9}={10},"+
-                                " {11}={12}, {13}={14}, {15}={16}, {17}={18}, {19}={20}, {21}={22} " +
-                                " WHERE six_input_id = {23} AND row_num = {24}").format(
-                                tbl, "rad", (rad*sigx1[i]), "rad1", rad1, "alost1", alost1, 
-                                "alost2", alost2, "alost3", alost3, "achaos", achaos, "achaos1", achaos1, 
-                                "amin", amin,"amax", amax, 'f14', f14Flag, "al", '?',  six_id[i], row[i])
-                            sd.conn.cursor().execute(sql, (sqlite3.Binary(al),))
+                            post_data.append([six_id[i], row[i], rad*sigx1[i], rad1, alost1, 
+                                alost2,  alost3, achaos,  achaos1, 
+                                 amin, amax, f14Flag, sqlite3.Binary(al)])
+                            
+                            # sql=("UPDATE {0} SET {1}={2}, {3}={4}, {5}={6}, {7}={8}, {9}={10},"+
+                            #     " {11}={12}, {13}={14}, {15}={16}, {17}={18}, {19}={20}, {21}={22} " +
+                            #     " WHERE six_input_id = {23} AND row_num = {24}").format(
+                            #     tbl, "rad", (rad*sigx1[i]), "rad1", rad1, "alost1", alost1, 
+                            #     "alost2", alost2, "alost3", alost3, "achaos", achaos, "achaos1", achaos1, 
+                            #     "amin", amin,"amax", amax, 'f14', f14Flag, "al", '?',  six_id[i], row[i])
+                            # sd.conn.cursor().execute(sql, (sqlite3.Binary(al),))
     #------------------------readplot-------------------                      
 
                     fmt=' %-39s  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f  %10.6f\n'
@@ -341,3 +347,7 @@ class PostProcessing:
         # datab=SQLTable(sd.conn,'da_post',cols,tables.Da_Post.key,recreate=True)
         datab=SQLTable(sd.conn,'da_post',cols)
         datab.insertl(final)
+
+        cols1 = SQLTable.cols_from_fields(tables.Six_Post.fields)
+        tab1 = SQLTable(sd.conn,'six_post',cols1,tables.Six_Post.key)
+        tab1.insertl(post_data)
