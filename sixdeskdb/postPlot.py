@@ -8,7 +8,7 @@ postpr_plots = 'averem distance kvar maxslope smear survival'.split()
 
 class Post_Plot:
 
-    def __init__(self, db, name, seed=None, angle=None):
+    def __init__(self, db, name, seed=None, angle=None, tune=None):
         self.db = db
         self.nturns = self.db.env_var['turnsl']
         self.exponent = self.db.env_var['turnse']
@@ -16,7 +16,7 @@ class Post_Plot:
         self.a1 = self.db.env_var['ns2l']
         self.names = ["all", "averem", "distance", "kvar", "maxslope", "smear", "survival"]
         plot = self.process_args(name, seed, angle)
-        plot(seed, angle)
+        plot(seed, angle, tune)
 
     def process_args(self, name, seed, angle):
         try:
@@ -34,11 +34,11 @@ class Post_Plot:
           sys.exit(1)
         return plot
 
-    def plot_averem(self, seed, angle, path=None):
+    def plot_averem(self, seed, angle, tune, show=False):
 
-        f22 = Fort(22, self.db, seed, angle)
-        f23 = Fort(23, self.db, seed, angle)
-        f24 = Fort(24, self.db, seed, angle)
+        f22 = Fort(22, self.db, seed, angle, tune)
+        f23 = Fort(23, self.db, seed, angle, tune)
+        f24 = Fort(24, self.db, seed, angle, tune)
 
         fig = plt.figure()
         ax  = fig.add_subplot(111)
@@ -52,17 +52,19 @@ class Post_Plot:
         ax.set_xlabel('Initial Amplitude [sigma]')
         ax.set_ylabel('Averaged Amplitude [sigma]')
         ax.set_xlim(self.a0,self.a1)
-        if path:
-            fn = "%s/averem.%s.%s.png"%(path, self.nturns, angle+1)
+        if show:
+            plt.show()
+        else:
+            dirname=self.db.mk_analysis_dir(seed,tune)
+            fn = "%s/averem.%s.%s.png"%(dirname, self.nturns, angle+1)
             print fn
             plt.savefig(fn)
-        else:
-            plt.show()
 
-    def plot_distance(self, seed, angle, path=None):
 
-        f13 = Fort(13, self.db, seed, angle)
-        f26 = Fort(26, self.db, seed, angle)
+    def plot_distance(self, seed, angle, tune, show=False):
+
+        f13 = Fort(13, self.db, seed, angle, tune)
+        f26 = Fort(26, self.db, seed, angle, tune)
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -77,16 +79,19 @@ class Post_Plot:
         #ax.set_yscale("log", nonposy="clip")
         # ax.semilogy(f13['dist'], np.exp(-f13['dist']/5.0))
         ax.set_xlim(self.a0,self.a1)
-        if path:
-            fn = "%s/distance.%s.%s.png"%(path, self.nturns, angle+1)
+        
+        if show:
+            plt.show()
+        else:
+            dirname=self.db.mk_analysis_dir(seed,tune)
+            fn = "%s/distance.%s.%s.png"%(dirname, self.nturns, angle+1)
             print fn
             plt.savefig(fn)
-        else:
-            plt.show()
 
-    def plot_kvar(self, seed, angle, path=None):
 
-        f40 = Fort(40, self.db, seed)
+    def plot_kvar(self, seed, angle, tune, show=False):
+
+        f40 = Fort(40, self.db, seed, tunes=tune)
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -108,17 +113,20 @@ class Post_Plot:
         ax.set_xlabel('K = ATAN( SQRT( Ez/Ex )) in [Degree]')
         ax.set_ylabel('Dynamic Aperture in [sigma]')
         ax.set_xlim(0,90)
-        if path:
-            fn = "%s/kvar.%s.%s.png"%(path, self.nturns, angle+1)
+        
+        if show:
+            plt.show()
+        else:
+            dirname=self.db.mk_analysis_dir(seed,tune)
+            fn = "%s/kvar.%s.%s.png"%(dirname, self.nturns, angle+1)
             print fn
             plt.savefig(fn)
-        else:
-            plt.show()
 
-    def plot_maxslope(self, seed, angle, path=None):
+
+    def plot_maxslope(self, seed, angle, tune, show=False):
         
-        f12 = Fort(12, self.db, seed, angle)
-        f26 = Fort(26, self.db, seed, angle)
+        f12 = Fort(12, self.db, seed, angle, tune)
+        f26 = Fort(26, self.db, seed, angle, tune)
         fig = plt.figure()
         ax = fig.add_subplot(111)
         fig.subplots_adjust(top=0.85)
@@ -131,17 +139,20 @@ class Post_Plot:
         ax.set_xlabel('Initial Amplitude [sigma]')
         ax.set_ylabel('Maximum Slope of Distance in Phase Space')
         ax.set_xlim(self.a0,self.a1)
-        if path:
-            fn = "%s/maxslope.%s.%s.png"%(path, self.nturns, angle+1)
+
+        if show:
+            plt.show()
+        else:
+            dirname=self.db.mk_analysis_dir(seed,tune)
+            fn = "%s/maxslope.%s.%s.png"%(dirname, self.nturns, angle+1)
             print fn
             plt.savefig(fn)
-        else:
-            plt.show()
 
-    def plot_smear(self, seed, angle, path=None):
 
-        f18 = Fort(18, self.db, seed, angle)
-        f19 = Fort(19, self.db, seed, angle)
+    def plot_smear(self, seed, angle, tune, show=False):
+
+        f18 = Fort(18, self.db, seed, angle, tune)
+        f19 = Fort(19, self.db, seed, angle, tune)
         fig = plt.figure()
         ax = fig.add_subplot(111)
         fig.subplots_adjust(top=0.85)
@@ -153,17 +164,19 @@ class Post_Plot:
         ax.set_xlabel('Initial Amplitude [sigma]')
         ax.set_ylabel('Smear [%]')
         ax.set_xlim(self.a0,self.a1)
-        if path:
-            fn = "%s/smear.%s.%s.png"%(path, self.nturns, angle+1)
+
+        if show:
+            plt.show()
+        else:
+            dirname=self.db.mk_analysis_dir(seed,tune)
+            fn = "%s/smear.%s.%s.png"%(dirname, self.nturns, angle+1)
             print fn
             plt.savefig(fn)
-        else:
-            plt.show()
 
-    def plot_survival(self, seed, angle, path=None):
+    def plot_survival(self, seed, angle, tune, show=False):
        
-        f15 = Fort(15, self.db, seed, angle)
-        f14 = Fort(14, self.db, seed, angle)
+        f15 = Fort(15, self.db, seed, angle, tune)
+        f14 = Fort(14, self.db, seed, angle, tune)
         fig = plt.figure()
         ax  = fig.add_subplot(111)
         fig.subplots_adjust(top=0.85)
@@ -178,14 +191,15 @@ class Post_Plot:
         # ax.set_yscale("log", nonposy="clip")
         ax.set_xlim(self.a0, self.a1)
         
-        if path:
-            fn = "%s/survival.%s.%s.png"%(path, self.nturns, angle+1)
+        if show:
+            plt.show()
+        else:
+            dirname=self.db.mk_analysis_dir(seed,tune)
+            fn = "%s/survival.%s.%s.png"%(dirname, self.nturns, angle+1)
             print fn
             plt.savefig(fn)
-        else:
-            plt.show()
 
-    def plot_all(self, seed = None, angle= None):
+    def plot_all(self, seed = None, angle= None, tune=None):
       '''plot survival plots and da vs turns for list of data ldat and associated error ldaterr'''
 
       print('Post processing plots -- generating the post processing plots plots')
@@ -199,19 +213,19 @@ class Post_Plot:
           for angle in xrange(len(self.db.get_db_angles())):
               plt.close('all')
               plt.figure(figsize=(6,6))
-              self.plot_averem(seed, angle, path=dirname)
-              self.plot_distance(seed, angle, path=dirname)
-              self.plot_kvar(seed, angle, path=dirname)
-              self.plot_maxslope(seed, angle, path=dirname)
-              self.plot_smear(seed, angle, path=dirname)
-              self.plot_survival(seed, angle, path=dirname)
+              self.plot_averem(seed, angle, tune)
+              self.plot_distance(seed, angle, tune)
+              self.plot_kvar(seed, angle, tune)
+              self.plot_maxslope(seed, angle, tune)
+              self.plot_smear(seed, angle, tune)
+              self.plot_survival(seed, angle, tune)
 
 
 
 
 
-# short
-# def plot_tunedp(self, seed, angle, path=None):
+# short runs
+# def plot_tunedp(self, seed, angle, tune, show=False):
 #     f16=Fort(16, self.db)
 #     f17=Fort(17, self.db)
 #     fig = plt.figure()
@@ -226,8 +240,3 @@ class Post_Plot:
 #     ax.set_xlabel('delta')
 #     ax.set_ylabel('Detuning')
 #     ax.set_xlim(-0.002,0.002)
-    
-#     if path:
-    #     plt.savefig("%stunedp.png"%path)
-    # else:
-    #     plt.show()

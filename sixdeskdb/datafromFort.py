@@ -5,12 +5,13 @@ import os
 
 ntlint =4
 class Fort:
-    def __init__(self, fort, sd,  seed=None, angle=None,):
+    def __init__(self, fort, sd,  seed=None, angle=None, tunes=None):
         self.name = "fort.{unit}".format(unit=fort)
         self.fort = fort
         self.sd = sd
         self.angles = self.sd.get_angles() if angle == None else [self.sd.get_angles()[angle]]
         self.seeds = self.sd.get_seeds() if seed == None else [seed]
+        self.tunes = self.sd.get_tunes() if tunes == None else [tunes]
         self.fields =list(zip(*dataQueried[str(fort)])[0])
         self.data = self.dispatch[str(fort)](self)
 
@@ -40,7 +41,9 @@ class Fort:
         sql = queries['else'] if self.fort !=10 else queries['10']
         seedsSeq  = ('={0}' if len(self.seeds) ==1 else ' IN ({0})').format(','.join(map(str, self.seeds)))
         anglesSeq = ('={0}' if len(self.angles)==1 else ' IN ({0})').format(','.join(map(str, self.angles)))
-        sql = sql.format( names = names, seedsSeq=seedsSeq, anglesSeq=anglesSeq)
+        tunexSeq  = ('={0}' if len(self.tunes)==1 else ' IN ({0})').format(','.join(map(str, [tune[0] for tune in self.tunes])))
+        tuneySeq  = ('={0}' if len(self.tunes)==1 else ' IN ({0})').format(','.join(map(str, [tune[0] for tune in self.tunes])))
+        sql = sql.format( names = names, seedsSeq=seedsSeq, anglesSeq=anglesSeq, tunexSeq=tunexSeq, tuneySeq=tuneySeq)
         # sql = sql.format( names = names, 
         #                   seedsSeq=','.join(map(str, self.sd.get_seeds())), 
         #                   anglesSeq=','.join(map(str, self.sd.get_angles())))

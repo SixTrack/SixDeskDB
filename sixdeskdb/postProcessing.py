@@ -332,5 +332,5 @@ class PostProcessing:
           ON (results.six_input_id=six_post.six_input_id AND results.row_num=six_post.row_num)"""
         self.db.execute(sql)
 
-    def plot(self, name, seed=None, angle=None):
-        return Post_Plot(self.db, name, seed, angle)
+    def plot(self, name, seed=None, angle=None, tune=None):
+        return Post_Plot(self.db, name, seed, angle, tune)
