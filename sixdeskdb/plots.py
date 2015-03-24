@@ -6,9 +6,9 @@ postpr_plots = 'averem distance kvar maxslope smear survival'.split()
 
 def plot_averem(db, seed, angle, a0, a1, nturns, path=None):
 
-    f22 = Fort(22, db)[seed, angle]
-    f23 = Fort(23, db)[seed, angle]
-    f24 = Fort(24, db)[seed, angle]
+    f22 = Fort(22, db, seed, angle)
+    f23 = Fort(23, db, seed, angle)
+    f24 = Fort(24, db, seed, angle)
 
     fig = plt.figure()
     ax  = fig.add_subplot(111)
@@ -23,14 +23,16 @@ def plot_averem(db, seed, angle, a0, a1, nturns, path=None):
     ax.set_ylabel('Averaged Amplitude [sigma]')
     ax.set_xlim(a0,a1)
     if path:
-        plt.savefig("%s/averem.%s.%s.png"%(path, nturns, angle))
+        fn = "%s/averem.%s.%s.png"%(path, nturns, angle+1)
+        print fn
+        plt.savefig(fn)
     else:
         plt.show()
 
 def plot_distance(db, seed, angle, a0, a1, nturns, path=None):
 
-    f13 = Fort(13, db)[seed, angle]
-    f26 = Fort(26, db)[seed, angle]
+    f13 = Fort(13, db, seed, angle)
+    f26 = Fort(26, db, seed, angle)
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -46,12 +48,15 @@ def plot_distance(db, seed, angle, a0, a1, nturns, path=None):
     # ax.semilogy(f13['dist'], np.exp(-f13['dist']/5.0))
     ax.set_xlim(a0,a1)
     if path:
-        plt.savefig("%s/distance.%s.%s.png"%(path, nturns, angle))
+        fn = "%s/distance.%s.%s.png"%(path, nturns, angle+1)
+        print fn
+        plt.savefig(fn)
     else:
         plt.show()
 
 def plot_kvar(db, seed, angle, a0, a1, nturns, exponent, path=None):
-    f40 = Fort(40, db)[seed]
+
+    f40 = Fort(40, db, seed)
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -74,14 +79,16 @@ def plot_kvar(db, seed, angle, a0, a1, nturns, exponent, path=None):
     ax.set_ylabel('Dynamic Aperture in [sigma]')
     ax.set_xlim(0,90)
     if path:
-        plt.savefig("%s/kvar.%s.%s.png"%(path, nturns, angle))
+        fn = "%s/kvar.%s.%s.png"%(path, nturns, angle+1)
+        print fn
+        plt.savefig(fn)
     else:
         plt.show()
 
 def plot_maxslope(db, seed, angle, a0, a1, nturns, path=None):
     
-    f12 = Fort(12, db)[seed, angle]
-    f26 = Fort(26, db)[seed, angle]
+    f12 = Fort(12, db, seed, angle)
+    f26 = Fort(26, db, seed, angle)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     fig.subplots_adjust(top=0.85)
@@ -95,14 +102,16 @@ def plot_maxslope(db, seed, angle, a0, a1, nturns, path=None):
     ax.set_ylabel('Maximum Slope of Distance in Phase Space')
     ax.set_xlim(a0,a1)
     if path:
-        plt.savefig("%s/maxslope.%s.%s.png"%(path, nturns, angle))
+        fn = "%s/maxslope.%s.%s.png"%(path, nturns, angle+1)
+        print fn
+        plt.savefig(fn)
     else:
         plt.show()
 
 def plot_smear(db, seed, angle, a0, a1, nturns, path=None):
 
-    f18 = Fort(18, db)[seed, angle]
-    f19 = Fort(19, db)[seed, angle]
+    f18 = Fort(18, db, seed, angle)
+    f19 = Fort(19, db, seed, angle)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     fig.subplots_adjust(top=0.85)
@@ -115,14 +124,16 @@ def plot_smear(db, seed, angle, a0, a1, nturns, path=None):
     ax.set_ylabel('Smear [%]')
     ax.set_xlim(a0,a1)
     if path:
-        plt.savefig("%s/smear.%s.%s.png"%(path, nturns, angle))
+        fn = "%s/smear.%s.%s.png"%(path, nturns, angle+1)
+        print fn
+        plt.savefig(fn)
     else:
         plt.show()
 
 def plot_survival(db, seed, angle, a0, a1, nturns, path=None):
    
-    f15 = Fort(15, db)[seed, angle]
-    f14 = Fort(14, db)[seed, angle]
+    f15 = Fort(15, db, seed, angle)
+    f14 = Fort(14, db, seed, angle)
     fig = plt.figure()
     ax  = fig.add_subplot(111)
     fig.subplots_adjust(top=0.85)
@@ -138,7 +149,9 @@ def plot_survival(db, seed, angle, a0, a1, nturns, path=None):
     ax.set_xlim(a0, a1)
     
     if path:
-        plt.savefig("%s/survival.%s.%s.png"%(path, nturns, angle))
+        fn = "%s/survival.%s.%s.png"%(path, nturns, angle+1)
+        print fn
+        plt.savefig(fn)
     else:
         plt.show()
 

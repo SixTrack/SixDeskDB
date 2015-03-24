@@ -3,9 +3,9 @@ queries = {
        '10': 'SELECT {names} FROM results WHERE seed in ({seedsSeq}) ' +
               'AND angle in ({anglesSeq}) ORDER BY amp1',
 
-       'else': 'SELECT {names} FROM results INNER JOIN six_post ON (results.six_input_id=six_post.six_input_id AND results.row_num=six_post.row_num) WHERE betx>0'+
-              'AND bety>0 AND emitx>0 AND emity>0 AND seed in ({seedsSeq}) ' +
-              'AND angle in ({anglesSeq}) ORDER BY amp1'
+       'else': 'SELECT {names} FROM six_post_results WHERE betx>0 '+
+              'AND bety>0 AND emitx>0 AND emity>0 AND seed{seedsSeq} ' +
+              'AND angle{anglesSeq} ORDER BY amp1'
        }
 
 dataQueried = {

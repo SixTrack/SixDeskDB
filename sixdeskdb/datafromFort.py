@@ -6,13 +6,15 @@ import os
 
 ntlint =4
 class Fort:
-    def __init__(self, fort, sd):
+    def __init__(self, fort, sd,  seed=None, angle=None,):
         self.name = "fort.{unit}".format(unit=fort)
         self.fort = fort
         self.sd = sd
+        self.angles = self.sd.get_angles() if angle == None else [self.sd.get_angles()[angle]]
+        self.seeds = self.sd.get_seeds() if seed == None else [seed]
         self.fields =list(zip(*dataQueried[str(fort)])[0])
         self.data = self.dispatch[str(fort)](self)
-    
+
     def __getitem__(self, key):
         if type(key)==tuple:
            mask = ((self.data['seed']==key[0]) & 
@@ -37,9 +39,12 @@ class Fort:
         names , ind= np.unique(zip(*rectype)[0], return_index=True)
         names = ','.join(names[np.argsort(ind)])
         sql = queries['else'] if self.fort !=10 else queries['10']
-        sql = sql.format( names = names, 
-                          seedsSeq=','.join(map(str, self.sd.get_seeds())), 
-                          anglesSeq=','.join(map(str, self.sd.get_angles())))
+        seedsSeq  = ('={0}' if len(self.seeds) ==1 else ' IN ({0})').format(','.join(map(str, self.seeds)))
+        anglesSeq = ('={0}' if len(self.angles)==1 else ' IN ({0})').format(','.join(map(str, self.angles)))
+        sql = sql.format( names = names, seedsSeq=seedsSeq, anglesSeq=anglesSeq)
+        # sql = sql.format( names = names, 
+        #                   seedsSeq=','.join(map(str, self.sd.get_seeds())), 
+        #                   anglesSeq=','.join(map(str, self.sd.get_angles())))
         return np.array(self.sd.execute(sql), dtype=rectype)
 
     def retrieveAl(self, indices=None):
