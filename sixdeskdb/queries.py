@@ -4,8 +4,8 @@ queries = {
               'AND angle in ({anglesSeq}) ORDER BY amp1',
 
        'else': 'SELECT {names} FROM six_post_results WHERE betx>0 '+
-              'AND bety>0 AND emitx>0 AND emity>0 AND seed{seedsSeq} ' +
-              'AND angle{anglesSeq} '+'AND tunex{tunexSeq} '+'AND tuney{tuneySeq} ORDER BY amp1'
+              'AND bety>0 AND emitx>0 AND emity>0 AND seed{seedsSeq} ' + 'AND angle{anglesSeq} '+
+              'AND tunex{tunexSeq} '+'AND tuney{tuneySeq} AND turn_max={turns} ORDER BY amp1'
        }
 
 dataQueried = {
