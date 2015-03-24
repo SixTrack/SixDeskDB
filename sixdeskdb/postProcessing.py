@@ -5,12 +5,13 @@
 
 import sys
 import getopt
-from deskdb import *
 import numpy as np
 import os
 from plots import *
+from deskdb import *
 import sqlite3
 from sqltable import SQLTable
+from postPlot import Post_Plot
 
 ment=1000
 epsilon = 1e-38
@@ -24,7 +25,6 @@ class PostProcessing:
     def __init__(self, database):
         self.db=database
         self.Elhc, self.Einj = self.db.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
-        self.readplotb()
 
     def checkInjection(self):
         if(np.abs(self.Einj)< epsilon):
@@ -331,3 +331,6 @@ class PostProcessing:
           AS SELECT * FROM results INNER JOIN six_post
           ON (results.six_input_id=six_post.six_input_id AND results.row_num=six_post.row_num)"""
         self.db.execute(sql)
+
+    def plot(self, name, seed=None, angle=None):
+        return Post_Plot(self.db, name, seed, angle)

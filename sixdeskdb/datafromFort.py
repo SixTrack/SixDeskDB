@@ -1,6 +1,5 @@
 from queries import queries, dataQueried
 import sys
-from deskdb import *
 import numpy as np
 import os
 
