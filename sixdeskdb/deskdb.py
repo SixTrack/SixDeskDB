@@ -1445,7 +1445,9 @@ class SixDeskDB(object):
       anglename=os.path.join(dirname,seed,angle)
       out.append(mk_dir(anglename))
     return out[-1]
-
+  def has_table(self,name):
+    sql="SELECT count(*) FROM sqlite_master WHERE type='table' AND name='%s'"
+    return self.execute(sql%name)
   def plot_survival_avg(self,seed):
     data=self.get_survival_turns(seed)
     a,s,t=data['angle'],data['amp'],data['surv']
@@ -1506,6 +1508,7 @@ class SixDeskDB(object):
              ('distp','float'),('dist','float'),
              ('sturns1' ,'int'),('sturns2','int'),('turn_max','int'),
              ('amp1','float'),('amp2','float'),('angle','float'),
+             ('row_num','int'),
              ('mtime','float')]
     names=','.join(zip(*rectype)[0])
     turnsl=self.env_var['turnsl']
@@ -1518,7 +1521,7 @@ class SixDeskDB(object):
     seeds=self.get_db_seeds()
     mtime=self.execute('SELECT max(mtime) from results')[0][0]
     final=[]
-    sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 AND turn_max=%d'%(names,turnsl)
+    sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 AND turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
     LHCDescrip=self.LHCDescrip
     for tunex,tuney in self.get_db_tunes():
         sixdesktunes="%s_%s"%(tunex,tuney)
@@ -1546,7 +1549,7 @@ class SixDeskDB(object):
                     print sql
                 inp=np.array(self.execute(sql),dtype=rectype)
                 if len(inp)==0:
-                    msg="all particle lost for angle = %s and seed = %s"
+                    msg="Warning: all particle lost for angle %s and seed %s"
                     print msg%(angle,seed)
                     continue
                 betx=inp['betx']
@@ -1564,8 +1567,9 @@ class SixDeskDB(object):
                 sturns1=inp['sturns1']
                 sturns2=inp['sturns2']
                 turn_max=inp['turn_max'].max()
-                amp2=inp['amp2']
-                if amp2[-1]<ns2l:
+                amp2=inp['amp2'][-1]
+                row_num=inp['row_num'][-1]
+                if row_num<30 or amp2<ns2l:
                     truncated=True
                 else:
                     truncated=False
@@ -1652,9 +1656,11 @@ class SixDeskDB(object):
                 alost1=alost1*alost2
                 firstamp=rad*sigx1[0]
                 lastamp=rad*sigx1[iel]
-                #if alost1==0. and alost2==0. and truncated:
-                #     alost1=rad*sigx1[-1]
-                #     alost2=rad*sigx1[-1]
+                if alost1==0. and alost2==0. and truncated:
+                     alost1=rad*sigx1[-1]
+                     alost2=rad*sigx1[-1]
+                     fmt="Warning: tune %s_%s, angle %s, seed %d, range %s-%s: stepwise survival"
+                #print fmt%(tunex,tuney,angle,seed,ns1l,ns2l)
                 name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
                 name1= '%s%ss%s%s-%s%s.%d'%(self.LHCDescrip,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
                 if(seed<10):
@@ -1703,7 +1709,10 @@ class SixDeskDB(object):
 
         fnplot='DAres.%s.%s.%s.plot'%(self.LHCDescrip,sixdesktunes,turnse)
         fnplot= os.path.join(dirname,fnplot)
-        fhplot = open(fnplot, 'w')
+        fhplot= open(fnplot, 'w')
+        fnsumm='DAres.%s.%s.%s.summ'%(self.LHCDescrip,sixdesktunes,turnse)
+        fnsumm= os.path.join(dirname,fnsumm)
+        fhsumm= open(fnsumm, 'w')
         fn=0
         #for k in eqaper:
         #  msg="Angle %-4g, Seed %2d: Dynamic Aperture below:  %.2f Sigma"
@@ -1713,6 +1722,13 @@ class SixDeskDB(object):
             study= final['name'][0]
             idxangle=final['angle']==angle
             idx     =idxangle&(final['alost1']!=0)
+            idxzero =idxangle&(final['alost1']==0)
+            if all(idxzero==idxangle):
+                print "No data for angle %s"%angle
+                continue
+            for seed in final['seed'][idxzero]:
+                fmt="Warning: tune %s_%s, angle %s, seed %d, range %s-%s: all stable particles"
+                print fmt%(tunex,tuney,angle,seed,ns1l,ns2l)
             idxneg  =idxangle&(final['alost1']<0)
             finalalost=np.abs(final['alost1'][idx])
             imini=np.argmin(finalalost)
@@ -1748,10 +1764,21 @@ class SixDeskDB(object):
             print "# of (Aav-A0)/A0 >10%%:  %d"  %nega
             name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
             if nostd:
-              fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
+              fmt1='%s %d %.2f %.2f %.2f %d %.2f %.2f\n'
+              fhplot.write(fmt1%(name2,fn,mini,mean,maxi,nega,Amin,Amax))
             else:
-              fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax, std))
+              fmt2='%s %d %.2f %.2f %.2f %d %.2f %.2f %.2f\n'
+              #angle_rad=angle/180*np.pi
+              fhplot.write(fmt2%(name2, fn, mini, mean, maxi, nega,
+                                 Amin, Amax, std))
+            fmt3='%.2f %.2f %.2f %d %.2f %.2f %.2f %.2f %.2f %.2f %d %.2f\n'
+            co=np.cos(angle/180*np.pi)
+            si=np.sin(angle/180*np.pi)
+            fhsumm.write(fmt3%(mini*co,mini*si,mini,smini,
+                               mean*co,mean*si,mean,
+                               maxi*co,maxi*si,maxi,smaxi,angle))
         fhplot.close()
+        fhsumm.close()
         print fnplot
 
 # -------------------------------- turn by turn data -----------------------------------------------------------
@@ -1936,3 +1963,10 @@ class SixDeskDB(object):
     pl.xlabel(r'$\sigma_x$')
     pl.ylabel(r'$\sigma_y$')
     return self
+  def check_zeroda(self):
+      if self.has_table('da_post'):
+         out=self.execute('select tunex,tuney,seed,angle from da_post where alost1==0')
+         for tunex,tuney,seed,angle in out:
+            print "Tune %s_%s, seed %d, angle %d has alost1=0"%(tunex,tuney,seed,angle)
+      else:
+        print "No DA command issued yet"

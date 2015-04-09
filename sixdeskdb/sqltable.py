@@ -46,7 +46,7 @@ class SQLTable(object):
     self.dbtype = dbtype
     if recreate:
         cur=db.cursor()
-        cur.execute("DROP TABLE %s"%name)
+        cur.execute("DROP TABLE IF EXISTS %s"%name)
     self.create()
   def create(self):
     db=self.db;table=self.name
@@ -119,7 +119,13 @@ class SQLTable(object):
     vals=','.join([artype] * len(data[0]))
     # print vals
     sql_cmd=sql%(table,vals)
-    cur.executemany(sql_cmd, data)
+    try:
+      cur.executemany(sql_cmd, data)
+    except sqlite3.ProgrammingError, e:
+      print "%s: %s"%(e.__class__.__name__,e.message)
+      print data
+      print sql_cmd
+      raise sqlite3.ProgrammingError
     count = cur.rowcount
     # print sql_cmd
     db.commit()

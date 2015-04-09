@@ -118,6 +118,15 @@ files, e.g. ~/w1/sixjobs or ~/w1/sixjobs/studies/job_tracking."""
        db.st_mad6t_results()
        db.st_six_beta()
        db.st_six_input()
+    def check(self,study):
+       """Perform checks. Options:
+zeroda:  Check whether da analysis produce 0 values of DA
+       """
+       db=SixDeskDB(study)
+       if len(self.args)==0:
+          print "Please select the check type"
+       else:
+          getattr(db,"check_%s")(self.args[0])
     def mad(self,study):
        """Analyse the output of mad6t (HL-LHC specific)
 

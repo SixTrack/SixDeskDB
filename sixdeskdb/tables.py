@@ -92,7 +92,7 @@ class Six_Res(object):
   ('sigy1', 'float', 'Vertical amplitude 1st particle'),
   ('deltap', 'float', 'Relative momentum deviation Deltap'),
   ('dist', 'float', 'Final distance in phase space'),
-  ('distp', 'float', 'Maximumslope of distance in phase space'),
+  ('distp', 'float', 'Maximum slope of distance in phase space'),
   ('qx_det', 'float', 'Horizontal detuning'),
   ('qx_spread', 'float', 'Spread of horizontal detuning'),
   ('qy_det', 'float', 'Vertical detuning'),
