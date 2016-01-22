@@ -36,9 +36,13 @@ from sqltable import SQLTable
 for t in (np.int8, np.int16, np.int32, np.int64,np.uint8, np.uint16, np.uint32, np.uint64):
   sqlite3.register_adapter(t, long)
 
-def parse_env(studydir):
-  tmp="sh -c '. %s/sixdeskenv;. %s/sysenv; python -c %s'"
-  cmd=tmp%(studydir,studydir,'"import os;print os.environ"')
+def parse_env(studydir,logname=None):
+  tmp="sh -c '%s . %s/sixdeskenv;. %s/sysenv; python -c %s'"
+  if logname is not None:
+    log='export LOGNAME="%s";'%logname
+  else:
+    log=""
+  cmd=tmp%(log,studydir,studydir,'"import os;print os.environ"')
   return eval(os.popen(cmd).read())
 
 
@@ -184,13 +188,13 @@ def check_sixdeskenv(studyDir):
 
 class SixDeskDB(object):
   @classmethod
-  def from_dir(cls,studyDir):
+  def from_dir(cls,studyDir,logname=None):
     '''create local Database for storing study'''
     sixdeskenv,sysenv=check_sixdeskenv(studyDir)
-    env_var = parse_env(studyDir)
+    env_var = parse_env(studyDir,logname=logname)
     dbname = env_var['LHCDescrip'] + ".db"
     db=cls(dbname,create=True)
-    db.update_sixdeskenv(studyDir)
+    db.update_sixdeskenv(studyDir,logname=logname)
     db.st_mad6t_run()
     db.st_mad6t_run2()
     db.st_mad6t_results()
@@ -199,10 +203,10 @@ class SixDeskDB(object):
     # db.st_six_results()
     return db
 
-  def update_sixdeskenv(self,studyDir):
+  def update_sixdeskenv(self,studyDir,logname=None):
     sixdeskenv,sysenv=check_sixdeskenv(studyDir)
     self.add_files([['sixdeskenv',sixdeskenv],['sysenv',sysenv]])
-    env_var = parse_env(studyDir)
+    env_var = parse_env(studyDir,logname=logname)
     for key in env_var.keys():
       if key not in tables.acc_var:
         del env_var[key]
@@ -272,6 +276,7 @@ class SixDeskDB(object):
       self.env_var[key]=val
       self.env_mtime[key]=mtime
     self.LHCDescrip=self.env_var.get('LHCDescrip')
+    self.logname=self.env_var.get('LOGNAME')
 
   def print_table_info(self):
       out=self.execute("SELECT name FROM sqlite_master WHERE type='table';")

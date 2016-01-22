@@ -55,9 +55,13 @@ def extract_mad_out(fh):
       name,val=extract_kmax(l)
       out[name]=val
     elif 'nom1 =' in l or 'nom2 =' in l or 'nom5 =' in l or 'nom8 =' in l:
-      print l
       name,eq,val,sm=l.split()
       out.setdefault(name,[]).append(float(val))
+    elif 'err =  ' in l or 'qx =  ' in l or 'qy =  ' in l:
+      name,eq,val,sm=l.split()
+      out[name]=float(val)
+      #out.setdefault(name,[]).append(float(val))
+      #out.setdefault(name,[]).append(float(val))
     elif l.startswith('acb'):
       name,valf,vali,lima,limb=l.split()
       valf,vali,lima,limb=map(float,(valf,vali,lima,limb))
