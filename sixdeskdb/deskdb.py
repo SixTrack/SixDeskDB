@@ -1798,6 +1798,37 @@ class SixDeskDB(object):
 #    dbname=create_db(tbt_data,studio,seedinit,seedend,nsi,nsf,angles)
 #    print ('Turn by turn tracking data successfully stored in %s.db' %dbname)
 # -------------------------------- da_vs_turns -----------------------------------------------------------
+  def st_fma(self,data,recreate=False):
+    ''' store fma data in database'''
+    cols  = SQLTable.cols_from_dtype(data.dtype)
+    tab   = SQLTable(self.conn,'fma',cols,tables.Fma.key,recreate)
+    tab.insert(data)
+#  def get_fma(self,seed,tune):
+#    '''get fma data from DB'''
+#    turnsl=self.env_var['turnsl']
+#    (tunex,tuney)=tune
+#    #check if table da_vst exists in database
+#    if(self.check_table('fma')):
+#      ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+#      cmd="""SELECT *
+#           FROM da_vst WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%d
+#           ORDER BY nturn"""
+#      cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
+#      data=np.fromiter(cur,dtype=ftype)
+#    else:
+#      #02/11/2014 remaned table da_vsturn to da_vst - keep da_vsturn for backward compatibility - note this table did not include the turn_max!!!
+#      #check if table da_vsturn exists in database
+#      if(self.check_table('da_vsturn')):
+#        ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+#        cmd="""SELECT *
+#             FROM da_vsturn WHERE seed=%s AND tunex=%s AND tuney=%s
+#             ORDER BY nturn"""
+#        cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
+#        data=np.fromiter(cur,dtype=ftype)
+#      #if tables da_vst and da_vsturn do not exist, return an empty list
+#      else:      
+#        data=[]
+#    return data
   def st_da_vst(self,data,recreate=False):
     ''' store da vs turns data in database'''
     cols  = SQLTable.cols_from_dtype(data.dtype)

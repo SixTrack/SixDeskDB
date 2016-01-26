@@ -169,6 +169,33 @@ class Files(object):
   ('mtime','float','file modification time')]
   key=['path']
 
+class Fma(object):
+  fields=[
+  ('six_input_id','int','unique id for each fma_sixtrack file'),
+  ('inputfile' ,'|S100', 'input file name'),
+  ('method', '|S100', 'method used to calculate particle tunes'),
+  ('part_id', 'float', 'particle id'),
+  ('q1', 'float', 'tune mode 1'),
+  ('q2', 'float', 'tune mode 2'),
+  ('q3', 'float', 'tune mode 3'),
+  ('eps1_min', 'float', 'minimum emittance mode 1'),
+  ('eps2_min', 'float', 'minimum emittance mode 2'),
+  ('eps3_min', 'float', 'minimum emittance mode 3'),
+  ('eps1_max', 'float', 'maximum emittance mode 1'),
+  ('eps2_max', 'float', 'maximum emittance mode 2'),
+  ('eps3_max', 'float', 'maximum emittance mode 3'),
+  ('eps1_avg', 'float', 'average emittance mode 1'),
+  ('eps2_avg', 'float', 'average emittance mode 2'),
+  ('eps3_avg', 'float', 'average emittance mode 3'),
+  ('eps1_0', 'float', 'initial emittance mode 1'),
+  ('eps2_0', 'float', 'initial emittance mode 2'),
+  ('eps3_0', 'float', 'initial emittance mode 3'),
+  ('phi1_0', 'float', 'initial phase mode 1'),
+  ('phi2_0', 'float', 'initial phase mode 2'),
+  ('phi3_0', 'float', 'initial phase mode 3'),
+  ('mtime','float','last modification time')]
+  key=['tunex','tuney','angle','seed','inputfile','method','id']
+
 class Da_Vst(object):
   fields=[
   ('seed', 'int', 'seed value'),
