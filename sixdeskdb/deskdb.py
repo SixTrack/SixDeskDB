@@ -505,7 +505,7 @@ class SixDeskDB(object):
     for row in cur.execute('SELECT DISTINCT six_input_id,mtime FROM six_results'):
         f10_data[row[0]]=row[1]
     fma_data={}
-    for row in cur.execute('SELECT DISTINCT six_input_id,mtime FROM six_fma'):
+    for row in cur.execute('SELECT DISTINCT six_input_id,mtime_fma FROM six_fma'):
         fma_data[row[0]]=row[1]
     count3   = 0
     count10  = 0
@@ -1825,38 +1825,28 @@ class SixDeskDB(object):
 #    tbt_data=downloader(studio, seeds, ampls, angles, tunes, exp_turns,np,setenv=True)
 #    dbname=create_db(tbt_data,studio,seedinit,seedend,nsi,nsf,angles)
 #    print ('Turn by turn tracking data successfully stored in %s.db' %dbname)
+# -------------------------------- fma -------------------------------------------------------------------
+  def get_fma(self,seed,tune,turns,inputfile,method):
+    (tunex,tuney)=tune
+    if(self.check_table('six_fma') and self.check_table('six_input')):
+      ftype=np.dtype([('id',int),('seed',int),('simul',str),('tunex',float),('tuney',float),('amp1',float),('amp2',float),('turns',str),('angle',float),('fort3','V'),('mtime',float),('six_input_id',int), ('row_num',int), ('inputfile' ,str), ('method', str), ('part_id', int), ('q1', float), ('q2', float), ('q3', float), ('eps1_min', float), ('eps2_min', float), ('eps3_min', float), ('eps1_max', float), ('eps2_max', float), ('eps3_max', float), ('eps1_avg', float), ('eps2_avg', float), ('eps3_avg', float), ('eps1_0', float), ('eps2_0', float), ('eps3_0', float), ('phi1_0', float), ('phi2_0', float), ('phi3_0', float), ('mtime_fma',float)])
+      cmd="""SELECT *
+           FROM fma WHERE seed=%s AND tunex=%s AND tuney=%s AND turns='%s'
+           AND inputfile='%s' AND method='%s' ORDER BY inputfile,method"""
+      cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turns,inputfile,method))
+      data=np.fromiter(cur,dtype=ftype)
+    else:
+      data=[]
+    return data
+  def plot_fma_footprint(self,seed,tune,turns,inputfile,method):
+    data=self.get_fma(seed,tune,turns,inputfile,method)
+    eps=np.sqrt(data['eps1_0']**2+data['eps2_0']**2)
+    pl.scatter(data['q1'],data['q2'],c=eps,norm=matplotlib.colors.Normalize(),linewidth=0)
+    cbar=pl.colorbar()
+    cbar.set_label(r'$\sqrt{\epsilon_{1,0}^2+\epsilon_{2,0}^2} \ [\mu \rm m]$ ',labelpad=30,rotation=270)
+    pl.xlabel('Q1')
+    pl.ylabel('Q2')
 # -------------------------------- da_vs_turns -----------------------------------------------------------
-  def st_fma(self,data,recreate=False):
-    ''' store fma data in database'''
-    cols  = SQLTable.cols_from_dtype(data.dtype)
-    tab   = SQLTable(self.conn,'fma',cols,tables.Fma.key,recreate)
-    tab.insert(data)
-#  def get_fma(self,seed,tune):
-#    '''get fma data from DB'''
-#    turnsl=self.env_var['turnsl']
-#    (tunex,tuney)=tune
-#    #check if table da_vst exists in database
-#    if(self.check_table('fma')):
-#      ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
-#      cmd="""SELECT *
-#           FROM da_vst WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%d
-#           ORDER BY nturn"""
-#      cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
-#      data=np.fromiter(cur,dtype=ftype)
-#    else:
-#      #02/11/2014 remaned table da_vsturn to da_vst - keep da_vsturn for backward compatibility - note this table did not include the turn_max!!!
-#      #check if table da_vsturn exists in database
-#      if(self.check_table('da_vsturn')):
-#        ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
-#        cmd="""SELECT *
-#             FROM da_vsturn WHERE seed=%s AND tunex=%s AND tuney=%s
-#             ORDER BY nturn"""
-#        cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
-#        data=np.fromiter(cur,dtype=ftype)
-#      #if tables da_vst and da_vsturn do not exist, return an empty list
-#      else:      
-#        data=[]
-#    return data
   def st_da_vst(self,data,recreate=False):
     ''' store da vs turns data in database'''
     cols  = SQLTable.cols_from_dtype(data.dtype)
