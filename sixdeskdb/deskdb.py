@@ -492,42 +492,54 @@ class SixDeskDB(object):
     conn = self.conn
     cur = conn.cursor()
     env_var = self.env_var
-    cols = SQLTable.cols_from_fields(tables.Six_In.fields)
-    tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
-    cols1 = SQLTable.cols_from_fields(tables.Six_Res.fields)
-    tab1 = SQLTable(conn,'six_results',cols1,tables.Six_Res.key)
+    cols3 = SQLTable.cols_from_fields(tables.Six_In.fields)
+    tab3 = SQLTable(conn,'six_input',cols3,tables.Six_In.key)
+    cols10 = SQLTable.cols_from_fields(tables.Six_Res.fields)
+    tab10 = SQLTable(conn,'six_results',cols10,tables.Six_Res.key)
+    colsfma = SQLTable.cols_from_fields(tables.Fma.fields)
+    tabfma = SQLTable(conn,'six_fma',colsfma,tables.Fma.key)
     f3_data={}
     for row in cur.execute('SELECT id,mtime,seed,simul,tunex,tuney,amp1,amp2,turns,angle FROM six_input'):
         f3_data[tuple(row[2:])]=row[:2]
     f10_data={}
     for row in cur.execute('SELECT DISTINCT six_input_id,mtime FROM six_results'):
         f10_data[row[0]]=row[1]
-    count3 = 0
-    count10 = 0
+    fma_data={}
+    for row in cur.execute('SELECT DISTINCT six_input_id,mtime FROM six_fma'):
+        fma_data[row[0]]=row[1]
+    count3   = 0
+    count10  = 0
+    countfma = 0
     workdir = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
     extra_files = []
-    rows3 = []
-    rows10 = []
+    rows3   = []
+    rows10  = []
+    rowsfma = []
     six_id_new = list(cur.execute('SELECT max(id) FROM six_input'))[0][0]
     if six_id_new is None:
       six_id_new=1
     else:
       six_id_new+=1
-    print "Looking for fort.3.gz, fort.10.gz files in\n %s"%workdir
-    file_count3=0
-    file_count10 = 0
+    print "Looking for fort.3.gz, fort.10.gz, fma_sixtrack files in\n %s"%workdir
+    file_count3   = 0
+    file_count10  = 0
+    file_countfma = 0
     for dirName in glob.iglob(os.path.join(workdir,'*','*','*','*','*','*')):
       f3=os.path.join(dirName, 'fort.3.gz')
       f10=os.path.join(dirName, 'fort.10.gz')
+      ffma=os.path.join(dirName, 'fma_sixtrack.gz')
       ranges= dirName.split('/')[-3]
       if '_' in ranges:
-        fn3_exists=fn10_exists=False
+        fn3_exists=fn10_exists=fnfma_exists=False
         if os.path.exists(f3):
             file_count3+=1
             fn3_exists=True
         if os.path.exists(f10):
             file_count10 += 1
             fn10_exists=True
+        if os.path.exists(ffma):
+            file_countfma += 1
+            fnfma_exists=True
         if file_count3%100==0:
            sys.stdout.write('.')
            sys.stdout.flush()
@@ -554,26 +566,42 @@ class SixDeskDB(object):
                 rows10.append([six_id,countl]+lines.split()+[mtime10])
                 countl += 1
              count10 += 1
+        if fnfma_exists:
+           mtimefma = os.path.getmtime(ffma)
+           mtimefma_old=fma_data.get(six_id,0)
+           if mtimefma > mtimefma_old and os.path.getsize(ffma)>0:
+             countl = 1
+             for lines in gzip.open(ffma,"r"):
+                if (lines.rfind('#') < 0):#skip header
+                  rowsfma.append([six_id,countl]+lines.split()+[mtimefma])
+                  countl += 1
+             countfma += 1
         if len(rows3) == 6000:
-          tab.insertl(rows3)
-          tab1.insertl(rows10)
+          tab3.insertl(rows3)
+          tab10.insertl(rows10)
+          tabfma.insertl(rowsfma)
           rows3 = []
           rows10 = []
-    tab.insertl(rows3)
-    tab1.insertl(rows10)
+          rowsfma = []
+    tab3.insertl(rows3)
+    tab10.insertl(rows10)
+    tabfma.insertl(rowsfma)
     rows3 = []
     print '\n number of fort.3 updated/found: %d/%d'%(count3,file_count3)
     print ' number of fort.10 updated/found: %d/%d'%(count10,file_count10)
-    sql="""CREATE VIEW IF NOT EXISTS results
-           AS SELECT * FROM six_input INNER JOIN six_results
-           ON six_input.id==six_results.six_input_id"""
-    cur.execute(sql)
-    sql="""SELECT count(*) FROM results"""
-    results=list(cur.execute(sql))[0][0]
-    sql="""SELECT COUNT(DISTINCT six_input_id) FROM six_results"""
-#    sql="""SELECT COUNT(*) FROM six_results"""
-    jobs=list(cur.execute(sql))[0][0]
-    print " db now contains %d results from %d jobs"% (results,jobs)
+    print ' number of fma_sixtrack updated/found: %d/%d'%(countfma,file_countfma)
+# create view of six_results and six_fma
+    for six_tab in ['results','fma']:
+      sql=("""CREATE VIEW IF NOT EXISTS %s
+              AS SELECT * FROM six_input INNER JOIN six_%s
+              ON six_input.id==six_%s.six_input_id""")%((six_tab,)*3)
+      cur.execute(sql)
+      sql="""SELECT count(*) FROM %s"""%(six_tab)
+      results=list(cur.execute(sql))[0][0]
+      sql=("""SELECT COUNT(DISTINCT six_input_id) FROM six_%s""")%(six_tab)
+#      sql="""SELECT COUNT(*) FROM six_%s"""%(six_tab)
+      jobs=list(cur.execute(sql))[0][0]
+      print " db now contains %d %s from %d jobs"% (results,six_tab,jobs)
 
   def execute(self,sql):
     cur= self.conn.cursor()
@@ -1798,6 +1826,37 @@ class SixDeskDB(object):
 #    dbname=create_db(tbt_data,studio,seedinit,seedend,nsi,nsf,angles)
 #    print ('Turn by turn tracking data successfully stored in %s.db' %dbname)
 # -------------------------------- da_vs_turns -----------------------------------------------------------
+  def st_fma(self,data,recreate=False):
+    ''' store fma data in database'''
+    cols  = SQLTable.cols_from_dtype(data.dtype)
+    tab   = SQLTable(self.conn,'fma',cols,tables.Fma.key,recreate)
+    tab.insert(data)
+#  def get_fma(self,seed,tune):
+#    '''get fma data from DB'''
+#    turnsl=self.env_var['turnsl']
+#    (tunex,tuney)=tune
+#    #check if table da_vst exists in database
+#    if(self.check_table('fma')):
+#      ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+#      cmd="""SELECT *
+#           FROM da_vst WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%d
+#           ORDER BY nturn"""
+#      cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
+#      data=np.fromiter(cur,dtype=ftype)
+#    else:
+#      #02/11/2014 remaned table da_vsturn to da_vst - keep da_vsturn for backward compatibility - note this table did not include the turn_max!!!
+#      #check if table da_vsturn exists in database
+#      if(self.check_table('da_vsturn')):
+#        ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+#        cmd="""SELECT *
+#             FROM da_vsturn WHERE seed=%s AND tunex=%s AND tuney=%s
+#             ORDER BY nturn"""
+#        cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
+#        data=np.fromiter(cur,dtype=ftype)
+#      #if tables da_vst and da_vsturn do not exist, return an empty list
+#      else:      
+#        data=[]
+#    return data
   def st_da_vst(self,data,recreate=False):
     ''' store da vs turns data in database'''
     cols  = SQLTable.cols_from_dtype(data.dtype)
