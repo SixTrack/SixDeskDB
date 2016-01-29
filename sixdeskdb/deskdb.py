@@ -1873,6 +1873,32 @@ class SixDeskDB(object):
     cbar.set_label(r'$\sqrt{\epsilon_{1,%s}^2+\epsilon_{2,%s}^2} \ [\mu \rm m]$'%(eps1.split('_')[1],eps2.split('_')[1]),labelpad=30,rotation=270)
     pl.xlabel(r'$Q_1$')
     pl.ylabel(r'$Q_2$')
+    pl.title('%s %s'%(inputfile,method))
+  def plot_fma_action_tune_ind(self,seed,tune,turns,inputfile,method,mode,eps1='eps1_0',eps2='eps2_0'):
+    """plot eps1 vs Q1, eps1 vs Q2 and
+    eps2 vs Q1, eps2 vs Q2 
+
+    Parameters:
+    ----------
+    seed : seed, e.g. 1
+    tune : optics tune, e.g. (62.28, 60.31)
+    turns : name of directory for number of turns tracked, e.g. 'e4'
+    inputfile: name of the inputfile used for the FMA analysis, e.g. IP3_DUMP_1
+    method: method used to calculate the tunes, e.g. TUNELASK
+    eps1: emittance mode 1, e.g. eps1_0 for initial emittance,
+        eps1_min for minimum emittance, eps1_max for maximum emittance
+        and eps1_avg for average emittance (over turns used for tune
+        analysis)
+    eps2: emittance mode 2 (see eps1 for example parameters)
+    """
+    data=self.get_fma(seed,tune,turns,inputfile,method)
+    for j in [1,2]:
+       pl.plot(data['eps1_%s'%(eps1.split('_')[1])],data['q%s'%j]-np.modf(self.get_db_tunes()[0][j-1])[0],'.',label=r'$\epsilon_{1,%s}$ vs $Q_{%s}$'%(eps1.split('_')[1],j))
+       pl.plot(data['eps2_%s'%(eps2.split('_')[1])],data['q%s'%j]-np.modf(self.get_db_tunes()[0][j-1])[0],'.',label=r'$\epsilon_{2,%s}$ vs $Q_{%s}$'%(eps2.split('_')[1],j))
+       pl.xlabel(r'$\epsilon \ [\mu \rm m]$')
+       pl.ylabel(r'$Q-Q_{\rm lattice}$')
+    pl.legend(loc='best')
+
   def plot_fma_action_tune(self,seed,tune,turns,inputfile,method,mode,eps1='eps1_0',eps2='eps2_0'):
     """plot eps1 vs eps2 colorcoded by the tune 
     of mode *mode*
