@@ -1827,6 +1827,18 @@ class SixDeskDB(object):
 #    print ('Turn by turn tracking data successfully stored in %s.db' %dbname)
 # -------------------------------- fma -------------------------------------------------------------------
   def get_fma(self,seed,tune,turns,inputfile,method):
+    """get data from fma_sixtrack. The data is stored
+    in table six_fma and can be accesed via the view
+    fma (view of six_fma and six_input)
+
+    Parameters:
+    ----------
+    seed : seed, e.g. 1
+    tune : optics tune, e.g. (62.28, 60.31)
+    turns : name of directory for number of turns tracked, e.g. 'e4'
+    inputfile: name of the inputfile used for the FMA analysis, e.g. IP3_DUMP_1
+    method: method used to calculate the tunes, e.g. TUNELASK
+    """
     (tunex,tuney)=tune
     if(self.check_table('six_fma') and self.check_table('six_input')):
       ftype=np.dtype([('id',int),('seed',int),('simul',str),('tunex',float),('tuney',float),('amp1',float),('amp2',float),('turns',str),('angle',float),('fort3','V'),('mtime',float),('six_input_id',int), ('row_num',int), ('inputfile' ,str), ('method', str), ('part_id', int), ('q1', float), ('q2', float), ('q3', float), ('eps1_min', float), ('eps2_min', float), ('eps3_min', float), ('eps1_max', float), ('eps2_max', float), ('eps3_max', float), ('eps1_avg', float), ('eps2_avg', float), ('eps3_avg', float), ('eps1_0', float), ('eps2_0', float), ('eps3_0', float), ('phi1_0', float), ('phi2_0', float), ('phi3_0', float), ('mtime_fma',float)])
@@ -1838,14 +1850,84 @@ class SixDeskDB(object):
     else:
       data=[]
     return data
-  def plot_fma_footprint(self,seed,tune,turns,inputfile,method):
+  def plot_fma_footprint(self,seed,tune,turns,inputfile,method,eps1='eps1_0',eps2='eps2_0'):
+    """plot q1 vs q2 colorcoded by sqrt(eps1**2+eps2**2)
+    
+    Parameters:
+    ----------
+    seed : seed, e.g. 1
+    tune : optics tune, e.g. (62.28, 60.31)
+    turns : name of directory for number of turns tracked, e.g. 'e4'
+    inputfile: name of the inputfile used for the FMA analysis, e.g. IP3_DUMP_1
+    method: method used to calculate the tunes, e.g. TUNELASK
+    eps1: emittance mode 1, e.g. eps1_0 for initial emittance,
+        eps1_min for minimum emittance, eps1_max for maximum emittance
+        and eps1_avg for average emittance (over turns used for tune
+        analysis)
+    eps2: emittance mode 2 (see eps1 for example parameters)
+    """
     data=self.get_fma(seed,tune,turns,inputfile,method)
-    eps=np.sqrt(data['eps1_0']**2+data['eps2_0']**2)
+    eps=np.sqrt(data[eps1]**2+data[eps2]**2)
     pl.scatter(data['q1'],data['q2'],c=eps,norm=matplotlib.colors.Normalize(),linewidth=0)
     cbar=pl.colorbar()
-    cbar.set_label(r'$\sqrt{\epsilon_{1,0}^2+\epsilon_{2,0}^2} \ [\mu \rm m]$ ',labelpad=30,rotation=270)
-    pl.xlabel('Q1')
-    pl.ylabel('Q2')
+    cbar.set_label(r'$\sqrt{\epsilon_{1,%s}^2+\epsilon_{2,%s}^2} \ [\mu \rm m]$'%(eps1.split('_')[1],eps2.split('_')[1]),labelpad=30,rotation=270)
+    pl.xlabel(r'$Q_1$')
+    pl.ylabel(r'$Q_2$')
+  def plot_fma_action_tune(self,seed,tune,turns,inputfile,method,mode,eps1='eps1_0',eps2='eps2_0'):
+    """plot eps1 vs eps2 colorcoded by the tune 
+    of mode *mode*
+
+    Parameters:
+    ----------
+    seed : seed, e.g. 1
+    tune : optics tune, e.g. (62.28, 60.31)
+    turns : name of directory for number of turns tracked, e.g. 'e4'
+    inputfile: name of the inputfile used for the FMA analysis, e.g. IP3_DUMP_1
+    method: method used to calculate the tunes, e.g. TUNELASK
+    mode: mode of the tune, 1=horizontal, 2=vertical, 3=longitudinal
+    eps1: emittance mode 1, e.g. eps1_0 for initial emittance,
+        eps1_min for minimum emittance, eps1_max for maximum emittance
+        and eps1_avg for average emittance (over turns used for tune
+        analysis)
+    eps2: emittance mode 2 (see eps1 for example parameters)
+    """
+    data=self.get_fma(seed,tune,turns,inputfile,method)
+    pl.scatter(data[eps1],data[eps2],c=data['q%s'%mode],norm=matplotlib.colors.Normalize(),linewidth=0)
+    cbar=pl.colorbar()
+    cbar.set_label(r'$Q_{%s}$'%mode,labelpad=30,rotation=270)
+    pl.xlabel(r'$\epsilon_{1,%s} \ [\mu \rm m]$'%(eps1.split('_')[1]))
+    pl.ylabel(r'$\epsilon_{2,%s} \ [\mu \rm m]$'%(eps2.split('_')[1]))
+  def plot_fma(self,seed,tune,turns,inputfile1,method1,inputfile2,method2,mode,eps1='eps1_0',eps2='eps2_0'):
+    """plot eps1 vs eps2 colorcoded by the 
+    differnce in tune of mode *mode* 
+        delta Q=abs(Q(inputfile2)-Q(inputfile1))
+    eps1 and eps2 are taken from inputfile1
+
+    Parameters:
+    ----------
+    seed : seed, e.g. 1
+    tune : optics tune, e.g. (62.28, 60.31)
+    turns : name of directory for number of turns tracked, e.g. 'e4'
+    inputfile[12]: name of the inputfile1 used for the FMA analysis,
+        e.g. IP3_DUMP_[12]
+    method[12]: method for tune calculation used in inputfile[12]
+        e.g. TUNELASK
+    method: method used to calculate the tunes, e.g. TUNELASK
+    mode: mode of the tune, 1=horizontal, 2=vertical, 3=longitudinal
+    eps1: emittance mode 1, e.g. eps1_0 for initial emittance,
+        eps1_min for minimum emittance, eps1_max for maximum emittance
+        and eps1_avg for average emittance (over turns used for tune
+        analysis)
+    eps2: emittance mode 2 (see eps1 for example parameters)
+    """
+    data1=self.get_fma(seed,tune,turns,inputfile1,method1)
+    data2=self.get_fma(seed,tune,turns,inputfile2,method2)
+    dq=np.abs(data1['q%s'%mode]-data2['q%s'%mode])
+    pl.scatter(data1[eps1],data1[eps2],c=dq,norm=matplotlib.colors.Normalize(),linewidth=0)
+    cbar=pl.colorbar()
+    cbar.set_label(r'$\Delta Q_{%s}$'%mode,labelpad=30,rotation=270)
+    pl.xlabel(r'$\epsilon_{1,%s} \ [\mu \rm m]$'%(eps1.split('_')[1]))
+    pl.ylabel(r'$\epsilon_{2,%s} \ [\mu \rm m]$'%(eps2.split('_')[1]))
 # -------------------------------- da_vs_turns -----------------------------------------------------------
   def st_da_vst(self,data,recreate=False):
     ''' store da vs turns data in database'''
