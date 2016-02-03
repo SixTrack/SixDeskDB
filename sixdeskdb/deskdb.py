@@ -1087,6 +1087,16 @@ class SixDeskDB(object):
     tabnames=np.fromiter(cur,dtype=ftype)
     return (tab in tabnames['name'])
 
+  def check_view(self,tab):
+    """check if view tab exists in database"""
+    cmd="""SELECT name FROM sqlite_master
+        WHERE type='view'
+        ORDER BY name"""
+    cur=self.conn.cursor().execute(cmd)
+    ftype=[('name',np.str_,30)]
+    tabnames=np.fromiter(cur,dtype=ftype)
+    return (tab in tabnames['name'])
+
   def get_angles(self):
     ''' get angles from env variables'''
     env_var = self.env_var
@@ -1708,6 +1718,9 @@ class SixDeskDB(object):
     datab.insertl(final)
 
   def mk_da(self,force=False,nostd=False):
+    """calculate DA for each seed and angle
+    from fort.10 files
+    """
     dirname=self.mk_analysis_dir()
     cols=SQLTable.cols_from_fields(tables.Da_Post.fields)
     datab=SQLTable(self.conn,'da_post',cols)
@@ -1826,6 +1839,24 @@ class SixDeskDB(object):
 #    dbname=create_db(tbt_data,studio,seedinit,seedend,nsi,nsf,angles)
 #    print ('Turn by turn tracking data successfully stored in %s.db' %dbname)
 # -------------------------------- fma -------------------------------------------------------------------
+  def get_fma_methods():
+    """returns list of all methods available for FMA analysis
+    """
+    return ['TUNENEWT1','TUNEABT','TUNEABT2','TUNENEWT','TUNEFIT','TUNEAPA','TUNEFFT','TUNEFFTI','TUNELASK']
+  def get_db_fma_inputfile_method():
+    """returns a list of inputfiles and methods used 
+    in db for FMA analysis
+
+    Returns:
+    --------
+    data: list
+        with format [(inputfile1,tunemethod1),(inputfile2,tunemethod2),...]
+    """
+    if(self.check_table('six_fma') and self.check_table('six_input')):
+      cmd="""SELECT inputfile,method
+           FROM fma ORDER BY inputfile"""
+      cur=self.conn.cursor().execute(cmd)
+      return list(set(cur.fetchall()))
   def get_fma(self,seed,tune,turns,inputfile,method):
     """get data from fma_sixtrack. The data is stored
     in table six_fma and can be accesed via the view
@@ -1838,10 +1869,20 @@ class SixDeskDB(object):
     turns : name of directory for number of turns tracked, e.g. 'e4'
     inputfile: name of the inputfile used for the FMA analysis, e.g. IP3_DUMP_1
     method: method used to calculate the tunes, e.g. TUNELASK
+
+    Returns:
+    --------
+    data: ndarray (structured) with 
+        id,seed,simul,tunex,tuney,amp1,amp2,turns,angle,fort3,mtime,six_input_id,
+        row_num from six_input table
+        and from six_fma table:
+        inputfile: inputfile name e.g. IP3_DUMP_1
+        method: method used for tune calculation e.g. TUNELASK
+        ,part_id,q1,q2,q3
     """
     (tunex,tuney)=tune
-    if(self.check_table('six_fma') and self.check_table('six_input')):
-      ftype=np.dtype([('id',int),('seed',int),('simul',str),('tunex',float),('tuney',float),('amp1',float),('amp2',float),('turns',str),('angle',float),('fort3','V'),('mtime',float),('six_input_id',int), ('row_num',int), ('inputfile' ,str), ('method', str), ('part_id', int), ('q1', float), ('q2', float), ('q3', float), ('eps1_min', float), ('eps2_min', float), ('eps3_min', float), ('eps1_max', float), ('eps2_max', float), ('eps3_max', float), ('eps1_avg', float), ('eps2_avg', float), ('eps3_avg', float), ('eps1_0', float), ('eps2_0', float), ('eps3_0', float), ('phi1_0', float), ('phi2_0', float), ('phi3_0', float), ('mtime_fma',float)])
+    if(self.check_view('fma')):
+      ftype=np.dtype([('id',int),('seed',int),('simul','|S100'),('tunex',float),('tuney',float),('amp1',float),('amp2',float),('turns','|S100'),('angle',float),('fort3','V'),('mtime',float),('six_input_id',int), ('row_num',int), ('inputfile' ,'|S100'), ('method', '|S100'), ('part_id', int), ('q1', float), ('q2', float), ('q3', float), ('eps1_min', float), ('eps2_min', float), ('eps3_min', float), ('eps1_max', float), ('eps2_max', float), ('eps3_max', float), ('eps1_avg', float), ('eps2_avg', float), ('eps3_avg', float), ('eps1_0', float), ('eps2_0', float), ('eps3_0', float), ('phi1_0', float), ('phi2_0', float), ('phi3_0', float), ('mtime_fma',float)])
       cmd="""SELECT *
            FROM fma WHERE seed=%s AND tunex=%s AND tuney=%s AND turns='%s'
            AND inputfile='%s' AND method='%s' ORDER BY inputfile,method"""
@@ -1850,8 +1891,61 @@ class SixDeskDB(object):
     else:
       data=[]
     return data
-  def plot_fma_footprint(self,seed,tune,turns,inputfile,method,eps1='eps1_0',eps2='eps2_0'):
-    """plot q1 vs q2 colorcoded by sqrt(eps1**2+eps2**2)
+  def get_fma_intersept(self,seed,tune,turns,inputfile1,method1,inputfile2,method2):
+    """get data with seed *seed*, tune *tune*,turns *turns*
+    which exists in inputfile1,method1 and inputfile2,method2
+    for each amp1,amp2,angle,part_id
+
+    Parameters:
+    ----------
+    seed : seed, e.g. 1
+    tune : optics tune, e.g. (62.28, 60.31)
+    turns : name of directory for number of turns tracked, e.g. 'e4'
+    inputfile: name of the inputfile used for the FMA analysis, e.g. IP3_DUMP_1
+    method: method used to calculate the tunes, e.g. TUNELASK
+    var: get only var=[(var1,var2,var3)] from database. If var=None
+        all variables are retrieved
+    Returns:
+    --------
+    data: ndarray (structured) with 
+        seed,tunex,tuney,fma1_amp1,fma2_amp1,fma1_amp2,fma2_amp2,...
+        where seed,tunex,tuney are identical for (inputfile1,method1)
+        and (inputfile2,method2)
+    """
+    (tunex,tuney)=tune
+    if(self.check_view('fma')):
+# delete tables fma1,fma2 if they exist
+      for t in ['fma1','fma2']:
+        cmd="""DROP TABLE IF EXISTS %s"""%(t)
+        self.conn.cursor().execute(cmd)
+# creat two tables: fma1: inputfile1,method1, fma2: inputfile2,method2
+# then select the common rows by requesting that amp1,angle,part_id match
+# other option to use inner join
+      cmd1="""CREATE TABLE fma1 AS SELECT * FROM fma WHERE seed=%s AND tunex=%s AND tuney=%s AND turns='%s' AND inputfile='%s' AND method='%s'"""%(seed,tunex,tuney,turns,inputfile1,method1)
+      cmd2="""CREATE TABLE fma2 AS SELECT * FROM fma WHERE seed=%s AND tunex=%s AND tuney=%s AND turns='%s' AND inputfile='%s' AND method='%s'"""%(seed,tunex,tuney,turns,inputfile2,method2)
+      for cmd in cmd1,cmd2:
+        self.conn.cursor().execute(cmd)
+# extract data from fma1 and fma2 where amp1,amp2,angle,part_id exist in both tables
+# create string for mysql command to extract data from fma1 and fma2
+# column names are renamed to amp1 -> fma1_amp1, fma2_amp2
+      var=['amp1','amp2','angle','inputfile','method','part_id','q1','q2','q3','eps1_min','eps2_min','eps3_min','eps1_max','eps2_max','eps3_max','eps1_avg','eps2_avg','eps3_avg','eps1_0','eps2_0','eps3_0','phi1_0','phi2_0','phi3_0']
+      t_var=()
+      varstr=''
+      for v in var:
+        t_var=t_var+(v,)*4
+      varstr=(', fma1.%s AS fma1_%s, fma2.%s AS fma2_%s'*len(var))%t_var
+      cmd12="""SELECT fma1.seed, fma1.tunex, fma1.tuney, fma1.turns %s FROM fma1,fma2 WHERE (fma1.amp1=fma2.amp1 AND fma1.amp2=fma2.amp2 AND fma1.angle=fma2.angle AND fma1.part_id=fma2.part_id)"""%varstr
+      cur=self.conn.cursor().execute(cmd12)
+      ftype=np.dtype([('seed',int),('tunex',float),('tuney',float),('turns','|S100'),('fma1_amp1',float),('fma2_amp1',float),('fma1_amp2',float),('fma2_amp2',float),('fma1_angle',float),('fma2_angle',float),('fma1_inputfile','|S100'),('fma2_inputfile','|S100'),('fma1_method','|S100'),('fma2_method','|S100'),('fma1_part_id',int),('fma2_part_id',int),('fma1_q1',float),('fma2_q1',float),('fma1_q2',float),('fma2_q2',float),('fma1_q3',float),('fma2_q3',float),('fma1_eps1_min',float),('fma2_eps1_min',float),('fma1_eps2_min',float),('fma2_eps2_min',float),('fma1_eps3_min',float),('fma2_eps3_min',float),('fma1_eps1_max',float),('fma2_eps1_max',float),('fma1_eps2_max',float),('fma2_eps2_max',float),('fma1_eps3_max',float),('fma2_eps3_max',float),('fma1_eps1_avg',float),('fma2_eps1_avg',float),('fma1_eps2_avg',float),('fma2_eps2_avg',float),('fma1_eps3_avg',float),('fma2_eps3_avg',float),('fma1_eps1_0',float),('fma2_eps1_0',float),('fma1_eps2_0',float),('fma2_eps2_0',float),('fma1_eps3_0',float),('fma2_eps3_0',float),('fma1_phi1_0',float),('fma2_phi1_0',float),('fma1_phi2_0',float),('fma2_phi2_0',float),('fma1_phi3_0',float),('fma2_phi3_0',float)])
+      data=np.fromiter(cur,dtype=ftype)
+    else:
+      data=[]
+    for t in ['fma1','fma2']:
+      cmd="""DROP TABLE IF EXISTS %s"""%(t)
+      self.conn.cursor().execute(cmd)
+    return data
+  def plot_fma_footprint(self,seed,tune,turns,inputfile,method,eps1='eps1_0',eps2='eps2_0',vmin=None,vmax=None):
+    """plot q1 vs q2 colorcoded by sqrt((eps1+eps2)/eps0)
     
     Parameters:
     ----------
@@ -1860,48 +1954,42 @@ class SixDeskDB(object):
     turns : name of directory for number of turns tracked, e.g. 'e4'
     inputfile: name of the inputfile used for the FMA analysis, e.g. IP3_DUMP_1
     method: method used to calculate the tunes, e.g. TUNELASK
-    eps1: emittance mode 1, e.g. eps1_0 for initial emittance,
+    eps1: emittance mode 1, e.g. eps1_0 is the initial emittance 
+        (this is equal to the initial emittance if 
+        the particles are tracked from 1 to ... turns)
         eps1_min for minimum emittance, eps1_max for maximum emittance
         and eps1_avg for average emittance (over turns used for tune
         analysis)
     eps2: emittance mode 2 (see eps1 for example parameters)
+    vmin,vmax: plot range for sqrt((eps1+eps2)/eps0) (larger/smaller
+        are saturated)
+    dq: plot range is (tune-dq,tune+dq)
     """
     data=self.get_fma(seed,tune,turns,inputfile,method)
-    eps=np.sqrt(data[eps1]**2+data[eps2]**2)
-    pl.scatter(data['q1'],data['q2'],c=eps,norm=matplotlib.colors.Normalize(),linewidth=0)
+    eps0=self.env_var['emit']*self.env_var['pmass']/self.env_var['e0']
+    amp=np.sqrt((data[eps1]+data[eps2])/eps0)
+    if vmin==None: vmin=np.min(amp)
+    if vmax==None:
+      vmax=np.max(amp)
+      vmax_db=np.max(self.get_db_amplitudes())+self.env_var['nsincl']
+      if vmax>vmax_db:# sometimes very large amplitudes occur, which are not important -> saturate them
+          vmax=vmax_db
+    pl.scatter(data['q1'],data['q2'],c=amp,vmin=vmin,vmax=vmax,linewidth=0)
     cbar=pl.colorbar()
-    cbar.set_label(r'$\sqrt{\epsilon_{1,%s}^2+\epsilon_{2,%s}^2} \ [\mu \rm m]$'%(eps1.split('_')[1],eps2.split('_')[1]),labelpad=30,rotation=270)
+    cbar.set_label(r'$\sigma=\sqrt{\frac{\epsilon_{1,%s}+\epsilon_{2,%s}}{\epsilon_0}}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f  \ \mu \rm m$'%(eps1.split('_')[1],eps2.split('_')[1],self.env_var['emit']),labelpad=30,rotation=270)
     pl.xlabel(r'$Q_1$')
     pl.ylabel(r'$Q_2$')
     pl.title('%s %s'%(inputfile,method))
-  def plot_fma_action_tune_ind(self,seed,tune,turns,inputfile,method,mode,eps1='eps1_0',eps2='eps2_0'):
-    """plot eps1 vs Q1, eps1 vs Q2 and
-    eps2 vs Q1, eps2 vs Q2 
-
-    Parameters:
-    ----------
-    seed : seed, e.g. 1
-    tune : optics tune, e.g. (62.28, 60.31)
-    turns : name of directory for number of turns tracked, e.g. 'e4'
-    inputfile: name of the inputfile used for the FMA analysis, e.g. IP3_DUMP_1
-    method: method used to calculate the tunes, e.g. TUNELASK
-    eps1: emittance mode 1, e.g. eps1_0 for initial emittance,
-        eps1_min for minimum emittance, eps1_max for maximum emittance
-        and eps1_avg for average emittance (over turns used for tune
-        analysis)
-    eps2: emittance mode 2 (see eps1 for example parameters)
-    """
-    data=self.get_fma(seed,tune,turns,inputfile,method)
-    for j in [1,2]:
-       pl.plot(data['eps1_%s'%(eps1.split('_')[1])],data['q%s'%j]-np.modf(self.get_db_tunes()[0][j-1])[0],'.',label=r'$\epsilon_{1,%s}$ vs $Q_{%s}$'%(eps1.split('_')[1],j))
-       pl.plot(data['eps2_%s'%(eps2.split('_')[1])],data['q%s'%j]-np.modf(self.get_db_tunes()[0][j-1])[0],'.',label=r'$\epsilon_{2,%s}$ vs $Q_{%s}$'%(eps2.split('_')[1],j))
-       pl.xlabel(r'$\epsilon \ [\mu \rm m]$')
-       pl.ylabel(r'$Q-Q_{\rm lattice}$')
-    pl.legend(loc='best')
-
-  def plot_fma_action_tune(self,seed,tune,turns,inputfile,method,mode,eps1='eps1_0',eps2='eps2_0'):
-    """plot eps1 vs eps2 colorcoded by the tune 
-    of mode *mode*
+# limit plotrange to 1.e-2 distance from lattice tune
+    dqlim=1.e-2
+    print """plot_fma_footprint: limit plotrange to %2.2e distance from lattice tune
+  in order to exclude chaotic tunes"""%dqlim
+    pl.xlim(np.modf(tune[0])[0]-dqlim,np.modf(tune[0])[0]+dqlim)
+    pl.ylim(np.modf(tune[1])[0]-dqlim,np.modf(tune[1])[0]+dqlim)
+  def plot_fma_action_tune(self,seed,tune,turns,inputfile,method,mode,eps1='eps1_0',eps2='eps2_0',vmin=None,vmax=None):
+    """plot sig1 vs sig2 colorcoded by the tune 
+    of mode *mode* with 
+    sig[12]=sqrt(eps[12]/eps0)
 
     Parameters:
     ----------
@@ -1911,23 +1999,33 @@ class SixDeskDB(object):
     inputfile: name of the inputfile used for the FMA analysis, e.g. IP3_DUMP_1
     method: method used to calculate the tunes, e.g. TUNELASK
     mode: mode of the tune, 1=horizontal, 2=vertical, 3=longitudinal
-    eps1: emittance mode 1, e.g. eps1_0 for initial emittance,
+    eps1: emittance mode 1, e.g. eps1_0 is the initial emittance 
+        (this is equal to the initial emittance if 
+        the particles are tracked from 1 to ... turns)
         eps1_min for minimum emittance, eps1_max for maximum emittance
         and eps1_avg for average emittance (over turns used for tune
         analysis)
     eps2: emittance mode 2 (see eps1 for example parameters)
+    vmin,vmax: plotrange for tune of mode *mode* (values outside
+        [vmin,vmax] are saturated
+        default values: vmin=min(tune),vmax=max(tune)
     """
     data=self.get_fma(seed,tune,turns,inputfile,method)
-    pl.scatter(data[eps1],data[eps2],c=data['q%s'%mode],norm=matplotlib.colors.Normalize(),linewidth=0)
+    eps0=self.env_var['emit']*self.env_var['pmass']/self.env_var['e0']
+# set colorbar limits
+    if vmin == None: vmin = np.min(data['q%s'%mode])
+    if vmax == None: vmax = np.max(data['q%s'%mode])
+    pl.scatter(np.sqrt(data[eps1]/eps0),np.sqrt(data[eps2]/eps0),c=data['q%s'%mode],linewidth=0,vmin=vmin,vmax=vmax)
     cbar=pl.colorbar()
     cbar.set_label(r'$Q_{%s}$'%mode,labelpad=30,rotation=270)
-    pl.xlabel(r'$\epsilon_{1,%s} \ [\mu \rm m]$'%(eps1.split('_')[1]))
-    pl.ylabel(r'$\epsilon_{2,%s} \ [\mu \rm m]$'%(eps2.split('_')[1]))
-  def plot_fma(self,seed,tune,turns,inputfile1,method1,inputfile2,method2,mode,eps1='eps1_0',eps2='eps2_0'):
-    """plot eps1 vs eps2 colorcoded by the 
-    differnce in tune of mode *mode* 
-        delta Q=abs(Q(inputfile2)-Q(inputfile1))
-    eps1 and eps2 are taken from inputfile1
+    pl.xlabel(r'$\sigma_x=\sqrt{\frac{\epsilon_{1,%s}}{\epsilon_0}} , \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(eps1.split('_')[1],self.env_var['emit']))
+    pl.ylabel(r'$\sigma_y=\sqrt{\frac{\epsilon_{2,%s}}{\epsilon_0}} , \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(eps2.split('_')[1],self.env_var['emit']))
+    pl.title('%s %s'%(inputfile,method))
+  def plot_fma_scatter(self,seed,tune,turns,inputfile1,method1,inputfile2,method2,var1='eps1_0',var2='eps2_0'):
+    """scatter plot var1 vs var2 of inputfile1 colorcoded by the 
+    differnce in tune 
+        delta Q=log10(sqrt(sum_i (Q_i(inputfile2)-Q_i(inputfile1))**2))
+    var1 and var2 are taken from inputfile1
 
     Parameters:
     ----------
@@ -1939,21 +2037,34 @@ class SixDeskDB(object):
     method[12]: method for tune calculation used in inputfile[12]
         e.g. TUNELASK
     method: method used to calculate the tunes, e.g. TUNELASK
-    mode: mode of the tune, 1=horizontal, 2=vertical, 3=longitudinal
-    eps1: emittance mode 1, e.g. eps1_0 for initial emittance,
+    var1: variable 1, e.g. eps1_0 for initial emittance,
         eps1_min for minimum emittance, eps1_max for maximum emittance
         and eps1_avg for average emittance (over turns used for tune
         analysis)
-    eps2: emittance mode 2 (see eps1 for example parameters)
+    var2: variable 2 (see var1 for example parameters)
     """
-    data1=self.get_fma(seed,tune,turns,inputfile1,method1)
-    data2=self.get_fma(seed,tune,turns,inputfile2,method2)
-    dq=np.abs(data1['q%s'%mode]-data2['q%s'%mode])
-    pl.scatter(data1[eps1],data1[eps2],c=dq,norm=matplotlib.colors.Normalize(),linewidth=0)
+    data=self.get_fma_intersept(seed,tune,turns,inputfile1,method1,inputfile2,method2)
+    dq=np.sqrt((data['fma1_q1']-data['fma2_q1'])**2+(data['fma1_q2']-data['fma2_q2'])**2)
+# amplitude vs dq
+    if('eps' in var1 and 'eps' in var2):
+      eps0=self.env_var['emit']*self.env_var['pmass']/self.env_var['e0']
+      pl.scatter(np.sqrt(data['fma1_%s'%var1]/eps0),np.sqrt(data['fma1_%s'%var2]/eps0),c=dq,marker='.',linewidth=0,vmin=0.0,vmax=1.e-2)
+      pl.xlabel(r'$\sigma_x=\frac{\epsilon_{1,%s}}{\epsilon_0}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var1.split('_')[1],self.env_var['emit']))
+      pl.ylabel(r'$\sigma_y=\frac{\epsilon_{2,%s}}{\epsilon_0}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var2.split('_')[1],self.env_var['emit']))
+# tune vs dq
+    if('q' in var1 and 'q' in var2):
+      pl.scatter(data['fma1_%s'%var1],data['fma1_%s'%var2],c=dq,marker='.',linewidth=0,vmin=0.0,vmax=1.e-2)
+      pl.xlabel('$Q_%s$'%(var1.split('q')[1]))
+      pl.ylabel('$Q_%s$'%(var2.split('q')[1]))
+# limit plotrange to 1.e-2 distance from lattice tune
+      dqlim=1.e-2
+      print """plot_fma_scatter: limit plotrange to %2.2e distance from lattice tune
+  in order to exclude chaotic tunes"""%dqlim
+      pl.xlim(np.modf(tune[0])[0]-dqlim,np.modf(tune[0])[0]+dqlim)
+      pl.ylim(np.modf(tune[1])[0]-dqlim,np.modf(tune[1])[0]+dqlim)
     cbar=pl.colorbar()
-    cbar.set_label(r'$\Delta Q_{%s}$'%mode,labelpad=30,rotation=270)
-    pl.xlabel(r'$\epsilon_{1,%s} \ [\mu \rm m]$'%(eps1.split('_')[1]))
-    pl.ylabel(r'$\epsilon_{2,%s} \ [\mu \rm m]$'%(eps2.split('_')[1]))
+    cbar.set_label(r'$\rm \sqrt{\sum_{i=1}^2 (Q_{i,2}-Q_{i,1})^2}$',labelpad=40,rotation=270)
+    pl.grid()
 # -------------------------------- da_vs_turns -----------------------------------------------------------
   def st_da_vst(self,data,recreate=False):
     ''' store da vs turns data in database'''
@@ -2093,9 +2204,14 @@ class SixDeskDB(object):
     pl.xlabel(r'Horizontal amplitude [$\sigma$]',labelpad=10,fontsize=12)
     pl.ylabel(r'Vertical amplitude [$\sigma$]',labelpad=10,fontsize=12)
   def get_da_angle(self):
+    """returns DA results for all seeds and angles"""
     angles=self.get_db_angles()
     seeds=self.get_db_seeds()
     sql="SELECT seed,angle,alost1 FROM da_post ORDER by seed,angle"
+    if(not self.check_table('da_post')):
+      print 'WARNING: Table da_post does not exist!'
+      print '... running db.mk_da()'
+      self.mk_da()
     data=np.array(self.execute(sql)).reshape(len(seeds),len(angles),-1)
     return data
   def plot_da_angle(self,label=None,color='r',ashift=0,marker='o',
@@ -2120,6 +2236,14 @@ class SixDeskDB(object):
     pl.xlabel(r'$\sigma_x$')
     pl.ylabel(r'$\sigma_y$')
     return self
+  def plot_da_seed(self,seed):
+    """plot the DA for one seed *seed*"""
+    data=self.get_da_angle()
+    pl.plot(data[seed-1][:,1],data[seed-1][:,2],'-',label='seed %s'%seed)
+    pl.xlabel('angle')
+    pl.ylabel(r'DA [$\sigma$]')
+    pl.legend()
+
   def check_zeroda(self):
       if self.has_table('da_post'):
          out=self.execute('select tunex,tuney,seed,angle from da_post where alost1==0')
