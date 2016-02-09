@@ -298,7 +298,8 @@ def plot_surv_2d_comp(db,dbcomp,lbl,complbl,seed,tune,ampmax):
   plot_surv_2d_stab(dbcomp,complbl,2,'r',seed,tune,ampmax)
   pl.legend(loc='best')
 def plot_comp_da_vst(db,dbcomp,ldat,ldaterr,lblname,complblname,seed,tune,ampmin,ampmax,tmax,slog,sfit,fitndrop):
-  """plot dynamic aperture vs number of turns, blue/green=simple average, red/orange=weighted average"""
+  """plot dynamic aperture vs number of turns, 
+  blue/green=simple average, red/orange=weighted average"""
   pl.close('all')
   pl.figure(figsize=(6,6))
   for dbbb in [db,dbcomp]:
