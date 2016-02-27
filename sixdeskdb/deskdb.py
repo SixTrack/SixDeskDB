@@ -1839,11 +1839,11 @@ class SixDeskDB(object):
 #    dbname=create_db(tbt_data,studio,seedinit,seedend,nsi,nsf,angles)
 #    print ('Turn by turn tracking data successfully stored in %s.db' %dbname)
 # -------------------------------- fma -------------------------------------------------------------------
-  def get_fma_methods():
+  def get_fma_methods(self):
     """returns list of all methods available for FMA analysis
     """
     return ['TUNENEWT1','TUNEABT','TUNEABT2','TUNENEWT','TUNEFIT','TUNEAPA','TUNEFFT','TUNEFFTI','TUNELASK']
-  def get_db_fma_inputfile_method():
+  def get_db_fma_inputfile_method(self):
     """returns a list of inputfiles and methods used 
     in db for FMA analysis
 
@@ -2037,10 +2037,12 @@ class SixDeskDB(object):
     method[12]: method for tune calculation used in inputfile[12]
         e.g. TUNELASK
     method: method used to calculate the tunes, e.g. TUNELASK
-    var1: variable 1, e.g. eps1_0 for initial emittance,
-        eps1_min for minimum emittance, eps1_max for maximum emittance
-        and eps1_avg for average emittance (over turns used for tune
+    var1: variable 1
+        for amplitudes: eps[12]_0 for initial emittance,
+        eps[12]_min for minimum emittance, eps[12]_max for maximum emittance
+        and eps[12]_avg for average emittance (over turns used for tune
         analysis)
+        for tunes: q[123] for tunes from inputfile1
     var2: variable 2 (see var1 for example parameters)
     """
     data=self.get_fma_intersept(seed,tune,turns,inputfile1,method1,inputfile2,method2)
@@ -2049,6 +2051,7 @@ class SixDeskDB(object):
     if('eps' in var1 and 'eps' in var2):
       eps0=self.env_var['emit']*self.env_var['pmass']/self.env_var['e0']
       pl.scatter(np.sqrt(data['fma1_%s'%var1]/eps0),np.sqrt(data['fma1_%s'%var2]/eps0),c=dq,marker='.',linewidth=0,vmin=0.0,vmax=1.e-2)
+      self.plot_da_angle_seed(seed,marker=None,linestyle='-',color='k')
       pl.xlabel(r'$\sigma_x=\frac{\epsilon_{1,%s}}{\epsilon_0}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var1.split('_')[1],self.env_var['emit']))
       pl.ylabel(r'$\sigma_y=\frac{\epsilon_{2,%s}}{\epsilon_0}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var2.split('_')[1],self.env_var['emit']))
 # tune vs dq
@@ -2214,8 +2217,8 @@ class SixDeskDB(object):
       self.mk_da()
     data=np.array(self.execute(sql)).reshape(len(seeds),len(angles),-1)
     return data
-  def plot_da_angle(self,label=None,color='r',ashift=0,marker='o',
-                    alpha=0.1,mec='none'):
+  def plot_da_angle(self,label=None,color='r',ashift=0,marker='o',alpha=0.3,mec='none'):
+    """plot DA (alost1) vs sigma_x and sigma_y"""
     data=self.get_da_angle()
     for ddd in data:
         s,angle,sig=ddd.T
@@ -2236,13 +2239,33 @@ class SixDeskDB(object):
     pl.xlabel(r'$\sigma_x$')
     pl.ylabel(r'$\sigma_y$')
     return self
-  def plot_da_seed(self,seed):
-    """plot the DA for one seed *seed*"""
-    data=self.get_da_angle()
-    pl.plot(data[seed-1][:,1],data[seed-1][:,2],'-',label='seed %s'%seed)
+  def plot_da_seed(self,seed,label=None,color='k',marker='o',linestyle='-',alpha=1.0,mec='none'):
+    """plot the angle vs the DA (alost1) for one seed *seed*"""
+    sql="SELECT seed,angle,alost1 FROM da_post WHERE seed==%s ORDER by seed,angle"%(seed)
+    data=np.array(self.execute(sql))
+    if label is None:
+      pl.plot(data[:,1],data[:,2],marker=marker,linestyle=linestyle,mfc=color,mec=mec,alpha=alpha)
+    else:
+      pl.plot(data[:,1],data[:,2],marker=marker,linestyle=linestyle,mfc=color,mec=mec,alpha=alpha,label='%s'%(label))
+      pl.legend()
     pl.xlabel('angle')
     pl.ylabel(r'DA [$\sigma$]')
-    pl.legend()
+  def plot_da_angle_seed(self,seed,label=None,color='k',ashift=0,marker='o',linestyle='-',alpha=1.0,mec='none'):
+    """plot the DA (alost1) expressed in sigmax
+    and sigmay for one seed *seed*"""
+    sql="SELECT seed,angle,alost1 FROM da_post WHERE seed==%s ORDER by seed,angle"%(seed)
+    data=np.array(self.execute(sql))
+    s,angle,sig=data.T
+    angle=(angle+ashift)*np.pi/180
+    x=abs(sig)*np.cos(angle)
+    y=abs(sig)*np.sin(angle)
+    if label is None:
+      pl.plot(x,y,marker=marker,linestyle=linestyle,mfc=color,mec=mec,alpha=alpha)
+    else:
+      pl.plot(x,y,marker=marker,linestyle=linestyle,mfc=color,mec=mec,alpha=alpha,label=label)
+      pl.legend()
+    pl.xlabel('angle')
+    pl.ylabel(r'DA [$\sigma$]')
 
   def check_zeroda(self):
       if self.has_table('da_post'):
