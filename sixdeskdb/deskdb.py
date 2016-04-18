@@ -1549,7 +1549,7 @@ class SixDeskDB(object):
                 sql=sql1+' AND seed=%s '%seed
                 #sql+=' AND ROUND(angle,5)=ROUND(%s,5) '%angle
                 sql+=' AND angle=%s '%angle
-                sql+=' ORDER BY amp1 '
+                sql+=' ORDER BY sigx1*sigx1+sigy1*sigy1 '
                 if self.debug:
                     print sql
                 inp=np.array(self.execute(sql),dtype=rectype)
