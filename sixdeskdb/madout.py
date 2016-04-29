@@ -11,8 +11,11 @@ def check_mad_out(data,resname):
     for l in StringIO(mad_out):
       if l.startswith('closest'):
         nclosest=int(l.split('closest')[1][0])
-        vclosest=float(l.split('=')[1].split(';')[0])
-        out.setdefault('closest%d'%nclosest,[]).append(vclosest)
+        try:
+          vclosest=float(l.split('=')[1].split(';')[0])
+          out.setdefault('closest%d'%nclosest,[]).append(vclosest)
+        except ValueError:
+          pass
       elif 'max*100' in l or 'max1*100' in l or 'max2*100' in l:
         name,val=extract_kmax(l)
         out.setdefault(name,[]).append(val)
