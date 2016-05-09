@@ -467,7 +467,7 @@ class SixDeskDB(object):
     tab = SQLTable(conn,'six_beta',cols,tables.Six_Be.key)
     workdir = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
     data=[]
-    print "Looking for betavalues,sixdesktunes, general_input in\n %s"%workdir
+    print "Looking for betavalues, sixdesktunes, general_input in\n %s"%workdir
     gen_input=os.path.join(workdir,'general_input')
     if not os.path.exists(gen_input):
       print "Warning: %s not found"%gen_input
@@ -493,7 +493,7 @@ class SixDeskDB(object):
         data.append(vals)
       except (ValueError,OSError):
         print "Error in %s"%fullname
-    print " number of sixdesktunes, betavalues, mychrom inserted: %d"%len(data)
+    print " number of sixdesktunes, betavalues inserted: %d"%len(data)
     tab.insertl(data)
 
 #  def insert_fort3(self,data):
