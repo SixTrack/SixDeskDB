@@ -475,24 +475,27 @@ class SixDeskDB(object):
     else:
       #content = sqlite3.Binary(compressBuf(gen_input))
       gen=[float(i) for i in open(gen_input).read().split()]
+    defaults={'betavalues':[0]*14,'sixdesktunes':[0]*5}
     for dirName in glob.glob('%s/*/simul/*'%workdir):
       dirn = dirName.split('/')
       seed = int(dirn[-3])
       tunex, tuney = dirn[-1].split('_')
       vals=[seed,tunex,tuney]
       lastmtime=0
-      try:
-        for fn in ['betavalues','sixdesktunes']:
-          fullname=os.path.join(dirName,fn)
+      for fn in ['betavalues','sixdesktunes']:
+        fullname=os.path.join(dirName,fn)
+        if os.path.isfile(fullname):
           mtime=os.path.getmtime(fullname)
           if mtime >lastmtime:
-              lastmtime=mtime
+            lastmtime=mtime
           vals+=[float(i) for i in open(fullname).read().split()]
-        vals.extend(gen)
-        vals.append(mtime)
-        data.append(vals)
-      except (ValueError,OSError):
-        print "Error in %s"%fullname
+        else:
+          if not (fn=='sixdesktunes' and self.env_var['chrom']==1):
+            print("'%s' not found, filling data with zeros"%fullname)
+          vals+=defaults[fn]
+      vals.extend(gen)
+      vals.append(mtime)
+      data.append(vals)
     print " number of sixdesktunes, betavalues inserted: %d"%len(data)
     tab.insertl(data)
 
