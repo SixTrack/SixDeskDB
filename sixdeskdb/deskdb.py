@@ -165,11 +165,15 @@ def split_job_params(dirname):
   ll=dirname.split('/')
   data=ll[-6:]
   seed,simul,tunes,rng,turns,angle=data
-  seed=int(seed)
-  tunex,tuney=map(float,tunes.split('_'))
-  amp1,amp2=map(float,rng.split('_'))
-  angle=float(angle)
-  #turns=10**int(turns[1])
+  try:
+    seed=int(seed)
+    tunex,tuney=map(float,tunes.split('_'))
+    amp1,amp2=map(float,rng.split('_'))
+    angle=float(angle)
+    #turns=10**int(turns[1])
+  except ValueError as e:
+      print("Error: path `%s` not compatible"%dirname)
+      raise ValueError
   return seed,simul,tunex,tuney,amp1,amp2,turns,angle
 
 
