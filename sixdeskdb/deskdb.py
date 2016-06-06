@@ -1944,7 +1944,7 @@ class SixDeskDB(object):
       cmd="""DROP TABLE IF EXISTS %s"""%(t)
       self.conn.cursor().execute(cmd)
     return data
-  def plot_fma_footprint(self,seed,tune,turns,inputfile,method,eps1='eps1_0',eps2='eps2_0',vmin=None,vmax=None):
+  def plot_fma_footprint(self,seed,tune,turns,inputfile,method,eps1='eps1_0',eps2='eps2_0',dq=None,vmin=None,vmax=None):
     """plot q1 vs q2 colorcoded by sqrt((eps1+eps2)/eps0)
     
     Parameters:
@@ -1981,11 +1981,12 @@ class SixDeskDB(object):
     pl.ylabel(r'$Q_2$')
     pl.title('%s %s'%(inputfile,method))
 # limit plotrange to 1.e-2 distance from lattice tune
-    dqlim=1.e-2
+    if dq==None: dq=1.e-2
     print """plot_fma_footprint: limit plotrange to %2.2e distance from lattice tune
-  in order to exclude chaotic tunes"""%dqlim
-    pl.xlim(np.modf(tune[0])[0]-dqlim,np.modf(tune[0])[0]+dqlim)
-    pl.ylim(np.modf(tune[1])[0]-dqlim,np.modf(tune[1])[0]+dqlim)
+  in order to exclude chaotic tunes"""%dq
+    pl.xlim(np.modf(tune[0])[0]-dq,np.modf(tune[0])[0]+dq)
+    pl.ylim(np.modf(tune[1])[0]-dq,np.modf(tune[1])[0]+dq)
+    pl.grid()
   def plot_fma_action_tune(self,seed,tune,turns,inputfile,method,mode,eps1='eps1_0',eps2='eps2_0',vmin=None,vmax=None):
     """plot sig1 vs sig2 colorcoded by the tune 
     of mode *mode* with 
@@ -2021,7 +2022,7 @@ class SixDeskDB(object):
     pl.xlabel(r'$\sigma_x=\sqrt{\frac{\epsilon_{1,%s}}{\epsilon_0}} , \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(eps1.split('_')[1],self.env_var['emit']))
     pl.ylabel(r'$\sigma_y=\sqrt{\frac{\epsilon_{2,%s}}{\epsilon_0}} , \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(eps2.split('_')[1],self.env_var['emit']))
     pl.title('%s %s'%(inputfile,method))
-  def plot_fma_scatter(self,seed,tune,turns,inputfile1,method1,inputfile2,method2,var1='eps1_0',var2='eps2_0'):
+  def plot_fma_scatter(self,seed,tune,turns,inputfile1,method1,inputfile2,method2,var1='eps1_0',var2='eps2_0',vmin=None,vmax=None):
     """scatter plot var1 vs var2 of inputfile1 colorcoded by the 
     differnce in tune 
         delta Q=log10(sqrt(sum_i (Q_i(inputfile2)-Q_i(inputfile1))**2))
@@ -2044,23 +2045,29 @@ class SixDeskDB(object):
         analysis)
         for tunes: q[123] for tunes from inputfile1
     var2: variable 2 (see var1 for example parameters)
+    vmin,vmax: plotrange for delta Q (values outside
+        [vmin,vmax] are saturated)
+        default values: vmin=0,vmax=1.e-6
     """
     data=self.get_fma_intersept(seed,tune,turns,inputfile1,method1,inputfile2,method2)
     dq=np.sqrt((data['fma1_q1']-data['fma2_q1'])**2+(data['fma1_q2']-data['fma2_q2'])**2)
+# default plot range for dq (colorbar)
+    if vmin == None: vmin = 0
+    if vmax == None: vmax = 1.e-6
 # amplitude vs dq
     if('eps' in var1 and 'eps' in var2):
       eps0=self.env_var['emit']*self.env_var['pmass']/self.env_var['e0']
-      pl.scatter(np.sqrt(data['fma1_%s'%var1]/eps0),np.sqrt(data['fma1_%s'%var2]/eps0),c=dq,marker='.',linewidth=0,vmin=0.0,vmax=1.e-2)
+      pl.scatter(np.sqrt(data['fma1_%s'%var1]/eps0),np.sqrt(data['fma1_%s'%var2]/eps0),c=dq,marker='.',linewidth=0,vmin=vmin,vmax=vmax)
       self.plot_da_angle_seed(seed,marker=None,linestyle='-',color='k')
       pl.xlabel(r'$\sigma_x=\frac{\epsilon_{1,%s}}{\epsilon_0}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var1.split('_')[1],self.env_var['emit']))
       pl.ylabel(r'$\sigma_y=\frac{\epsilon_{2,%s}}{\epsilon_0}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var2.split('_')[1],self.env_var['emit']))
 # tune vs dq
     if('q' in var1 and 'q' in var2):
-      pl.scatter(data['fma1_%s'%var1],data['fma1_%s'%var2],c=dq,marker='.',linewidth=0,vmin=0.0,vmax=1.e-2)
+      pl.scatter(data['fma1_%s'%var1],data['fma1_%s'%var2],c=dq,marker='.',linewidth=0,vmin=vmin,vmax=vmax,s=4)
       pl.xlabel('$Q_%s$'%(var1.split('q')[1]))
       pl.ylabel('$Q_%s$'%(var2.split('q')[1]))
-# limit plotrange to 1.e-2 distance from lattice tune
-      dqlim=1.e-2
+# limit plotrange to dqlim distance from lattice tune
+      dqlim=5.e-2
       print """plot_fma_scatter: limit plotrange to %2.2e distance from lattice tune
   in order to exclude chaotic tunes"""%dqlim
       pl.xlim(np.modf(tune[0])[0]-dqlim,np.modf(tune[0])[0]+dqlim)
