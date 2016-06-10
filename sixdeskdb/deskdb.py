@@ -1953,7 +1953,7 @@ class SixDeskDB(object):
     else:
       data=[]
     return data
-  def get_fma_intersept(self,seed,tune,turns,inputfile1,method1,inputfile2,method2):
+  def get_fma_intersept(self,seed,tune,turns,inputfile1,method1,inputfile2,method2,var=None):
     """get data with seed *seed*, tune *tune*,turns *turns*
     which exists in inputfile1,method1 and inputfile2,method2
     for each amp1,amp2,angle,part_id
@@ -1965,8 +1965,9 @@ class SixDeskDB(object):
     turns : name of directory for number of turns tracked, e.g. 'e4'
     inputfile: name of the inputfile used for the FMA analysis, e.g. IP3_DUMP_1
     method: method used to calculate the tunes, e.g. TUNELASK
-    var: get only var=[(var1,var2,var3)] from database. If var=None
-        all variables are retrieved
+    var: list of variables to be extracted, e.g. for fma analysis
+         ['q1','q2','q3','eps1_0','eps2_0','eps3_0']
+         if var= None, all variables are extracted.
     Returns:
     --------
     data: ndarray (structured) with 
@@ -1990,7 +1991,12 @@ class SixDeskDB(object):
 # extract data from fma1 and fma2 where amp1,amp2,angle,part_id exist in both tables
 # create string for mysql command to extract data from fma1 and fma2
 # column names are renamed to amp1 -> fma1_amp1, fma2_amp2
-      var=['amp1','amp2','angle','inputfile','method','part_id','q1','q2','q3','eps1_min','eps2_min','eps3_min','eps1_max','eps2_max','eps3_max','eps1_avg','eps2_avg','eps3_avg','eps1_0','eps2_0','eps3_0','phi1_0','phi2_0','phi3_0']
+      if var==None:
+        var=['amp1','amp2','angle','inputfile','method','part_id','q1','q2','q3','eps1_min','eps2_min','eps3_min','eps1_max','eps2_max','eps3_max','eps1_avg','eps2_avg','eps3_avg','eps1_0','eps2_0','eps3_0','phi1_0','phi2_0','phi3_0']
+      else:
+        varmin=['amp1','amp2','angle','inputfile','method','part_id'] # minimum set of variables to extract data
+        var.extend(varmin)
+        var=list(set(var))
       t_var=()
       varstr=''
       for v in var:
@@ -1998,7 +2004,14 @@ class SixDeskDB(object):
       varstr=(', fma1.%s AS fma1_%s, fma2.%s AS fma2_%s'*len(var))%t_var
       cmd12="""SELECT fma1.seed, fma1.tunex, fma1.tuney, fma1.turns %s FROM fma1,fma2 WHERE (fma1.amp1=fma2.amp1 AND fma1.amp2=fma2.amp2 AND fma1.angle=fma2.angle AND fma1.part_id=fma2.part_id)"""%varstr
       cur=self.conn.cursor().execute(cmd12)
-      ftype=np.dtype([('seed',int),('tunex',float),('tuney',float),('turns','|S100'),('fma1_amp1',float),('fma2_amp1',float),('fma1_amp2',float),('fma2_amp2',float),('fma1_angle',float),('fma2_angle',float),('fma1_inputfile','|S100'),('fma2_inputfile','|S100'),('fma1_method','|S100'),('fma2_method','|S100'),('fma1_part_id',int),('fma2_part_id',int),('fma1_q1',float),('fma2_q1',float),('fma1_q2',float),('fma2_q2',float),('fma1_q3',float),('fma2_q3',float),('fma1_eps1_min',float),('fma2_eps1_min',float),('fma1_eps2_min',float),('fma2_eps2_min',float),('fma1_eps3_min',float),('fma2_eps3_min',float),('fma1_eps1_max',float),('fma2_eps1_max',float),('fma1_eps2_max',float),('fma2_eps2_max',float),('fma1_eps3_max',float),('fma2_eps3_max',float),('fma1_eps1_avg',float),('fma2_eps1_avg',float),('fma1_eps2_avg',float),('fma2_eps2_avg',float),('fma1_eps3_avg',float),('fma2_eps3_avg',float),('fma1_eps1_0',float),('fma2_eps1_0',float),('fma1_eps2_0',float),('fma2_eps2_0',float),('fma1_eps3_0',float),('fma2_eps3_0',float),('fma1_phi1_0',float),('fma2_phi1_0',float),('fma1_phi2_0',float),('fma2_phi2_0',float),('fma1_phi3_0',float),('fma2_phi3_0',float)])
+# construct list for ftype
+      laux=[('seed',int),('tunex',float),('tuney',float),('turns','|S100')] # common variables
+      for v in var:
+        if v in ['inputfile','method']: typ='|S100'
+        elif v == 'part_id': typ=int
+        else: typ=float
+        laux.extend([('fma%s_%s'%(i,v),typ) for i in [1,2]])
+      ftype=np.dtype(laux)
       data=np.fromiter(cur,dtype=ftype)
     else:
       data=[]
@@ -2086,7 +2099,7 @@ class SixDeskDB(object):
     pl.title('%s %s'%(inputfile,method))
   def plot_fma_scatter(self,seed,tune,turns,inputfile1,method1,inputfile2,method2,var1='eps1_0',var2='eps2_0',vmin=None,vmax=None):
     """scatter plot var1 vs var2 of inputfile1 colorcoded by the 
-    differnce in tune 
+    difference in tune 
         delta Q=log10(sqrt(sum_i (Q_i(inputfile2)-Q_i(inputfile1))**2))
     var1 and var2 are taken from inputfile1
 
