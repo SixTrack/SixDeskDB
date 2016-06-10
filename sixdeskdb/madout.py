@@ -11,8 +11,11 @@ def check_mad_out(data,resname):
     for l in StringIO(mad_out):
       if l.startswith('closest'):
         nclosest=int(l.split('closest')[1][0])
-        vclosest=float(l.split('=')[1].split(';')[0])
-        out.setdefault('closest%d'%nclosest,[]).append(vclosest)
+        try:
+          vclosest=float(l.split('=')[1].split(';')[0])
+          out.setdefault('closest%d'%nclosest,[]).append(vclosest)
+        except ValueError:
+          pass
       elif 'max*100' in l or 'max1*100' in l or 'max2*100' in l:
         name,val=extract_kmax(l)
         out.setdefault(name,[]).append(val)
@@ -55,9 +58,13 @@ def extract_mad_out(fh):
       name,val=extract_kmax(l)
       out[name]=val
     elif 'nom1 =' in l or 'nom2 =' in l or 'nom5 =' in l or 'nom8 =' in l:
-      print l
       name,eq,val,sm=l.split()
       out.setdefault(name,[]).append(float(val))
+    elif 'err =  ' in l or 'qx =  ' in l or 'qy =  ' in l:
+      name,eq,val,sm=l.split()
+      out[name]=float(val)
+      #out.setdefault(name,[]).append(float(val))
+      #out.setdefault(name,[]).append(float(val))
     elif l.startswith('acb'):
       name,valf,vali,lima,limb=l.split()
       valf,vali,lima,limb=map(float,(valf,vali,lima,limb))

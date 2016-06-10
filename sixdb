@@ -59,12 +59,12 @@ class SixDB(object):
                 print
                 self.help(cmd)
     def help(self,cmd=None):
-        """Obtain help on commands
+        """Get help on commands
 Usage: sixdb <cmd> <help>
         """
         cmds=['load_dir', 'update_dir', 'info',
                'da', 'da_vs_turns', 'plot_da_vs_turns',
-               'mad', 'interactive','set']
+               'mad', 'interactive','set','replace']
         msg="""sixdb: command line interface of SixDeskDB
 Usage: sixdb <study> <cmd> <options> or sixdb <cmd> to get additional help
         """
@@ -75,7 +75,7 @@ Usage: sixdb <study> <cmd> <options> or sixdb <cmd> to get additional help
                 doc=getattr(self,cmd).__doc__.splitlines()[0]
                 print "%-11s: %s"%(cmd,doc)
             print
-            print "To obtain help on commands use sixdb <cmd>"
+            print "To obtain help on commands type: sixdb <cmd>"
         elif cmd in cmds:
             print "%s:"%cmd,
             print getattr(self,cmd).__doc__
@@ -106,10 +106,16 @@ Options:
     def load_dir(self,study):
        """Create database from a SixDesk directory dir.
 
-Usage: sixdb <studydir> load_dir
+Usage: sixdb <studydir> load_dir [logname]
 <studydir> is a directory that contains the sixdeskenv and sysenv
-files, e.g. ~/w1/sixjobs or ~/w1/sixjobs/studies/job_tracking."""
-       SixDeskDB.from_dir(study)
+files, e.g. ~/w1/sixjobs or ~/w1/sixjobs/studies/job_tracking.
+[logname] add logging name for importing data of another user."""
+       if len(self.args)>2:
+          logname=self.args[2]
+       else:
+          logname=None
+       print logname
+       SixDeskDB.from_dir(study,logname=logname)
     def update_dir(self,study):
        """Update results from directory tree"""
        db=SixDeskDB(study)
@@ -124,7 +130,7 @@ zeroda:  Check whether da analysis produce 0 values of DA
        """
        db=SixDeskDB(study)
        if len(self.args)==0:
-          print "Please select the check type"
+          print "Please select the check"
        else:
           getattr(db,"check_%s")(self.args[0])
     def mad(self,study):
@@ -140,23 +146,23 @@ Usage: sixdb <dbname> da_vs_turns
     Options:
     -force         : force to recalculate the da vs turns
     -turnstep      : steps in the number of turns (default: 100)
-    -tmax          : maximum number of turns 
-                     (default: max. number of turns tracked) 
+    -tmax          : maximum number of turns
+                     (default: max. number of turns tracked)
     -outfile       : survival data is saved in DAsurv.out
                      and the da vs turns in DA.out
     -outfileold    : da vs turns is saved in DAold.out with the
                      old data format
     -fit           : fit the da vs turns data assuming the model:
                         D(N)=Dinf+b0/[log(N^(exp(-b1)))]^kappa
-                     As this is an asumptotic rule, the first 
+                     As this is an asumptotic rule, the first
                      ndrop data points of the da vs turns are
                      omitted.
                      default data:  dawsimp
                      default error: dawsimperr
                      default ndrop: 25
-    -fitopt <data> <error> <ndrop> <skap> <ekap> <dkap>: 
+    -fitopt <data> <error> <ndrop> <skap> <ekap> <dkap>:
                      specify the data, ndrop and the scan range
-                     for the scan over kappa to be used for the 
+                     for the scan over kappa to be used for the
                      fit of the da vs turns
                      For <error>='none' the errors of the data
                      are not taken into account
@@ -201,14 +207,14 @@ Usage: sixdb <dbname> da_vs_turns
 
 Usage: sixdb <dbname> plot_da_vs_turns
     Options:
-    -ampmaxsurv    : maximum amplitude for survival plot 
+    -ampmaxsurv    : maximum amplitude for survival plot
                      (default: max. amp tracked)
     -amprangedavst : minimum maximum amplitude for da vs turns
                      plots (default: min. and max. amplitude tracked)
-    -tmax          : maximum number of turns 
+    -tmax          : maximum number of turns
                      (default: max. number of turns tracked)
     -plotdat <data> <dataerr>: choose data to be plotted
-                     default: data='dawsimp' dataerr='dawsimperr' 
+                     default: data='dawsimp' dataerr='dawsimperr'
                      you can also give a comma separated list:
                         data='dawsimp,dawtrap'
                         dataerr='dawsimperr,dawtraperr'
@@ -297,6 +303,12 @@ db.plot_polar_col('sturns1',1)
         Usage: sixdb <dbname> missing_jobs
         """
         SixDeskDB(study).missing_jobs()
+    def replace(self,study):
+        """Replace strings in variables definitions
+        Usage: sixdb <dbname> replace <find> <replace>"""
+        old=self.args[2]
+        new=self.args[3]
+        SixDeskDB(study).vars_replace_all(old,new)
 
 
 if __name__=="__main__":
