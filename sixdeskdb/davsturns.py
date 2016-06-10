@@ -27,7 +27,7 @@ def linear_fit(datx,daty,daterr):
   fitfunc = lambda p,x: p[0]+p[1]*x#p[0]=Dinf, p[1]=b0
   errfunc = lambda p,x,y,err: (y-fitfunc(p,x))/err
   pinit = [0.1, 0.1]
-  #minimize 
+  #minimize
   outfit=optimize.leastsq(errfunc, pinit,args=(datx,daty,daterr),full_output=1)
   (p0,p1)=outfit[0]#(p[0],p[1])
   var    =outfit[1]#variance matrix
@@ -44,7 +44,7 @@ def get_min_turn_ang(s,t,a,it):
 
   check if there is a particle with angle ang with lost turn number <it
   if true: lost turn number and amplitude of the last stable particle is saved = particle "before" the particle with the smallest amplitude with nturns<it
-  if false: the smallest lost turn number and the largest amplitude is saved 
+  if false: the smallest lost turn number and the largest amplitude is saved
   """
   # s,t,a are ordered by angle,amplitude
   angles,sigmas=t.shape# angles = number of angles, sigmas = number of amplitudes
@@ -82,7 +82,7 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep):
              'dastraperrepamp','dawsimperr','dassimperr','nturn','tlossmin',
              'mtime'
   the da is in steps of turnstep
-  das:       integral over radius 
+  das:       integral over radius
              das = 2/pi*int_0^(2pi)[r(theta)]dtheta=<r(theta)>
                  = 2/pi*dtheta*sum(a_i*r(theta_i))
   daw:       integral over phase space
@@ -90,7 +90,7 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep):
                  = (dtheta*sum(a_i*r(theta_i)^4*sin(2*theta_i)))^1/4
   trapezoidal rule (trap):  a_i=(3/2,1, ... ,1,3/2)
   simpson rule     (simp):  a_i=(55/24.,-1/6.,11/8.,1, ... 1,11/8.,-1/6.,55/24.)
-                            numerical recipes open formulas 4.1.15 and 4.1.18      
+                            numerical recipes open formulas 4.1.15 and 4.1.18
   """
   mtime=time.time()
   (tunex,tuney)=tune
@@ -135,7 +135,7 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep):
     else:
       if(warnsimp):
         print('WARNING! mk_da_vst - You need at least 7 angles to calculate the da vs turns with the simpson rule! da*simp* will be set to 0.')
-        warnsimp=False 
+        warnsimp=False
       calcsimp=False
     # ---- trapezoidal rule (trap)
     # integral
@@ -163,7 +163,7 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep):
     else:
       (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
     tlossmin=np.min(mta['sturn'])
-    if(dawtrap!=currentdawtrap and it-turnstep > 0 and tlossmin!=currenttlossmin):
+    if(dawtrap!=currentdawtrap and it-turnstep >= 0 and tlossmin!=currenttlossmin):
       daout[dacount]=(seed,tunex,tuney,turnsl,dawtrap,dastrap,dawsimp,dassimp,dawtraperr,dastraperr,dastraperrep,dastraperrepang,dastraperrepamp,dawsimperr,dassimperr,it-turnstep,tlossmin,mtime)
       dacount=dacount+1
     currentdawtrap =dawtrap
@@ -228,7 +228,7 @@ def mk_da_vst_fit(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap):
   mtime=time.time()
   (tunex,tuney)=tune
   print('calculating b1mean ...')
-  (b1mean,b1meanerr,b1std)=get_b1mean(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap) 
+  (b1mean,b1meanerr,b1std)=get_b1mean(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap)
   print('average over %s seeds: b1mean=%s, b1meanerr=%s, b1std=%s'%(round(len(db.get_db_seeds())),round(b1mean,3),round(b1meanerr,3),round(b1std,3)))
   print('start scan over kappa for fixed b1=%s to find kappa with minimum residual ...'%b1mean)
   ftype=[('kappa',float),('dkappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float)]
@@ -249,7 +249,7 @@ def mk_da_vst_fit(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap):
     minkap[ccs]=(seed,tunex,tuney,turnsl,fitdat,fitdaterr,fitndrop,)+tuple(lkap[iminkap])+(b1mean,b1meanerr,b1std,mtime,)
     ccs+=1
   print('... scan over kappa is finished!')
-  return minkap 
+  return minkap
 
 # ----------- functions to reload and create DA.out files for previous scripts -----------
 def save_daout_old(data,filename):
@@ -349,7 +349,7 @@ def clean_dir_da_vst(db,files):
 
 # for error analysis - data is not saved in database but output files are generated
 def RunDaVsTurnsAng(db,seed,tune,turnstep):
-  """Da vs turns -- calculate da vs turns for divisors of angmax, 
+  """Da vs turns -- calculate da vs turns for divisors of angmax,
      e.g. for angmax=29+1 for divisors [1, 2, 3, 5, 6] - last 2 [10,15] are omitted as the number of angles has to be larger than 3"""
   # start analysis
   try:
@@ -541,7 +541,7 @@ def PlotCompDaVsTurns(db,dbcomp,ldat,ldaterr,lblname,complblname,ampmaxsurv,ampm
     seed=int(seed)
     for tune in db.get_db_tunes():
       if(seed in dbcomp.get_db_seeds() and tune in db.get_db_tunes()):
-        dirname=db.mk_analysis_dir(seed,tune)#directories already created with 
+        dirname=db.mk_analysis_dir(seed,tune)#directories already created with
         pl.close('all')
         plot_surv_2d_comp(db,dbcomp,lblname,complblname,seed,tune,ampmaxsurv)
         pl.savefig('%s/DAsurv_comp.%s.png'%(dirname,turnsedb))

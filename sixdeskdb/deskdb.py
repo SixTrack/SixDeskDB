@@ -36,9 +36,13 @@ from sqltable import SQLTable
 for t in (np.int8, np.int16, np.int32, np.int64,np.uint8, np.uint16, np.uint32, np.uint64):
   sqlite3.register_adapter(t, long)
 
-def parse_env(studydir):
-  tmp="sh -c '. %s/sixdeskenv;. %s/sysenv; python -c %s'"
-  cmd=tmp%(studydir,studydir,'"import os;print os.environ"')
+def parse_env(studydir,logname=None):
+  tmp="sh -c '%s . %s/sixdeskenv;. %s/sysenv; python -c %s'"
+  if logname is not None:
+    log='export LOGNAME="%s";'%logname
+  else:
+    log=""
+  cmd=tmp%(log,studydir,studydir,'"import os;print os.environ"')
   return eval(os.popen(cmd).read())
 
 
@@ -184,13 +188,13 @@ def check_sixdeskenv(studyDir):
 
 class SixDeskDB(object):
   @classmethod
-  def from_dir(cls,studyDir):
+  def from_dir(cls,studyDir,logname=None):
     '''create local Database for storing study'''
     sixdeskenv,sysenv=check_sixdeskenv(studyDir)
-    env_var = parse_env(studyDir)
+    env_var = parse_env(studyDir,logname=logname)
     dbname = env_var['LHCDescrip'] + ".db"
     db=cls(dbname,create=True)
-    db.update_sixdeskenv(studyDir)
+    db.update_sixdeskenv(studyDir,logname=logname)
     db.st_mad6t_run()
     db.st_mad6t_run2()
     db.st_mad6t_results()
@@ -199,10 +203,10 @@ class SixDeskDB(object):
     # db.st_six_results()
     return db
 
-  def update_sixdeskenv(self,studyDir):
+  def update_sixdeskenv(self,studyDir,logname=None):
     sixdeskenv,sysenv=check_sixdeskenv(studyDir)
     self.add_files([['sixdeskenv',sixdeskenv],['sysenv',sysenv]])
-    env_var = parse_env(studyDir)
+    env_var = parse_env(studyDir,logname=logname)
     for key in env_var.keys():
       if key not in tables.acc_var:
         del env_var[key]
@@ -246,6 +250,7 @@ class SixDeskDB(object):
     try:
       conn = sqlite3.connect(dbname,isolation_level="IMMEDIATE")
       cur = conn.cursor()
+      conn.create_function('',1,np.sqrt)
       cur.execute("PRAGMA synchronous = OFF")
       cur.execute("PRAGMA journal_mode = MEMORY")
       cur.execute("PRAGMA auto_vacuum = FULL")
@@ -272,6 +277,7 @@ class SixDeskDB(object):
       self.env_var[key]=val
       self.env_mtime[key]=mtime
     self.LHCDescrip=self.env_var.get('LHCDescrip')
+    self.logname=self.env_var.get('LOGNAME')
 
   def print_table_info(self):
       out=self.execute("SELECT name FROM sqlite_master WHERE type='table';")
@@ -308,6 +314,9 @@ class SixDeskDB(object):
           madout.check_mad_out(data,resname)
           print resname
 
+  def set_env(self,**args):
+      mtime=time.time()
+      self.set_variables(args.items(),mtime)
 
   def set_variables(self,lst,mtime):
     '''set additional variables besides predefined environment variables
@@ -458,7 +467,7 @@ class SixDeskDB(object):
     tab = SQLTable(conn,'six_beta',cols,tables.Six_Be.key)
     workdir = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
     data=[]
-    print "Looking for betavalues,sixdesktunes, general_input in\n %s"%workdir
+    print "Looking for betavalues, sixdesktunes, general_input in\n %s"%workdir
     gen_input=os.path.join(workdir,'general_input')
     if not os.path.exists(gen_input):
       print "Warning: %s not found"%gen_input
@@ -466,26 +475,77 @@ class SixDeskDB(object):
     else:
       #content = sqlite3.Binary(compressBuf(gen_input))
       gen=[float(i) for i in open(gen_input).read().split()]
+    defaults={'betavalues':[0]*14,'sixdesktunes':[0]*5}
     for dirName in glob.glob('%s/*/simul/*'%workdir):
       dirn = dirName.split('/')
       seed = int(dirn[-3])
       tunex, tuney = dirn[-1].split('_')
       vals=[seed,tunex,tuney]
       lastmtime=0
-      try:
-        for fn in ['betavalues','sixdesktunes']:
-          fullname=os.path.join(dirName,fn)
+      for fn in ['betavalues','sixdesktunes']:
+        fullname=os.path.join(dirName,fn)
+        if os.path.isfile(fullname):
           mtime=os.path.getmtime(fullname)
           if mtime >lastmtime:
-              lastmtime=mtime
+            lastmtime=mtime
           vals+=[float(i) for i in open(fullname).read().split()]
-        vals.extend(gen)
-        vals.append(mtime)
-        data.append(vals)
-      except (ValueError,OSError):
-        print "Error in %s"%fullname
-    print " number of sixdesktunes, betavalues, mychrom inserted: %d"%len(data)
+        else:
+          if not (fn=='sixdesktunes' and self.env_var['chrom']==1):
+            print("'%s' not found, filling data with zeros"%fullname)
+          vals+=defaults[fn]
+      vals.extend(gen)
+      vals.append(mtime)
+      data.append(vals)
+    print " number of sixdesktunes, betavalues inserted: %d"%len(data)
     tab.insertl(data)
+
+#  def insert_fort3(self,data):
+#    """insert fort.3
+#       jobparams, mtime, fh
+#       jobparams=seed,simul,tunex,tuney,amp1,amp2,turns,angle
+##    """
+#    conn = self.conn
+#    cur = conn.cursor()
+#    env_var = self.env_var
+#    cols = SQLTable.cols_from_fields(tables.Six_In.fields)
+#    tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
+#    f3_data={}
+#    for row in cur.execute('SELECT id,mtime,seed,simul,tunex,tuney,amp1,amp2,turns,angle FROM six_input'):
+#        f3_data[tuple(row[2:])]=row[:2]
+#    count3 = 0
+#    six_id_new = list(cur.execute('SELECT max(id) FROM six_input'))[0][0]
+#    if six_id_new is None:
+#      six_id_new=1
+#    else:
+#      six_id_new+=1
+#    for jobparams, mtime, fh in data:
+#       six_id_old,mtime_old=f3_data.get(jobparmams,[-1,0])
+#       if six_id_old==-1:
+#          six_id=six_id_new
+#          six_id_new+=1
+#       else:
+#         six_id=six_id_old
+#       if mtime3>mtime3_old:
+#        count3+=1
+#        f3file=sqlite3.Binary(compressBuf(f3))
+#        dirn = [six_id] + list(jobparmams) + [f3file,mtime3]
+#        rows3.append(dirn)
+#        if len(rows3) == 6000:
+#          tab.insertl(rows3)
+#          tab1.insertl(rows10)
+#          rows3 = []
+#          rows10 = []
+#       tab.insertl(rows3)
+#       tab1.insertl(rows10)
+#       rows3 = []
+#    print '\n number of fort.3 updated/found: %d/%d'%(count3,file_count3)
+#    sql="""CREATE VIEW IF NOT EXISTS results
+#           AS SELECT * FROM six_input INNER JOIN six_results
+#           ON six_input.id==six_results.six_input_id"""
+#    cur.execute(sql)
+#    sql="""SELECT COUNT(DISTINCT six_input_id) FROM six_results"""
+#    jobs=list(cur.execute(sql))[0][0]
+#    print " db now contains %d jobs"% (jobs)
 
   def st_six_input(self):
     ''' store input values (seed,tunes,amps,etc) along with fort.3 file'''
@@ -1009,7 +1069,8 @@ class SixDeskDB(object):
 
   def get_num_results(self):
     ''' get results count from DB '''
-    return self.execute('SELECT count(*) FROM six_results')[0][0]/30
+    pairs=self.env_var('sixdeskpairs')
+    return self.execute('SELECT count(*) FROM six_results')[0][0]/pairs
 
   def get_turnsl(self):
     ''' get turnsl = maximum number of turns for long queue from env table'''
@@ -1274,27 +1335,28 @@ class SixDeskDB(object):
     t=self._movavg2d(t,smooth=smooth)
     return x,y,t
   def get_2d_col(self,col,seed):
-    cmd="""SELECT angle,amp1+(amp2-amp1)*row_num/30,
+    cmd="""SELECT angle,sigx1*sigx1+sigy1*sigy1,
             %s
-            FROM results WHERE seed=%s ORDER BY angle,amp1,row_num"""
+            FROM results
+            WHERE seed=%s ORDER BY angle,sigx1*sigx1+sigy1*sigy1"""
     cur=self.conn.cursor().execute(cmd%(col,seed))
-    ftype=[('angle',float),('amp',float),('surv',float)]
+    ftype=[('angle',float),('ampsq',float),('surv',float)]
     data=np.fromiter(cur,dtype=ftype)
     angles=len(set(data['angle']))
     data=data.reshape(angles,-1)
-    a,s,t=data['angle'],data['amp'],data['surv']
+    a,s,t=data['angle'],np.sqrt(data['ampsq']),data['surv']
     return a,s,t
   def get_3d_col(self,col,cond=''):
-    cmd="""SELECT seed,angle,amp1+(amp2-amp1)*row_num/30,
+    cmd="""SELECT seed,angle,sigx1*sigx1+sigy1*sigy1,
             %s
-            FROM results %s ORDER BY seed,angle,amp1,row_num"""
+            FROM results %s ORDER BY seed,angle,sigx1*sigx1+sigy1*sigy1"""
     cur=self.conn.cursor().execute(cmd%(col,cond))
-    ftype=[('seed',float),('angle',float),('amp',float),('surv',float)]
+    ftype=[('seed',float),('angle',float),('ampsq',float),('surv',float)]
     data=np.fromiter(cur,dtype=ftype)
     angles=len(set(data['angle']))
     seeds=len(set(data['seed']))
     data=data.reshape(seeds,angles,-1)
-    ss,a,s,t=data['seed'],data['angle'],data['amp'],data['surv']
+    ss,a,s,t=data['seed'],data['angle'],np.sqrt(data['ampsq']),data['surv']
     return ss,a,s,t
   def plot_polar_col(self,col,seed,smooth=None):
     x,y,t=self.get_polar_col(col,seed)
@@ -1340,14 +1402,14 @@ class SixDeskDB(object):
     self._plot_polar(x,y,data['surv'].mean(axis=0),smooth=smooth)
     pl.title('Survived turns')
   def get_col(self,col,seed,angle):
-    cmd="""SELECT amp1+(amp2-amp1)*row_num/30,
+    cmd="""SELECT sigx1*sigx1+sigy1*sigy1,
             %s
             FROM results WHERE seed=%s AND angle=%s
-            ORDER BY amp1,row_num"""
+            ORDER BY sigx1*sigx1+sigy1*sigy1,row_num"""
     cur=self.conn.cursor().execute(cmd%(col,seed,angle))
-    ftype=[('amp',float),('surv',float)]
+    ftype=[('ampsq',float),('surv',float)]
     data=np.fromiter(cur,dtype=ftype)
-    a,t=data['amp'],data['surv']
+    a,t=np.sqrt(data['ampsq']),data['surv']
     return a,t
   def plot_col(self,col,seed,angle,lbl=None,ls='-'):
     a,t=self.get_col(col,seed,angle)
@@ -1372,11 +1434,11 @@ class SixDeskDB(object):
 
   def get_survival_turns(self,seed):
     '''get survival turns from DB '''
-    cmd="""SELECT angle,amp1+(amp2-amp1)*row_num/30,
+    cmd="""SELECT angle,(sigx1*sigx1+sigy1*sigy1),
         CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
         FROM six_results,six_input WHERE seed=%s AND id=six_input_id
-        ORDER BY angle,sigx1"""
-    # cmd="""SELECT angle,sqrt(sigx1*2+sigy1*2),
+        ORDER BY angle,sigx1*sigx1+sigy1*sigy1"""
+    # cmd="""SELECT angle,(sigx1*2+sigy1*2),
     #         CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
     #         FROM six_results,six_input WHERE seed=%s and id=six_input_id 
     #         ORDER BY angle,sigx1"""
@@ -1396,17 +1458,17 @@ class SixDeskDB(object):
 
   def plot_survival_2d_avg(self,smooth=None):
     ''' plot avg survival turns graph '''
-    cmd=""" SELECT seed,angle,amp1+(amp2-amp1)*row_num/30,
+    cmd=""" SELECT seed,angle,sigx1*sigx1+sigy1*sigy1,
         CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
         FROM six_results,six_input WHERE id=six_input_id
-        ORDER BY angle,sigx1"""
+        ORDER BY angle,sigx1*sigx1+sigy1*sigy1"""
     cur=self.conn.cursor().execute(cmd)
-    ftype=[('seed',float),('angle',float),('amp',float),('surv',float)]
+    ftype=[('seed',float),('angle',float),('ampsq',float),('surv',float)]
     data=np.fromiter(cur,dtype=ftype)
     angles=len(set(data['angle']))
     seeds=len(set(data['seed']))
     data=data.reshape(seeds,angles,-1)
-    a,s,t=data['angle'],data['amp'],data['surv']
+    a,s,t=data['angle'],np.sqrt(data['ampsq']),data['surv']
     a=a.mean(axis=0); s=s.mean(axis=0); t=t.mean(axis=0)
     self._plot_survival_2d(a,s,t,smooth=smooth)
     pl.title('Survived turns')
@@ -1544,7 +1606,7 @@ class SixDeskDB(object):
                 sql=sql1+' AND seed=%s '%seed
                 #sql+=' AND ROUND(angle,5)=ROUND(%s,5) '%angle
                 sql+=' AND angle=%s '%angle
-                sql+=' ORDER BY amp1 '
+                sql+=' ORDER BY sigx1*sigx1+sigy1*sigy1 '
                 if self.debug:
                     print sql
                 inp=np.array(self.execute(sql),dtype=rectype)
@@ -1942,7 +2004,7 @@ class SixDeskDB(object):
     data=np.array(self.execute(sql)).reshape(len(seeds),len(angles),-1)
     return data
   def plot_da_angle(self,label=None,color='r',ashift=0,marker='o',
-                    alpha=0.1,mec='none'):
+                    alpha=0.1,mec='none',**args):
     data=self.get_da_angle()
     for ddd in data:
         s,angle,sig=ddd.T
@@ -1950,9 +2012,10 @@ class SixDeskDB(object):
         x=abs(sig)*np.cos(angle)
         y=abs(sig)*np.sin(angle)
         if label is None:
-          pl.plot(x,y,marker,mfc=color,mec=mec,alpha=alpha)
+          pl.plot(x,y,marker,mfc=color,mec=mec,alpha=alpha,color=color,**args)
         else:
-          pl.plot(x,y,marker,mfc=color,mec=mec,alpha=alpha,label=label)
+          pl.plot(x,y,marker,mfc=color,mec=mec,alpha=alpha,label=label,
+                  color=color,**args)
           label=None
     #pl.xlabel(r'angle')
     #xa,xb=pl.xlim()
