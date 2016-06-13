@@ -33,6 +33,8 @@ import tables
 import lsfqueue
 import madout
 from sqltable import SQLTable
+import footprint
+
 for t in (np.int8, np.int16, np.int32, np.int64,np.uint8, np.uint16, np.uint32, np.uint64):
   sqlite3.register_adapter(t, long)
 
@@ -2229,6 +2231,16 @@ class SixDeskDB(object):
       if dqmode == 'trans':
         cbar.set_label(r'$\max_{j=1,2}(\log10{(\max_{i=1}^{\rm nfma}|Q_{j,i}-\bar Q_{j}|)}$',labelpad=40,rotation=270)
     pl.grid()
+  def plot_res(self,m,n,l=0,qz=0,color='b',linestyle='-'):
+    """plot resonance of order (m,n,l) where l is
+    the order of the sideband with frequency qz in
+    the current plot range"""
+    footprint.plot_res(m=m,n=n,l=l,qz=qz,color=color,linestyle=linestyle)
+  def plot_res_order(self,o,l=0,qz=0,c1='b',lst1='-',c2='b',lst2='--',c3='g',annotate=False):
+    """plot resonance lines of order o and sidebands
+    of order l and frequency qz in current plot
+    range"""
+    footprint.plot_res_order(o=o,l=l,qz=qz,c1=c1,lst1=lst1,c2=c2,lst2=lst2,c3=c3,annotate=annotate)
 # -------------------------------- da_vs_turns -----------------------------------------------------------
   def st_da_vst(self,data,recreate=False):
     ''' store da vs turns data in database'''
