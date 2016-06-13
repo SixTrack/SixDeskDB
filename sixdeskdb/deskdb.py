@@ -1953,9 +1953,9 @@ class SixDeskDB(object):
     else:
       data=[]
     return data
-  def get_fma_intersept(self,seed,tune,turns,inputfile1,method1,inputfile2,method2,var=None):
+  def get_fma_intersept(self,seed,tune,turns,files,var=None):
     """get data with seed *seed*, tune *tune*,turns *turns*
-    which exists in inputfile1,method1 and inputfile2,method2
+    which exists in (inputfile1,method1),(inputfile2,method2),etc.
     for each amp1,amp2,angle,part_id
 
     Parameters:
@@ -1963,7 +1963,10 @@ class SixDeskDB(object):
     seed : seed, e.g. 1
     tune : optics tune, e.g. (62.28, 60.31)
     turns : name of directory for number of turns tracked, e.g. 'e4'
-    inputfile: name of the inputfile used for the FMA analysis, e.g. IP3_DUMP_1
+    files: list of inputfiles and methods with
+           files=[(inputfile_0,method_0),...,(inputfile_n,method_n)]
+           e.g. to compare only two files
+           files=[('IP3_DUMP_1','TUNELASK'),('IP3_DUMP_2','TUNELASK')]
     method: method used to calculate the tunes, e.g. TUNELASK
     var: list of variables to be extracted, e.g. for fma analysis
          ['q1','q2','q3','eps1_0','eps2_0','eps3_0']
@@ -1971,51 +1974,75 @@ class SixDeskDB(object):
     Returns:
     --------
     data: ndarray (structured) with 
-        seed,tunex,tuney,fma1_amp1,fma2_amp1,fma1_amp2,fma2_amp2,...
-        where seed,tunex,tuney are identical for (inputfile1,method1)
-        and (inputfile2,method2)
+        seed,tunex,tuney,fma0_amp1,fma1_amp1,fma0_amp2,fma1_amp2,...
+        where seed,tunex,tuney are identical for 
+        (inputfile_0,method_0) to (inputfile_n,method_n)
     """
     (tunex,tuney)=tune
+    nfma = len(files) # number of (inputfile,method)
     if(self.check_view('fma')):
-# delete tables fma1,fma2 if they exist
-      for t in ['fma1','fma2']:
-        cmd="""DROP TABLE IF EXISTS %s"""%(t)
-        self.conn.cursor().execute(cmd)
-# creat two tables: fma1: inputfile1,method1, fma2: inputfile2,method2
+# create n tables: fma0: inputfile1,method1, fma1: inputfile2,method2
 # then select the common rows by requesting that amp1,angle,part_id match
 # other option to use inner join
-      cmd1="""CREATE TABLE fma1 AS SELECT * FROM fma WHERE seed=%s AND tunex=%s AND tuney=%s AND turns='%s' AND inputfile='%s' AND method='%s'"""%(seed,tunex,tuney,turns,inputfile1,method1)
-      cmd2="""CREATE TABLE fma2 AS SELECT * FROM fma WHERE seed=%s AND tunex=%s AND tuney=%s AND turns='%s' AND inputfile='%s' AND method='%s'"""%(seed,tunex,tuney,turns,inputfile2,method2)
-      for cmd in cmd1,cmd2:
+      for i in range(nfma):
+        t='fma%s'%i
+#       delete tables fma0,...,fman if they exist
+        cmd="""DROP TABLE IF EXISTS %s"""%(t)
         self.conn.cursor().execute(cmd)
-# extract data from fma1 and fma2 where amp1,amp2,angle,part_id exist in both tables
-# create string for mysql command to extract data from fma1 and fma2
-# column names are renamed to amp1 -> fma1_amp1, fma2_amp2
+#       create the tables
+        (inputfile,method)=files[i]
+        print '... getting values for %s and %s'%(inputfile,method)
+        cmd="""CREATE TABLE %s AS SELECT * FROM fma WHERE seed=%s AND tunex=%s AND tuney=%s AND turns='%s' AND inputfile='%s' AND method='%s'"""%(t,seed,tunex,tuney,turns,inputfile,method)
+        self.conn.cursor().execute(cmd)
+# extract data from fma0 and fma1 where amp1,amp2,angle,part_id exist in both tables
+# create string for mysql command to extract data from fma0 and fma1
+# column names are renamed to amp1 -> fma0_amp1, fma1_amp2
+#     Create sql command
+#     a) list of fma tables for sql command (FROM statement in sql command cmd12
+      fma_tables=','.join([ 'fma%s'%i for i in xrange(nfma) ])
+#     b) list of variables
       if var==None:
         var=['amp1','amp2','angle','inputfile','method','part_id','q1','q2','q3','eps1_min','eps2_min','eps3_min','eps1_max','eps2_max','eps3_max','eps1_avg','eps2_avg','eps3_avg','eps1_0','eps2_0','eps3_0','phi1_0','phi2_0','phi3_0']
       else:
         varmin=['amp1','amp2','angle','inputfile','method','part_id'] # minimum set of variables to extract data
         var.extend(varmin)
         var=list(set(var))
-      t_var=()
+#     c) create command for sql command cmd12 - select fma0.amp1 as fma0_amp1 ...
+#        need to convert . to _ in order to import it later as structured array
       varstr=''
-      for v in var:
-        t_var=t_var+(v,)*4
-      varstr=(', fma1.%s AS fma1_%s, fma2.%s AS fma2_%s'*len(var))%t_var
-      cmd12="""SELECT fma1.seed, fma1.tunex, fma1.tuney, fma1.turns %s FROM fma1,fma2 WHERE (fma1.amp1=fma2.amp1 AND fma1.amp2=fma2.amp2 AND fma1.angle=fma2.angle AND fma1.part_id=fma2.part_id)"""%varstr
+      for t in fma_tables.split(','):
+        t_var=()
+        for v in var:
+          t_var=t_var+(t,v,)*2
+        varstr=varstr + (', %s.%s AS %s_%s'*len(var))%t_var
+#     c) create command for sql command cmd12 -  WHERE (fma0.amp1=fma1.amp1 AND fma0.amp2=fma1.amp2 ...)
+      wherestr=''
+      for t in fma_tables.split(','):
+        if t != 'fma0':
+          for v in 'amp1 amp2 angle part_id'.split():
+            wherestr=wherestr + 'fma0.%s=%s.%s AND '%(v,t,v)
+      wherestr=wherestr[:-5] # delete last AND
+      cmd12="""SELECT fma0.seed, fma0.tunex, fma0.tuney, fma0.turns %s FROM %s WHERE (%s)"""%(varstr,fma_tables,wherestr)
+      print '... intersepting tables, returning only values for which amp1,amp2,angle,part_id exist in all (inputfile,method) pairs'
       cur=self.conn.cursor().execute(cmd12)
 # construct list for ftype
       laux=[('seed',int),('tunex',float),('tuney',float),('turns','|S100')] # common variables
-      for v in var:
-        if v in ['inputfile','method']: typ='|S100'
-        elif v == 'part_id': typ=int
-        else: typ=float
-        laux.extend([('fma%s_%s'%(i,v),typ) for i in [1,2]])
+      for t in fma_tables.split(','):
+        for v in var:
+          if v in ['inputfile','method']: typ='|S100'
+          elif v == 'part_id': typ=int
+          else: typ=float
+          laux.append(('%s_%s'%(t,v),typ))
       ftype=np.dtype(laux)
-      data=np.fromiter(cur,dtype=ftype)
+      try:
+        data=np.fromiter(cur,dtype=ftype)
+      except ValueError:
+        print 'ERROR in get_fma_intersept: check your dtype definition'
+        print 'dtype = %s'%ftype
+        data=[]
     else:
       data=[]
-    for t in ['fma1','fma2']:
+    for t in fma_tables.split(','):
       cmd="""DROP TABLE IF EXISTS %s"""%(t)
       self.conn.cursor().execute(cmd)
     return data
@@ -2124,21 +2151,21 @@ class SixDeskDB(object):
         [vmin,vmax] are saturated)
         default values: vmin=0,vmax=1.e-6
     """
-    data=self.get_fma_intersept(seed,tune,turns,inputfile1,method1,inputfile2,method2)
-    dq=np.sqrt((data['fma1_q1']-data['fma2_q1'])**2+(data['fma1_q2']-data['fma2_q2'])**2)
+    data=self.get_fma_intersept(seed,tune,turns,files=[(inputfile1,method1),(inputfile2,method2)])
+    dq=np.sqrt((data['fma0_q1']-data['fma1_q1'])**2+(data['fma0_q2']-data['fma1_q2'])**2)
 # default plot range for dq (colorbar)
     if vmin == None: vmin = 0
     if vmax == None: vmax = 1.e-6
 # amplitude vs dq
     if('eps' in var1 and 'eps' in var2):
       eps0=self.env_var['emit']*self.env_var['pmass']/self.env_var['e0']
-      pl.scatter(np.sqrt(data['fma1_%s'%var1]/eps0),np.sqrt(data['fma1_%s'%var2]/eps0),c=dq,marker='.',linewidth=0,vmin=vmin,vmax=vmax)
+      pl.scatter(np.sqrt(data['fma0_%s'%var1]/eps0),np.sqrt(data['fma0_%s'%var2]/eps0),c=dq,marker='.',linewidth=0,vmin=vmin,vmax=vmax)
       self.plot_da_angle_seed(seed,marker=None,linestyle='-',color='k')
       pl.xlabel(r'$\sigma_x=\frac{\epsilon_{1,%s}}{\epsilon_0}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var1.split('_')[1],self.env_var['emit']))
       pl.ylabel(r'$\sigma_y=\frac{\epsilon_{2,%s}}{\epsilon_0}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var2.split('_')[1],self.env_var['emit']))
 # tune vs dq
     if('q' in var1 and 'q' in var2):
-      pl.scatter(data['fma1_%s'%var1],data['fma1_%s'%var2],c=dq,marker='.',linewidth=0,vmin=vmin,vmax=vmax,s=5)
+      pl.scatter(data['fma0_%s'%var1],data['fma0_%s'%var2],c=dq,marker='.',linewidth=0,vmin=vmin,vmax=vmax,s=5)
       pl.xlabel('$Q_%s$'%(var1.split('q')[1]))
       pl.ylabel('$Q_%s$'%(var2.split('q')[1]))
 # limit plotrange to dqlim distance from lattice tune
