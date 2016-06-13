@@ -2124,21 +2124,31 @@ class SixDeskDB(object):
     pl.xlabel(r'$\sigma_x=\sqrt{\frac{\epsilon_{1,%s}}{\epsilon_0}} , \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(eps1.split('_')[1],self.env_var['emit']))
     pl.ylabel(r'$\sigma_y=\sqrt{\frac{\epsilon_{2,%s}}{\epsilon_0}} , \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(eps2.split('_')[1],self.env_var['emit']))
     pl.title('%s %s'%(inputfile,method))
-  def plot_fma_scatter(self,seed,tune,turns,inputfile1,method1,inputfile2,method2,var1='eps1_0',var2='eps2_0',vmin=None,vmax=None):
-    """scatter plot var1 vs var2 of inputfile1 colorcoded by the 
-    difference in tune 
-        delta Q=log10(sqrt(sum_i (Q_i(inputfile2)-Q_i(inputfile1))**2))
-    var1 and var2 are taken from inputfile1
-
+  def plot_fma_scatter(self,seed,tune,turns,files,var1='eps1_0',var2='eps2_0',dqmode='trans',vmin=None,vmax=None):
+    """scatter plot var1 vs var2 of inputfile_0 colorcoded by the 
+    difference in tune over all (inputfile,method) pairs in *files*.
+    With the parameter *dqmode* the calculation of the difference in
+    tune can be selected with:
+      'trans':        using Q1 and Q2
+      'q1','q2','q3': using only Q1 or only Q2 or only Q3
+    Calculation of dQ:
+      * two (inputfile,method):
+          dQ_j   =log10(|Q_{1,j}-Q_{0,j}|), j=1,2,3
+      * more than 2 (inputfile,method) pairs:
+        The diffusion in tune is defined as the maximum difference with
+        respect to the average tune over all (inputfile,method) pairs.
+          Q_{j,avg}=1/nfma*sum_{i=1}^{nfma}(Q_{i,j}), j=1,2,3
+          dQ_j   =log10(max_{i=1}^{nfma}(|Q_{i,j}-Q_{j,avg}|)), j=1,2,3
+        where nfma is the number of (inputfile,method) pairs.
     Parameters:
     ----------
     seed : seed, e.g. 1
     tune : optics tune, e.g. (62.28, 60.31)
     turns : name of directory for number of turns tracked, e.g. 'e4'
-    inputfile[12]: name of the inputfile1 used for the FMA analysis,
-        e.g. IP3_DUMP_[12]
-    method[12]: method for tune calculation used in inputfile[12]
-        e.g. TUNELASK
+    files: list of inputfiles and methods with
+           files=[(inputfile_0,method_0),...,(inputfile_n,method_n)]
+           e.g. to compare only two files
+           files=[('IP3_DUMP_1','TUNELASK'),('IP3_DUMP_2','TUNELASK')]
     method: method used to calculate the tunes, e.g. TUNELASK
     var1: variable 1
         for amplitudes: eps[12]_0 for initial emittance,
@@ -2147,15 +2157,46 @@ class SixDeskDB(object):
         analysis)
         for tunes: q[123] for tunes from inputfile1
     var2: variable 2 (see var1 for example parameters)
+    dqmode: defines in which plane the diffusion in tune is calculated
+        possible values are: 'trans','q1','q2','q3':
+          'trans': take the maximum diffusion over the transverse tunes
+             explicitly dq=max(dq1_max,dq2_max)
+          'q1','q2','q3': use only Q1 or Q2 or Q3
     vmin,vmax: plotrange for delta Q (values outside
         [vmin,vmax] are saturated)
-        default values: vmin=0,vmax=1.e-6
+        default values: vmin=-3,vmax=-7
     """
-    data=self.get_fma_intersept(seed,tune,turns,files=[(inputfile1,method1),(inputfile2,method2)])
-    dq=np.sqrt((data['fma0_q1']-data['fma1_q1'])**2+(data['fma0_q2']-data['fma1_q2'])**2)
+    data=self.get_fma_intersept(seed=seed,tune=tune,turns=turns,files=files)
+    nfma = len(files)
+    if nfma < 2:
+      print 'ERROR in plot_fma_scatter: you need to define at least 2 (inputfile,method) pairs to compare'
+      return
+# only 2 files -> take diff in tune over two files
+    elif nfma == 2:
+      if dqmode in ['q1','q2','q3']:
+        dqmax=np.abs(data['fma0_%s']-data['fma1_%s'])
+      if dqmode == 'trans':
+        dq1=np.abs(data['fma0_q1']-data['fma1_q1'])
+        dq2=np.abs(data['fma0_q2']-data['fma1_q2'])
+        dqmax=np.amax([dq1,dq2],axis=0)
+# > 2 files -> max_{i=1,nfma}(q_i-avg(q_i))
+    else:
+      if dqmode in ['q1','q2','q3']:
+        dqavg = np.mean([ data['fma%s_%s'%(i,dqmode)] for i in xrange(nfma) ],axis=0)
+        dqmax = np.amax([ np.abs(data['fma%s_%s'%(i,dqmode)]-dqavg) for i in xrange(nfma) ],axis=0)
+      if dqmode == 'trans':
+        dqavg12={}
+        dqmax12={}
+        for qm in ['q1','q2']:
+          dqavg12[qm] = np.mean([ data['fma%s_%s'%(i,qm)] for i in xrange(nfma) ],axis=0)
+          dqmax12[qm] = np.amax([ np.abs(data['fma%s_%s'%(i,qm)]-dqavg12[qm]) for i in xrange(nfma) ],axis=0)
+        dqmax=np.amax([dqmax12['q1'],dqmax12['q2']],axis=0)
+# define infinitely small (1.e-60) value if dqmax = 0 as log(0) is not defined    
+    np.place(dqmax,dqmax==0,[1.e-60])
+    dq=np.log10(dqmax)
 # default plot range for dq (colorbar)
-    if vmin == None: vmin = 0
-    if vmax == None: vmax = 1.e-6
+    if vmin == None: vmin = -3
+    if vmax == None: vmax = -7
 # amplitude vs dq
     if('eps' in var1 and 'eps' in var2):
       eps0=self.env_var['emit']*self.env_var['pmass']/self.env_var['e0']
@@ -2175,7 +2216,18 @@ class SixDeskDB(object):
       pl.xlim(np.modf(tune[0])[0]-dqlim,np.modf(tune[0])[0]+dqlim)
       pl.ylim(np.modf(tune[1])[0]-dqlim,np.modf(tune[1])[0]+dqlim)
     cbar=pl.colorbar()
-    cbar.set_label(r'$\rm \sqrt{\sum_{i=1}^2 (Q_{i,2}-Q_{i,1})^2}$',labelpad=40,rotation=270)
+    if nfma <2:
+      if dqmode in ['q1','q2','q3']:
+        mode=dqmode.split('q')[1]
+        cbar.set_label(r'$\log10{(|Q_{%s,1}-Q_{%s,0}|)}$'%(mode,mode),labelpad=40,rotation=270)
+      if dqmode == 'trans':
+        cbar.set_label(r'$\log10{(\max_{i=1,2}(|Q_{i,1}-Q_{i,0}|))}$',labelpad=40,rotation=270)
+    else:
+      if dqmode in ['q1','q2','q3']:
+        mode=dqmode.split('q')[1]
+        cbar.set_label(r'$\log10{(\max_{i=1}^{\rm nfma}|Q_{%s,i}-\bar Q_{%s}|)}$'%(mode,mode),labelpad=40,rotation=270)
+      if dqmode == 'trans':
+        cbar.set_label(r'$\max_{j=1,2}(\log10{(\max_{i=1}^{\rm nfma}|Q_{j,i}-\bar Q_{j}|)}$',labelpad=40,rotation=270)
     pl.grid()
 # -------------------------------- da_vs_turns -----------------------------------------------------------
   def st_da_vst(self,data,recreate=False):
