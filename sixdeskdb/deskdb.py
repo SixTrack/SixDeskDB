@@ -1980,6 +1980,9 @@ class SixDeskDB(object):
         where seed,tunex,tuney are identical for 
         (inputfile_0,method_0) to (inputfile_n,method_n)
     """
+# to be changed, q1[(amp1,amp2)]=[0.32,0.33, ...]
+# q1={}
+# q1.setdefault((a1,a2),[]).append(...)
     (tunex,tuney)=tune
     nfma = len(files) # number of (inputfile,method)
     if(self.check_view('fma')):
