@@ -1983,6 +1983,8 @@ class SixDeskDB(object):
 # to be changed, q1[(amp1,amp2)]=[0.32,0.33, ...]
 # q1={}
 # q1.setdefault((a1,a2),[]).append(...)
+    if len(files) < 2:
+      raise Exception("ERROR in plot_fma_scatter: you need to define at least 2 (inputfile,method) pairs to calcute the difference in tune!!!")
     (tunex,tuney)=tune
     nfma = len(files) # number of (inputfile,method)
     if(self.check_view('fma')):
@@ -2174,8 +2176,7 @@ class SixDeskDB(object):
     data=self.get_fma_intersept(seed=seed,tune=tune,turns=turns,files=files)
     nfma = len(files)
     if nfma < 2:
-      print 'ERROR in plot_fma_scatter: you need to define at least 2 (inputfile,method) pairs to compare'
-      return
+      raise Exception("ERROR in plot_fma_scatter: you need to define at least 2 (inputfile,method) pairs to compare")
 # only 2 files -> take diff in tune over two files
     elif nfma == 2:
       if dqmode in ['q1','q2','q3']:
@@ -2393,6 +2394,16 @@ class SixDeskDB(object):
       self.mk_da()
     data=np.array(self.execute(sql)).reshape(len(seeds),len(angles),-1)
     return data
+  def get_da_angle_seed(self,seed):
+    """returns DA results for seed *seed* and all angles"""
+    angles=self.get_db_angles()
+    sql="SELECT seed,angle,alost1 FROM da_post WHERE seed==%s ORDER by seed,angle"%(seed)
+    if(not self.check_table('da_post')):
+      print 'WARNING: Table da_post does not exist!'
+      print '... running db.mk_da()'
+      self.mk_da()
+    data=np.array(self.execute(sql))
+    return data
   def plot_da_angle(self,label=None,color='r',ashift=0,marker='o',
                     alpha=0.1,mec='none',**args):
     """plot DA (alost1) vs sigma_x and sigma_y"""
@@ -2419,8 +2430,7 @@ class SixDeskDB(object):
     return self
   def plot_da_seed(self,seed,label=None,color='k',marker='o',linestyle='-',alpha=1.0,mec='none'):
     """plot the angle vs the DA (alost1) for one seed *seed*"""
-    sql="SELECT seed,angle,alost1 FROM da_post WHERE seed==%s ORDER by seed,angle"%(seed)
-    data=np.array(self.execute(sql))
+    data=self.get_da_angle_seed(seed)
     if label is None:
       pl.plot(data[:,1],data[:,2],marker=marker,linestyle=linestyle,mfc=color,mec=mec,alpha=alpha)
     else:
@@ -2431,8 +2441,7 @@ class SixDeskDB(object):
   def plot_da_angle_seed(self,seed,label=None,color='k',ashift=0,marker='o',linestyle='-',alpha=1.0,mec='none'):
     """plot the DA (alost1) expressed in sigmax
     and sigmay for one seed *seed*"""
-    sql="SELECT seed,angle,alost1 FROM da_post WHERE seed==%s ORDER by seed,angle"%(seed)
-    data=np.array(self.execute(sql))
+    data=self.get_da_angle_seed(seed)
     s,angle,sig=data.T
     angle=(angle+ashift)*np.pi/180
     x=abs(sig)*np.cos(angle)
