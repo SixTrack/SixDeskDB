@@ -2209,7 +2209,7 @@ class SixDeskDB(object):
       pl.scatter(np.sqrt(data['fma0_%s'%var1]/eps0),np.sqrt(data['fma0_%s'%var2]/eps0),c=dq,marker='.',linewidth=0,vmin=vmin,vmax=vmax)
       if(not self.check_table('da_post')):
         print 'WARNING: Table da_post does not exist! To create it and plot the DA, please run db.mk_da()!'
-      else
+      else:
         self.plot_da_angle_seed(seed,marker=None,linestyle='-',color='k')
       pl.xlabel(r'$\sigma_x=\frac{\epsilon_{1,%s}}{\epsilon_0}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var1.split('_')[1],self.env_var['emit']))
       pl.ylabel(r'$\sigma_y=\frac{\epsilon_{2,%s}}{\epsilon_0}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var2.split('_')[1],self.env_var['emit']))
