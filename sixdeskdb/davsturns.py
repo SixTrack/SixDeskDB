@@ -4,7 +4,7 @@ from scipy import optimize
 import matplotlib.pyplot as pl
 import glob, sys, os, time
 from deskdb import SixDeskDB,tune_dir,mk_dir
-
+import matplotlib
 # ------------- basic functions -----------
 def get_divisors(n):
   """finds the divisors of an integer number"""
@@ -298,7 +298,8 @@ def plot_surv_2d_comp(db,dbcomp,lbl,complbl,seed,tune,ampmax):
   plot_surv_2d_stab(dbcomp,complbl,2,'r',seed,tune,ampmax)
   pl.legend(loc='best')
 def plot_comp_da_vst(db,dbcomp,ldat,ldaterr,lblname,complblname,seed,tune,ampmin,ampmax,tmax,slog,sfit,fitndrop):
-  """plot dynamic aperture vs number of turns, blue/green=simple average, red/orange=weighted average"""
+  """plot dynamic aperture vs number of turns, 
+  blue/green=simple average, red/orange=weighted average"""
   pl.close('all')
   pl.figure(figsize=(6,6))
   for dbbb in [db,dbcomp]:
@@ -311,7 +312,8 @@ def plot_comp_da_vst(db,dbcomp,ldat,ldaterr,lblname,complblname,seed,tune,ampmin
       lbl    = complblname
       fmtpl  = 'ro'
       fmtfit = 'r-'
-    pl.errorbar(data[ldat[0]],data['tlossmin'],xerr=data[ldaterr[0]],fmt=fmtpl,markersize=2,label='%s %s'%(ldat[0],lbl))
+#    pl.errorbar(data[ldat[0]],data['tlossmin'],xerr=data[ldaterr[0]],fmt=fmtpl,markersize=2,label='%s %s'%(ldat[0],lbl))
+    pl.errorbar(data[ldat[0]],data['tlossmin'],xerr=data[ldaterr[0]],fmt=fmtpl,markersize=2,label='%s'%(lbl))
     if(sfit):
       fitdata=dbbb.get_da_vst_fit(seed,tune)
       fitdata=fitdata[fitdata['fitdat']==ldat[0]]
@@ -321,11 +323,11 @@ def plot_comp_da_vst(db,dbcomp,ldat,ldaterr,lblname,complblname,seed,tune,ampmin
         pl.plot(fitdata['dinf']+fitdata['b0']/(np.log(data['tlossmin']**np.exp(-fitdata['b1mean']))**fitdata['kappa']),data['tlossmin'],fmtfit)
       else:
         print('Warning: no fit data available or data ambigious!')
-  pl.title('seed '+str(seed))
+  pl.title('seed '+str(seed),fontsize=16)
   pl.xlim([ampmin,ampmax])
-  pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=12)
-  pl.ylabel(r'Number of turns',labelpad=15,fontsize=12)
-  plleg=pl.gca().legend(loc='best')
+  pl.xlabel(r'Dynamic aperture [$\sigma$]',labelpad=10,fontsize=16)
+  pl.ylabel(r'Number of turns',labelpad=15,fontsize=16)
+  plleg=pl.gca().legend(loc='best',fontsize=16)
   for label in plleg.get_texts():
     label.set_fontsize(12)
   if(slog):
@@ -512,6 +514,7 @@ def PlotDaVsTurns(db,ldat,ldaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlo
 
 def PlotCompDaVsTurns(db,dbcomp,ldat,ldaterr,lblname,complblname,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop):
   '''Comparison of two studies: survival plots (area of stable particles) and Da vs turns plots'''
+  matplotlib.rcParams.update({'font.size': 16})
   turnsldb    =db.env_var['turnsl']
   turnsedb    =db.env_var['turnse']
   turnsldbcomp=dbcomp.env_var['turnsl']
@@ -546,8 +549,8 @@ def PlotCompDaVsTurns(db,dbcomp,ldat,ldaterr,lblname,complblname,ampmaxsurv,ampm
         print('... saving plot %s/DAsurv_comp.%s.png'%(dirname,turnsedb))
         plot_comp_da_vst(db,dbcomp,ldat,ldaterr,lblname,complblname,seed,tune,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop)
         if(plotlog==True):
-          pl.savefig('%s/DA_comp_log.%s.png'%(dirname,turnsedb))
+          pl.savefig('%s/DA_comp_log.%s.png'%(dirname,turnsedb),bbox_inches='tight')
           print('... saving plot %s/DA_comp_log.%s.png'%(dirname,turnsedb))
         else:
-          pl.savefig('%s/DA_comp.%s.png'%(dirname,turnsedb))
+          pl.savefig('%s/DA_comp.%s.png'%(dirname,turnsedb),bbox_inches='tight')
           print('... saving plot %s/DA_comp.%s.png'%(dirname,turnsedb))
