@@ -35,8 +35,6 @@ import madout
 from sqltable import SQLTable
 import footprint
 
-from math import pi
-
 for t in (np.int8, np.int16, np.int32, np.int64,np.uint8, np.uint16, np.uint32, np.uint64):
   sqlite3.register_adapter(t, long)
 
@@ -2227,10 +2225,10 @@ class SixDeskDB(object):
       pl.xlim(np.modf(tune[0])[0]-dqlim,np.modf(tune[0])[0]+dqlim)
       pl.ylim(np.modf(tune[1])[0]-dqlim,np.modf(tune[1])[0]+dqlim)
     elif('amp' in var1 or 'amp' in var2):
-      npart = max(data['fma0_part_id'])/2
+      npart = self.env_var['sixdeskpairs']
       ampr = data['fma0_amp1']+(data['fma0_amp2']-data['fma0_amp1'])/(npart-1)*(data['fma0_part_id']/2-1)
-      ampx = ampr*np.cos(data['fma0_angle']*pi/180.)
-      ampy = ampr*np.sin(data['fma0_angle']*pi/180.)
+      ampx = ampr*np.cos(data['fma0_angle']*np.pi/180.)
+      ampy = ampr*np.sin(data['fma0_angle']*np.pi/180.)
       pl.scatter(ampx,ampy,c=dq,marker='.',linewidth=0,vmin=vmin,vmax=vmax,s=5)
       pl.xlabel(r'$\sigma_x$')
       pl.ylabel(r'$\sigma_y$')
