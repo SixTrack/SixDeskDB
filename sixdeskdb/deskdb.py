@@ -35,6 +35,8 @@ import madout
 from sqltable import SQLTable
 import footprint
 
+from math import pi
+
 for t in (np.int8, np.int16, np.int32, np.int64,np.uint8, np.uint16, np.uint32, np.uint64):
   sqlite3.register_adapter(t, long)
 
@@ -2214,7 +2216,7 @@ class SixDeskDB(object):
       pl.xlabel(r'$\sigma_x=\sqrt{\frac{\epsilon_{1,%s}}{\epsilon_0}}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var1.split('_')[1],self.env_var['emit']))
       pl.ylabel(r'$\sigma_y=\sqrt{\frac{\epsilon_{2,%s}}{\epsilon_0}}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var2.split('_')[1],self.env_var['emit']))
 # tune vs dq
-    if('q' in var1 and 'q' in var2):
+    elif('q' in var1 and 'q' in var2):
       pl.scatter(data['fma0_%s'%var1],data['fma0_%s'%var2],c=dq,marker='.',linewidth=0,vmin=vmin,vmax=vmax,s=5)
       pl.xlabel('$Q_%s$'%(var1.split('q')[1]))
       pl.ylabel('$Q_%s$'%(var2.split('q')[1]))
@@ -2224,6 +2226,14 @@ class SixDeskDB(object):
   in order to exclude chaotic tunes"""%dqlim
       pl.xlim(np.modf(tune[0])[0]-dqlim,np.modf(tune[0])[0]+dqlim)
       pl.ylim(np.modf(tune[1])[0]-dqlim,np.modf(tune[1])[0]+dqlim)
+    elif('amp' in var1 or 'amp' in var2):
+      npart = max(data['fma0_part_id'])/2
+      ampr = data['fma0_amp1']+(data['fma0_amp2']-data['fma0_amp1'])/(npart-1)*(data['fma0_part_id']/2-1)
+      ampx = ampr*np.cos(data['fma0_angle']*pi/180.)
+      ampy = ampr*np.sin(data['fma0_angle']*pi/180.)
+      pl.scatter(ampx,ampy,c=dq,marker='.',linewidth=0,vmin=vmin,vmax=vmax,s=5)
+      pl.xlabel(r'$\sigma_x$')
+      pl.ylabel(r'$\sigma_y$')
     cbar=pl.colorbar()
     if nfma <2:
       if dqmode in ['q1','q2','q3']:
