@@ -645,6 +645,59 @@ class SixDeskDB(object):
     self.conn.commit()
     return list(cur)
 
+  def st_boinc_results(self):
+    ''' store input values (seed,tunes,amps,etc) along with fort.3 file'''
+    conn = self.conn
+    cur = conn.cursor()
+    env_var = self.env_var
+    cols = SQLTable.cols_from_fields(tables.Six_In.fields)
+    tab = SQLTable(conn,'six_input',cols,tables.Six_In.key)
+    cols1 = SQLTable.cols_from_fields(tables.Six_Res.fields)
+    tab1 = SQLTable(conn,'six_results',cols1,tables.Six_Res.key)
+    f3_data={}
+    for row in cur.execute('SELECT id,mtime,seed,simul,tunex,tuney,amp1,amp2,turns,angle FROM six_input'):
+        f3_data[tuple(row[2:])]=row[:2]
+    f10_data={}
+    for row in cur.execute('SELECT DISTINCT six_input_id,mtime FROM six_results'):
+        f10_data[row[0]]=row[1]
+    count3 = 0
+    count10 = 0
+    workdir = env_var['sixdeskboincdir']
+    extra_files = []
+    rows3 = []
+    rows10 = []
+    print "Looking for fort.10 files in\n %s"%workdir
+    file_count10 = 0
+    for dirName in glob.iglob(os.path.join(workdir,'*')):
+      f10=os.path.join(dirName)
+      file_count10 += 1
+      if file_count3%100==0:
+         sys.stdout.write('.')
+         sys.stdout.flush()
+      jobparmams=split_job_params(dirName.split('__','/')) # to change for boinc TO CLEAN
+      six_id_old,mtime3_old=f3_data.get(jobparmams,[-1,0])
+      mtime10 = os.path.getmtime(f10)
+      mtime10_old=f10_data.get(six_id,0)
+      if mtime10 > mtime10_old and os.path.getsize(f10)>0:
+         countl = 1
+         for lines in file.open(f10,"r"):
+           rows10.append([six_id,countl]+lines.split()+[mtime10])
+           countl += 1
+         count10 += 1
+         if count10 == 1000:
+           tab1.insertl(rows10)
+    tab1.insertl(rows10)
+    print ' number of fort.10 updated/found: %d/%d'%(count10,file_count10)
+    sql="""CREATE VIEW IF NOT EXISTS results
+           AS SELECT * FROM six_input INNER JOIN six_results
+           ON six_input.id==six_results.six_input_id"""
+    cur.execute(sql)
+    sql="""SELECT count(*) FROM results"""
+    results=list(cur.execute(sql))[0][0]
+    sql="""SELECT COUNT(DISTINCT six_input_id) FROM six_results"""
+    jobs=list(cur.execute(sql))[0][0]
+    print " db now contains %d results from %d jobs"% (results,jobs)
+
   def load_extra(self):
     ''' load extra files from DB '''
     verbose = self.verbose
