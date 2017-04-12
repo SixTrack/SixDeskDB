@@ -1499,6 +1499,12 @@ class SixDeskDB(object):
     self._plot_polar(x,y,data['surv'].mean(axis=0),smooth=smooth)
     pl.title('Survived turns')
   def get_col(self,col,seed,angle):
+    """ Get the column from table results specified by the seed and the angle
+        as a function of the amplitude of the track particles in sigma
+
+        Example:
+            db.get_col('sturns1',1,45)
+    """
     cmd="""SELECT sigx1*sigx1+sigy1*sigy1,
             %s
             FROM results WHERE seed=%s AND angle=%s
