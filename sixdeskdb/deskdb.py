@@ -2527,3 +2527,37 @@ class SixDeskDB(object):
             print "Tune %s_%s, seed %d, angle %d has alost1=0"%(tunex,tuney,seed,angle)
       else:
         print "No DA command issued yet"
+  def compare_overlap_angle(self,tunes,seed,angle,colname):
+    ss="""select %%s,%s from results
+          where tunex=%s and tuney=%s and seed=%s and
+                angle=%s and row_num=%%s
+          order by amp1"""%(colname,tunes[0],tunes[1],seed,angle)
+    l1=self.execute(ss%('amp1',1))[1:]
+    l2=self.execute(ss%('amp2',30))[:-1]
+    return np.all(np.array(l1)==np.array(l2))
+  def compare_overlap(self,colname):
+    out=[]
+    for tunes in self.get_tunes():
+      for seed in self.get_seeds():
+         for angle in self.get_angles():
+            res=self.compare_overlap_angle(tunes,seed,angle,colname)
+            if not res:
+               out.append([tunes,seed,angle,colname])
+    return out
+  def check_overlap(self):
+    turnse=self.env_var['turnse']
+    for colname in ['sturns1']:
+      res=self.compare_overlap('sturns1')
+      for tunes,seed,angle,colname in res:
+        msg="Error in tunes=%s, seed=%s, angle=%s, colname=%s"
+        print(msg%(tunes,seed,angle,colname))
+        dirname=self.mk_analysis_dir(seed,tunes)
+        pl.close('all')
+        pl.figure(figsize=(6,6))
+        self.plot_surv_2d(seed,tunes)#suvival plot
+        pl.savefig('%s/DAsurv.%s.png'%(dirname,turnse))
+        print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
+  def check_results(self):
+     self.check_overlap()
+
+
