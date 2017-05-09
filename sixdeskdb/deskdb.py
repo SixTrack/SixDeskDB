@@ -2575,5 +2575,35 @@ class SixDeskDB(object):
         print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
   def check_results(self):
      self.check_overlap()
+  def get_fort3(self,seed,amp1,angle,tunes=None):
+    ss="""select fort3 from six_input
+          where seed=%s and
+                tunex=%s and tuney=%s and
+                amp1=%s and turns='%s'
+                and angle=%s"""
+    if tunes is None:
+        tunes=self.get_tunes()[0]
+    turns='e%g'%self.env_var['turnsle']
+    ss=ss%(seed,tunes[0],tunes[1],amp1,turns,angle)
+    fort3=self.execute(ss)[0][0]
+    return decompressBuf(decompressBuf(fort3))
+  def get_fort_2_8_16(self,seed):
+    ss="""select fort2, fort8, fort16 from mad6t_results
+          where seed=%s"""%(seed)
+    forts=map(decompressBuf,self.execute(ss)[0])
+    return forts
+  def extract_job(self,dest,seed,amp1,angle,tunes=None):
+    fc2,fc8,fc16=self.get_fort_2_8_16(seed)
+    fc3=self.get_fort3(seed,amp1,angle,tunes)
+    print("Prepare directory '%s'"%dest)
+    if not os.path.isdir(dest):
+      os.mkdir(dest)
+    open(os.path.join(dest,'fort.2'),'w').write(fc2)
+    open(os.path.join(dest,'fort.3'),'w').write(fc3)
+    open(os.path.join(dest,'fort.8'),'w').write(fc8)
+    open(os.path.join(dest,'fort.16'),'w').write(fc16)
+    sixtrack=self.env_var['SIXTRACKEXE']
+    if not os.path.exists(dest):
+      os.symlink(sixtrack,os.path.join(dest,'sixtrack'))
 
 
