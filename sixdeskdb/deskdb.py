@@ -2603,7 +2603,8 @@ class SixDeskDB(object):
     open(os.path.join(dest,'fort.8'),'w').write(fc8)
     open(os.path.join(dest,'fort.16'),'w').write(fc16)
     sixtrack=self.env_var['SIXTRACKEXE']
-    if not os.path.exists(dest):
-      os.symlink(sixtrack,os.path.join(dest,'sixtrack'))
+    sixtrackln=os.path.join(dest,'sixtrack')
+    if not os.path.exists(sixtrackln):
+      os.symlink(sixtrack,sixtrackln)
 
 
