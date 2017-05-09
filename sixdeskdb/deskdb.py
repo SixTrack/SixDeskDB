@@ -1498,18 +1498,19 @@ class SixDeskDB(object):
     x,y,t=self.get_polar_col(col,1)
     self._plot_polar(x,y,data['surv'].mean(axis=0),smooth=smooth)
     pl.title('Survived turns')
-  def get_col(self,col,seed,angle):
+  def get_col(self,col,seed,angle,tunes=None):
     """ Get the column from table results specified by the seed and the angle
         as a function of the amplitude of the track particles in sigma
 
         Example:
             db.get_col('sturns1',1,45)
     """
-    cmd="""SELECT sigx1*sigx1+sigy1*sigy1,
-            %s
-            FROM results WHERE seed=%s AND angle=%s
-            ORDER BY sigx1*sigx1+sigy1*sigy1,row_num"""
-    cur=self.conn.cursor().execute(cmd%(col,seed,angle))
+    cmd="""SELECT sigx1*sigx1+sigy1*sigy1, %s FROM results
+            WHERE tunex=%s AND tuney=%s AND seed=%s AND angle=%s
+            ORDER BY amp1,row_num"""
+    if tunes is None:
+        tunes=self.get_tunes()[0]
+    cur=self.conn.cursor().execute(cmd%(col,tunes[0],tunes[1],seed,angle))
     ftype=[('ampsq',float),('surv',float)]
     data=np.fromiter(cur,dtype=ftype)
     a,t=np.sqrt(data['ampsq']),data['surv']
@@ -2527,30 +2528,37 @@ class SixDeskDB(object):
             print "Tune %s_%s, seed %d, angle %d has alost1=0"%(tunex,tuney,seed,angle)
       else:
         print "No DA command issued yet"
-  def compare_overlap_angle(self,tunes,seed,angle,colname):
+  def get_overlap_angle(self,tunes,seed,angle,colname):
     ss="""select %%s,%s from results
           where tunex=%s and tuney=%s and seed=%s and
                 angle=%s and row_num=%%s
           order by amp1"""%(colname,tunes[0],tunes[1],seed,angle)
-    l1=self.execute(ss%('amp1',1))[1:]
-    l2=self.execute(ss%('amp2',30))[:-1]
-    return np.all(np.array(l1)==np.array(l2))
+    pairs=self.env_var['sixdeskpairs']
+    l1=np.array(self.execute(ss%('amp1',1))[1:])
+    l2=np.array(self.execute(ss%('amp2',pairs))[:-1])
+    return l1,l2
+  def compare_overlap_angle(self,tunes,seed,angle,colname):
+    l1,l2=self.get_overlap_angle(tunes,seed,angle,colname)
+    bad_amps=l1[l1[:,1]!=l2[:,1]]
+    return bad_amps[:,0]
   def compare_overlap(self,colname):
     out=[]
     for tunes in self.get_tunes():
       for seed in self.get_seeds():
          for angle in self.get_angles():
-            res=self.compare_overlap_angle(tunes,seed,angle,colname)
-            if not res:
-               out.append([tunes,seed,angle,colname])
+            amps=self.compare_overlap_angle(tunes,seed,angle,colname)
+            if len(amps)>0:
+               out.append([tunes,seed,angle,colname,amps])
     return out
   def check_overlap(self):
     turnse=self.env_var['turnse']
+    st=self.env_var['nsincl']
     for colname in ['sturns1']:
       res=self.compare_overlap('sturns1')
-      for tunes,seed,angle,colname in res:
-        msg="Error in tunes=%s, seed=%s, angle=%s, colname=%s"
-        print(msg%(tunes,seed,angle,colname))
+      for tunes,seed,angle,colname,amps in res:
+        amps=['%g-%g:%g-%g'%(a-st,a,a,st+a) for a in amps]
+        msg="Error in tunes=%s, seed=%s, angle=%s, colname=%s, amps=%s"
+        print(msg%(tunes,seed,angle,colname,', '.join(amps)))
         dirname=self.mk_analysis_dir(seed,tunes)
         pl.close('all')
         pl.figure(figsize=(6,6))
