@@ -148,33 +148,89 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
         print('WARNING! mk_da_vst - You need at least 7 angles to calculate the da vs turns with the simpson rule! da*simp* will be set to 0.')
         warnsimp=False
       calcsimp=False
+
+
+    # prepare the arrays for unequal emittances
+    mta_angle_ue = np.arctan(((emitx/emity)**0.5)*np.tan(mta_angle))                                                        # angle for unequal emittances
+    angstep_ue   = angstep*((emitx/emity)**0.5)*((np.cos(mta_angle_ue)**2)/(np.cos(mta_angle)**2))                          # angular step for unequal emittances
+    eR           = (((emitx/regemi)*np.cos(mta_angle_ue)**2 + (emity/regemi)*np.sin(mta_angle_ue)**2))**0.5                 # square root under rsigma
+    mta_sigma_ue = mta_sigma/eR                                                                                             # rsigma for unequal emittances
+    ampstep_ue   = eR*ampstep - ((emitx-emity)/regemi)*((np.cos(mta_angle_ue)*np.sin(mta_angle_ue))/eR**2)*mta_sigma_ue*angstep_ue    # amplitude step with unequal emittances
+    
+    
+#    print "AMPSTEP   ", ampstep
+#    print "AMPSTEP_UE", ampstep_ue
+    
     # ---- trapezoidal rule (trap)
     # integral
-    dawtrapint = ((ajtrap*(mta_sigma**4*np.sin(2*mta_angle))).sum())*angstep
-    dawtrap    = (dawtrapint)**(1/4.)
-    #
-#    dastrap    = (2./np.pi)*(ajtrap*(mta_sigma)).sum()*angstep
-    print "DASTRAP OLD", dastrap, regemi, emitx, emity, (regemi/emity)**0.5
-    dastrap    = (2./np.pi)*((regemi/emity)**0.5)*(ajtrap*(mta_sigma)/(( np.sin(mta_angle)**2 + (emitx/emity)*(np.cos(mta_angle)**2))**0.5 )).sum()*angstep
-    print "DASTRAP NEW", dastrap
+    dawtrapint = ((ajtrap*(mta_sigma**4*np.sin(2*mta_angle))).sum())*angstep                                   # old
+    dawtrap    = (dawtrapint)**(1/4.)                                                                          # old
+#    print "dawtrap OLD", dawtrap, regemi, emitx, emity, (regemi/emity)**0.5                                    # INFO
+
+    dawtrapint = np.dot(angstep_ue,((ajtrap*(mta_sigma_ue**4*np.sin(2*mta_angle_ue))))).sum()                  # new [COMPLETE]
+    dawtrap    = (dawtrapint)**(1/4.)                                                                          # new
+#    print "dawtrap NEW", dawtrap, regemi, emitx, emity, (regemi/emity)**0.5                                    # INFO
+    
+    dastrap    = (2./np.pi)*(ajtrap*(mta_sigma)).sum()*angstep                                                 # old
+    print "DASTRAP OLD", dastrap
+    print "ajtrap", ajtrap
+    print "mta_sigma", mta_sigma
+    print "angstep", angstep
+    print "mta_angle", mta_angle
+    
+
+    dastrap    = (2./np.pi)*np.dot((ajtrap*(mta_sigma_ue)),angstep_ue).sum()                                    # NEW [COMPLETE]
+    print "DASTRAP NEW2", dastrap                                                                               # INFO
+
     # error
-    dawtraperrint   = np.abs(((ajtrap*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum())*angstep*ampstep)
+    dawtraperrint   = np.abs(((ajtrap*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum())*angstep*ampstep)                         # old
     dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint
-    dastraperr      = ampstep/2
+#    print "DAWTRAPERR OLD", dawtraperr
+
+    dawtraperrint   = np.abs(np.dot(angstep_ue*ampstep_ue,((ajtrap*(2*(mta_sigma_ue**3)*np.sin(2*mta_angle_ue))))).sum())     # new [complete]
+    dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint    
+#    print "DAWTRAPERR NEW", dawtraperr
+
+    sys.exit()
+    
+    dastraperr      = ampstep/2                                                                                 # old
     dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
     dastraperrepamp = ampstep/2
     dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)
+
+
+    dastraperr      = np.max(ampstep_ue)/2                                                                      # new [complete]
+    dastraperrepang = ((np.abs(np.diff(mta_sigma_ue))).sum())/(2*angmax)                                        # new [complete]
+    dastraperrepamp = np.max(ampstep)/2                                                                         # new [complete]
+    dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)    
+
+    
     # ---- simpson rule (simp)
     if(calcsimp):
       # int
-      dawsimpint = (ajsimp*((mta_sigma**4)*np.sin(2*mta_angle))).sum()*angstep
+      dawsimpint = (ajsimp*((mta_sigma**4)*np.sin(2*mta_angle))).sum()*angstep                                   # old
       dawsimp    = (dawsimpint)**(1/4.)
       dassimpint = (ajsimp*mta_sigma).sum()*angstep
       dassimp    = (2./np.pi)*dassimpint
+      print "DAWSIMP, DASSIMP, OLD", dawsimp, dassimp
+
+      dawsimpint = np.dot(angstep_ue,(ajsimp*((mta_sigma_ue**4)*np.sin(2*mta_angle_ue)))).sum()                  # NEW [COMPLETE]
+      dawsimp    = (dawsimpint)**(1/4.)
+      dassimpint = np.dot(angstep_ue,(ajsimp*mta_sigma_ue)).sum()
+      dassimp    = (2./np.pi)*dassimpint
+      print "DAWSIMP, DASSIMP, NEW", dawsimp, dassimp      
+      
       # error
-      dawsimperrint = (ajsimp*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum()*angstep*ampstep
+      dawsimperrint = (ajsimp*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum()*angstep*ampstep                      # old
       dawsimperr    = np.abs(1/4.*dawsimpint**(-3/4.))*dawsimperrint
       dassimperr    = ampstep/2#simplified
+      print "DAWSIMPERR, DASSIMPERR, OLD", dawsimperr, dassimperr
+      
+      dawsimperrint = np.dot(angstep_ue*ampstep_ue,(ajsimp*(2*(mta_sigma_ue**3)*np.sin(2*mta_angle_ue)))).sum()  # new [complete]
+      dawsimperr    = np.abs(1/4.*dawsimpint**(-3/4.))*dawsimperrint
+      dassimperr    = np.max(ampstep_ue)/2#simplified                                                            # new [complete]
+      print "DAWSIMPERR, DASSIMPERR, NEW", dawsimperr, dassimperr      
+      
     else:
       (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
     tlossmin=np.min(mta['sturn'])
