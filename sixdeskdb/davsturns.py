@@ -156,31 +156,42 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
     eR           = (((emitx/regemi)*np.cos(mta_angle_ue)**2 + (emity/regemi)*np.sin(mta_angle_ue)**2))**0.5                 # square root under rsigma
     mta_sigma_ue = mta_sigma/eR                                                                                             # rsigma for unequal emittances
     ampstep_ue   = eR*ampstep - ((emitx-emity)/regemi)*((np.cos(mta_angle_ue)*np.sin(mta_angle_ue))/eR**2)*mta_sigma_ue*angstep_ue    # amplitude step with unequal emittances
+
+    print ""
+    print "AMPSTEP OLD", ampstep
+    print "AMPSTEP NEW", ampstep_ue
+
+    print ""
+    print "MTA_SIGMA OLD", mta_sigma
+    print "MTA_SIGMA NEW", mta_sigma_ue
+
+    print ""
+    print "MTA_ANGLE OLD", mta_angle
+    print "MTA_ANGLE NEW", mta_angle_ue        
     
-    
-#    print "AMPSTEP   ", ampstep
-#    print "AMPSTEP_UE", ampstep_ue
+    print ""
     
     # ---- trapezoidal rule (trap)
     # integral
     dawtrapint = ((ajtrap*(mta_sigma**4*np.sin(2*mta_angle))).sum())*angstep                                   # old
     dawtrap    = (dawtrapint)**(1/4.)                                                                          # old
-#    print "dawtrap OLD", dawtrap, regemi, emitx, emity, (regemi/emity)**0.5                                    # INFO
+    print "DAWTRAP OLD", dawtrap                                    # INFO
+
+
 
     dawtrapint = np.dot(angstep_ue,((ajtrap*(mta_sigma_ue**4*np.sin(2*mta_angle_ue))))).sum()                  # new [COMPLETE]
     dawtrap    = (dawtrapint)**(1/4.)                                                                          # new
+    print "DAWTRAP NEW", dawtrap                                    # INFO    
 #    print "dawtrap NEW", dawtrap, regemi, emitx, emity, (regemi/emity)**0.5                                    # INFO
     
     dastrap    = (2./np.pi)*(ajtrap*(mta_sigma)).sum()*angstep                                                 # old
+    print ""
     print "DASTRAP OLD", dastrap
-    print "ajtrap", ajtrap
-    print "mta_sigma", mta_sigma
-    print "angstep", angstep
-    print "mta_angle", mta_angle
     
 
     dastrap    = (2./np.pi)*np.dot((ajtrap*(mta_sigma_ue)),angstep_ue).sum()                                    # NEW [COMPLETE]
-    print "DASTRAP NEW2", dastrap                                                                               # INFO
+    print "DASTRAP NEW", dastrap                                                                               # INFO
+    print ""
 
     # error
     dawtraperrint   = np.abs(((ajtrap*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum())*angstep*ampstep)                         # old
@@ -472,6 +483,8 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
 
   regemi=db.env_var['emit']          # get the emittance at which the simulation was carried out
   print 'REGEMI  =', regemi
+  if emitx==0.:                   # if the unequal emittance option is not used
+    emitx,emity = regemi, regemi
   print 'EMITX   =', emitx
   print 'EMITY   =', emity  
   for seed in db.get_db_seeds():
