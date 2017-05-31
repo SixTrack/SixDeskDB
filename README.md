@@ -1,6 +1,2 @@
 SixDesk
 =======
-
-
-
-Unequal emittances option
