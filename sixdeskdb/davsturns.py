@@ -157,64 +157,91 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
     mta_sigma_ue = mta_sigma/eR                                                                                             # rsigma for unequal emittances
     ampstep_ue   = eR*ampstep - ((emitx-emity)/regemi)*((np.cos(mta_angle_ue)*np.sin(mta_angle_ue))/eR**2)*mta_sigma_ue*angstep_ue    # amplitude step with unequal emittances
 
-    print ""
-    print "AMPSTEP OLD", ampstep
-    print "AMPSTEP NEW", ampstep_ue
+#    print ""
+#    print "AMPSTEP OLD", ampstep
+#    print "AMPSTEP NEW", ampstep_ue
+#    print "LEN AMPSTEP", len(ampstep_ue)
 
-    print ""
-    print "MTA_SIGMA OLD", mta_sigma
-    print "MTA_SIGMA NEW", mta_sigma_ue
+#    print ""
+#    print "MTA_SIGMA OLD", mta_sigma
+#    print "MTA_SIGMA NEW", mta_sigma_ue
 
-    print ""
-    print "MTA_ANGLE OLD", mta_angle
-    print "MTA_ANGLE NEW", mta_angle_ue        
-    
-    print ""
+#    print ""
+    #print "ANGSTEP OLD  ", angstep
+    #print "ANGSTEP NEW  ", angstep_ue    
+#    print "MTA_ANGLE OLD", mta_angle
+    #print "MTA_ANGLE NEW", mta_angle_ue
+
+
+    # get the integration steps (difference in angle) in the new coordinate system
+    dtheta = np.diff(mta_angle_ue)                               # get the angular distance of the data points [integration constant]
+    dtheta = np.insert(dtheta, 0, mta_angle_ue[0])               # add the first point (distance from x-axis)
+    dtheta = np.append(dtheta, (np.pi/2-mta_angle_ue[-1]))       # add the last ponit  (distance from y-axis)
+
+#    print "dtheta       ", dtheta
+#    print "SUM,len      ", np.sum(dtheta), len(dtheta)
+#    print ""
     
     # ---- trapezoidal rule (trap)
     # integral
     dawtrapint = ((ajtrap*(mta_sigma**4*np.sin(2*mta_angle))).sum())*angstep                                   # old
     dawtrap    = (dawtrapint)**(1/4.)                                                                          # old
-    print "DAWTRAP OLD", dawtrap                                    # INFO
+#    print "DAWTRAP OLD", dawtrap                                    # INFO
 
 
 
-    dawtrapint = np.dot(angstep_ue,((ajtrap*(mta_sigma_ue**4*np.sin(2*mta_angle_ue))))).sum()                  # new [COMPLETE]
-    dawtrap    = (dawtrapint)**(1/4.)                                                                          # new
-    print "DAWTRAP NEW", dawtrap                                    # INFO    
+#    dawtrapint = np.dot(angstep_ue,((ajtrap*(mta_sigma_ue**4*np.sin(2*mta_angle_ue))))).sum()                  # new [COMPLETE]
+#    dawtrap    = (dawtrapint)**(1/4.)                                                                          # new
+#    print "DAWTRAP NEW", dawtrap                                    # INFO    
 #    print "dawtrap NEW", dawtrap, regemi, emitx, emity, (regemi/emity)**0.5                                    # INFO
-    
-    dastrap    = (2./np.pi)*(ajtrap*(mta_sigma)).sum()*angstep                                                 # old
-    print ""
-    print "DASTRAP OLD", dastrap
-    
 
-    dastrap    = (2./np.pi)*np.dot((ajtrap*(mta_sigma_ue)),angstep_ue).sum()                                    # NEW [COMPLETE]
-    print "DASTRAP NEW", dastrap                                                                               # INFO
-    print ""
+
+
+    # version of dastrap assuming equal step size
+    dastrap    = (2./np.pi)*(ajtrap*(mta_sigma)).sum()*angstep                                                 # old
+#    print ""
+#    print "DASTRAP OLD", dastrap
+
+    #### PH: calculate dastrap with a generalized integration rule
+    #        baseline is the open formula (4.1.15) in Press et al. NUMERICAL RECIPES in Fortran 77 [second edition]
+    #        we generalize the formula for uneven distances between the sampling points
+    dastrap_ue  = 0 
+    dastrap_ue += dtheta[0]*mta_sigma_ue[0]               # corner element from left  [open formula for trapezoidal rule]
+    dastrap_ue += dtheta[-1]*mta_sigma_ue[-1]             # corner element from right [open formula for trapezoidal rule]    
+    for i in range(1,len(dtheta)-1):
+        dastrap_ue += (0.5)*( mta_sigma_ue[i] + mta_sigma_ue[i-1] )*dtheta[i]
+    dastrap_ue = (2./np.pi)*dastrap_ue                    # multipy with 2/pi
+    dastrap    = dastrap_ue                               # preliminary, change dastrap variable before merging with main branch
+        
+#    print "DASTRAP NNW",  dastrap_ue                                                                              # INFO
+#    print ""
+
+
 
     # error
     dawtraperrint   = np.abs(((ajtrap*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum())*angstep*ampstep)                         # old
     dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint
 #    print "DAWTRAPERR OLD", dawtraperr
 
-    dawtraperrint   = np.abs(np.dot(angstep_ue*ampstep_ue,((ajtrap*(2*(mta_sigma_ue**3)*np.sin(2*mta_angle_ue))))).sum())     # new [complete]
-    dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint    
+#    dawtraperrint   = np.abs(np.dot(angstep_ue*ampstep_ue,((ajtrap*(2*(mta_sigma_ue**3)*np.sin(2*mta_angle_ue))))).sum())     # new [complete]
+#    dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint    
 #    print "DAWTRAPERR NEW", dawtraperr
-
-    sys.exit()
     
     dastraperr      = ampstep/2                                                                                 # old
     dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
     dastraperrepamp = ampstep/2
     dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)
 
+#    print 'dastraperrep', dastraperrep
+    
+    # assume that the error of dastrap can be calculated similarly to the one with equal step size
 
     dastraperr      = np.max(ampstep_ue)/2                                                                      # new [complete]
     dastraperrepang = ((np.abs(np.diff(mta_sigma_ue))).sum())/(2*angmax)                                        # new [complete]
-    dastraperrepamp = np.max(ampstep)/2                                                                         # new [complete]
+    dastraperrepamp = np.max(ampstep_ue)/2                                                                      # new [complete]
     dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)    
 
+#    print 'dastraperrep', dastraperrep
     
     # ---- simpson rule (simp)
     if(calcsimp):
@@ -223,24 +250,24 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
       dawsimp    = (dawsimpint)**(1/4.)
       dassimpint = (ajsimp*mta_sigma).sum()*angstep
       dassimp    = (2./np.pi)*dassimpint
-      print "DAWSIMP, DASSIMP, OLD", dawsimp, dassimp
+#      print "DAWSIMP, DASSIMP, OLD", dawsimp, dassimp
 
-      dawsimpint = np.dot(angstep_ue,(ajsimp*((mta_sigma_ue**4)*np.sin(2*mta_angle_ue)))).sum()                  # NEW [COMPLETE]
-      dawsimp    = (dawsimpint)**(1/4.)
-      dassimpint = np.dot(angstep_ue,(ajsimp*mta_sigma_ue)).sum()
-      dassimp    = (2./np.pi)*dassimpint
-      print "DAWSIMP, DASSIMP, NEW", dawsimp, dassimp      
+#      dawsimpint = np.dot(angstep_ue,(ajsimp*((mta_sigma_ue**4)*np.sin(2*mta_angle_ue)))).sum()                  # NEW [COMPLETE]
+#      dawsimp    = (dawsimpint)**(1/4.)
+#      dassimpint = np.dot(angstep_ue,(ajsimp*mta_sigma_ue)).sum()
+#      dassimp    = (2./np.pi)*dassimpint
+#      print "DAWSIMP, DASSIMP, NEW", dawsimp, dassimp      
       
       # error
       dawsimperrint = (ajsimp*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum()*angstep*ampstep                      # old
       dawsimperr    = np.abs(1/4.*dawsimpint**(-3/4.))*dawsimperrint
       dassimperr    = ampstep/2#simplified
-      print "DAWSIMPERR, DASSIMPERR, OLD", dawsimperr, dassimperr
+#      print "DAWSIMPERR, DASSIMPERR, OLD", dawsimperr, dassimperr
       
-      dawsimperrint = np.dot(angstep_ue*ampstep_ue,(ajsimp*(2*(mta_sigma_ue**3)*np.sin(2*mta_angle_ue)))).sum()  # new [complete]
-      dawsimperr    = np.abs(1/4.*dawsimpint**(-3/4.))*dawsimperrint
-      dassimperr    = np.max(ampstep_ue)/2#simplified                                                            # new [complete]
-      print "DAWSIMPERR, DASSIMPERR, NEW", dawsimperr, dassimperr      
+#      dawsimperrint = np.dot(angstep_ue*ampstep_ue,(ajsimp*(2*(mta_sigma_ue**3)*np.sin(2*mta_angle_ue)))).sum()  # new [complete]
+#      dawsimperr    = np.abs(1/4.*dawsimpint**(-3/4.))*dawsimperrint
+#      dassimperr    = np.max(ampstep_ue)/2#simplified                                                            # new [complete]
+#      print "DAWSIMPERR, DASSIMPERR, NEW", dawsimperr, dassimperr      
       
     else:
       (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
@@ -563,6 +590,9 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
     else:
       print("Error in -fitopt: <data> has to be 'dawtrap','dastrap','dawsimp' or 'dassimp' - Aborting!")
       sys.exit(0)
+  if emitx!=regemi or emity!=regemi:
+    print("WARNING: you are using the unequal emittances option! So far this option is only computing the correct value of dastrap. Take this into account in your analysis!")
+
 
 def PlotDaVsTurns(db,ldat,ldaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop):
   '''plot survival plots and da vs turns for list of data ldat and associated error ldaterr'''
