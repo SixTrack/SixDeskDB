@@ -196,7 +196,8 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
 #    print "dawtrap NEW", dawtrap, regemi, emitx, emity, (regemi/emity)**0.5                                    # INFO
 
 
-
+    print 'ajtrap', ajtrap
+    print 'mta_sigma', mta_sigma
     # version of dastrap assuming equal step size
     dastrap    = (2./np.pi)*(ajtrap*(mta_sigma)).sum()*angstep                                                 # old
 #    print ""
@@ -228,21 +229,42 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
 #    print "DAWTRAPERR NEW", dawtraperr
     
     dastraperr      = ampstep/2                                                                                 # old
-    dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
+    dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*(angmax+1))                               # PH: bugfix angmax -> angmax+1
     dastraperrepamp = ampstep/2
     dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)
+    print 'dastreperrepang before', dastraperrepang**2                                               # correct version implemented
 
-#    print 'dastraperrep', dastraperrep
+
+
+    dastraperrepang = 0
+    for i in range(1,len(dtheta)-1):
+      dastraperrepang += dtheta[i]*(2./np.pi)*np.abs(mta_sigma_ue[i-1]-mta_sigma_ue[i])/(2.)      
     
-    # assume that the error of dastrap can be calculated similarly to the one with equal step size
-
+      
+    print 'dastreperrepang after ', dastraperrepang**2
+      
+    
     dastraperr      = np.max(ampstep_ue)/2                                                                      # new [complete]
     dastraperrepang = ((np.abs(np.diff(mta_sigma_ue))).sum())/(2*angmax)                                        # new [complete]
     dastraperrepamp = np.max(ampstep_ue)/2                                                                      # new [complete]
     dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)    
 
-#    print 'dastraperrep', dastraperrep
+    print 'lennpdiff', len(np.diff(mta_sigma))
+    print 'ampstep  ', ampstep
+    print 'angmas   ', angmax
+    print 'ampstep_ue', ampstep_ue
+    print 'mta_sigma', mta_sigma
+    print 's        ', s
+    print 'amstep_ue', ampstep_ue
+    print 'angtep_ue', angstep_ue
+    print 'sumangste', angstep_ue.sum()
+    print 'lenampstp', len(ampstep_ue)
+    print 'dtheta   ', dtheta
+    print 'lendtheta', len(dtheta)
+    print 'lenangstp', len(angstep_ue)
     
+#    print 'dastraperrep', dastraperrep
+    sys.exit()
     # ---- simpson rule (simp)
     if(calcsimp):
       # int
