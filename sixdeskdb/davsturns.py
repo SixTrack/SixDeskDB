@@ -196,10 +196,10 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
 #    print "dawtrap NEW", dawtrap, regemi, emitx, emity, (regemi/emity)**0.5                                    # INFO
 
 
-    print 'ajtrap', ajtrap
-    print 'mta_sigma', mta_sigma
+#    print 'ajtrap', ajtrap
+#    print 'mta_sigma', mta_sigma
     # version of dastrap assuming equal step size
-    dastrap    = (2./np.pi)*(ajtrap*(mta_sigma)).sum()*angstep                                                 # old
+#    dastrap    = (2./np.pi)*(ajtrap*(mta_sigma)).sum()*angstep                                                 # old
 #    print ""
 #    print "DASTRAP OLD", dastrap
 
@@ -214,57 +214,80 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
     dastrap_ue = (2./np.pi)*dastrap_ue                    # multipy with 2/pi
     dastrap    = dastrap_ue                               # preliminary, change dastrap variable before merging with main branch
         
-#    print "DASTRAP NNW",  dastrap_ue                                                                              # INFO
+#    print "DASTRAP NEW",  dastrap                                                                              # INFO
 #    print ""
 
-
+    #sys.exit()
 
     # error
     dawtraperrint   = np.abs(((ajtrap*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum())*angstep*ampstep)                         # old
     dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint
 #    print "DAWTRAPERR OLD", dawtraperr
 
-#    dawtraperrint   = np.abs(np.dot(angstep_ue*ampstep_ue,((ajtrap*(2*(mta_sigma_ue**3)*np.sin(2*mta_angle_ue))))).sum())     # new [complete]
-#    dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint    
-#    print "DAWTRAPERR NEW", dawtraperr
     
     dastraperr      = ampstep/2                                                                                 # old
     dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*(angmax+1))                               # PH: bugfix angmax -> angmax+1
+    
     dastraperrepamp = ampstep/2
     dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)
-    print 'dastreperrepang before', dastraperrepang**2                                               # correct version implemented
-
+#    print 'dastraperrep before', dastraperrep
+#    print 'dastreperrepang before', dastraperrepang**2                                               # correct version implemented
 
 
     dastraperrepang = 0
     for i in range(1,len(dtheta)-1):
-      dastraperrepang += dtheta[i]*(2./np.pi)*np.abs(mta_sigma_ue[i-1]-mta_sigma_ue[i])/(2.)      
-    
-      
-    print 'dastreperrepang after ', dastraperrepang**2
-      
-    
-    dastraperr      = np.max(ampstep_ue)/2                                                                      # new [complete]
-    dastraperrepang = ((np.abs(np.diff(mta_sigma_ue))).sum())/(2*angmax)                                        # new [complete]
-    dastraperrepamp = np.max(ampstep_ue)/2                                                                      # new [complete]
+      dastraperrepang += dtheta[i]*(2./np.pi)*np.abs(mta_sigma_ue[i-1]-mta_sigma_ue[i])/(2.)          
+#    print 'dastreperrepang after ', dastraperrepang**2
+
+  
+#    print ''
+#    print 'dastreperrepamp before', dastraperrepamp**2                                               
+
+    # PH JUN17 SECOND TERM OF THE ERROR FUNCTION
+
+    stepsize = []                                                                                 # determine the step size in the new coordinate system
+    for i,r in enumerate(s):
+      stepsize.append(np.diff(r)[np.diff(r)!=0].min())
+    stepsize = np.array(stepsize)
+    stepsize = stepsize/2.                                                                        # this is the error on r (DELTA r)
+
+
+    # PH JUN17 implement the generalized error function following the open trapezoidal rule with unequal step size
+    dastraperrepamp = 0
+    dastraperrepamp += ((dtheta[0]*stepsize[0] + dtheta[1]*stepsize[0]/2.))                       # first term 
+    dastraperrepamp += ((dtheta[-2]*stepsize[-1]/2. + dtheta[-1]*stepsize[-1] ))                  # last term
+    for i in range(1,len(stepsize)-1):
+      dastraperrepamp += ((1./2.)*(dtheta[i]*stepsize[i] + dtheta[i+1]*stepsize[i]))              # middle terms
+
+    dastraperrepamp = dastraperrepamp*(2./np.pi)
+#    print 'dastreperrepamp after ', dastraperrepamp**2
+#    print
+
     dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)    
 
-    print 'lennpdiff', len(np.diff(mta_sigma))
-    print 'ampstep  ', ampstep
-    print 'angmas   ', angmax
-    print 'ampstep_ue', ampstep_ue
-    print 'mta_sigma', mta_sigma
-    print 's        ', s
-    print 'amstep_ue', ampstep_ue
-    print 'angtep_ue', angstep_ue
-    print 'sumangste', angstep_ue.sum()
-    print 'lenampstp', len(ampstep_ue)
-    print 'dtheta   ', dtheta
-    print 'lendtheta', len(dtheta)
-    print 'lenangstp', len(angstep_ue)
+#    print 'dastraperrrep', dastraperrrep
+    # debugging stuff
+#    dastraperr      = np.max(ampstep_ue)/2                                                                      # new [complete]
+#    dastraperrepang = ((np.abs(np.diff(mta_sigma_ue))).sum())/(2*angmax)                                        # new [complete]
+#    dastraperrepamp = np.max(ampstep_ue)/2                                                                      # new [complete]
+#    dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)    
+
+#    print 'lennpdiff', len(np.diff(mta_sigma))
+#    print 'ampstep  ', ampstep
+#    print 'angmas   ', angmax
+#    print 'ampstep_ue', ampstep_ue
+#    print 'mta_sigma', mta_sigma
+#    print 's        ', s
+#    print 'amstep_ue', ampstep_ue
+#    print 'angtep_ue', angstep_ue
+#    print 'sumangste', angstep_ue.sum()
+#    print 'lenampstp', len(ampstep_ue)
+#    print 'dtheta   ', dtheta
+#    print 'lendtheta', len(dtheta)
+#    print 'lenangstp', len(angstep_ue)
     
 #    print 'dastraperrep', dastraperrep
-    sys.exit()
+#    sys.exit()
     # ---- simpson rule (simp)
     if(calcsimp):
       # int
@@ -295,11 +318,19 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
       (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
     tlossmin=np.min(mta['sturn'])
     if(dawtrap!=currentdawtrap and it-turnstep >= 0 and tlossmin!=currenttlossmin):
+      if emitx!=regemi or emity!=regemi:
+#        print 'nonequal emit'
+#        dawtrap = 0.
+        dawtrap,dawsimp,dassimp,dawtraperr,dastraperr                      = np.zeros(5)
+        dawsimperr,dassimperr                                              = np.zeros(2)            
       daout[dacount]=(seed,tunex,tuney,turnsl,dawtrap,dastrap,dawsimp,dassimp,dawtraperr,dastraperr,dastraperrep,dastraperrepang,dastraperrepamp,dawsimperr,dassimperr,it-turnstep,tlossmin,mtime)
       dacount=dacount+1
     currentdawtrap =dawtrap
     currenttlossmin=tlossmin
-  return daout[daout['dawtrap']>0]#delete 0 from errors
+  if emitx!=regemi or emity!=regemi:
+    return daout[daout['seed']>0]
+  else:
+    return daout[daout['dawtrap']>0]#delete 0 from errors
 
 # ----------- functions to calculat the fit -----------
 def get_fit_data(data,fitdat,fitdaterr,fitndrop,fitkap,b1):
