@@ -1593,7 +1593,7 @@ class SixDeskDB(object):
         smooth=np.ones(smooth)/float(smooth[0]*smooth[1])
         t=scipy.signal.fftconvolve(smooth,t,mode='full')
     #pl.pcolormesh(x,y,t,antialiased=True)
-    pl.scatter(x,y,bs=t)
+    pl.scatter(x,y,c=t)
     pl.xlabel(r'$\sigma_x$')
     pl.ylabel(r'$\sigma_y$')
     #pl.colorbar()
@@ -1830,11 +1830,12 @@ class SixDeskDB(object):
                     alost1=rad*sigx1[-1]
                     alost2=rad*sigx1[-1]
                     fmt="Warning: tune %s_%s, angle %s, seed %d, range %s-%s: stepwise survival"
+                    print fmt%(tunex,tuney,angle,seed,ns1l,ns2l)
                 elif alost1==0. and alost2==0.:
                     alost1=0
                     alost2=0
                     fmt="Warning: tune %s_%s, angle %s, seed %d, range %s-%s: All particle survived, DA set to 0"
-                print fmt%(tunex,tuney,angle,seed,ns1l,ns2l)
+                    print fmt%(tunex,tuney,angle,seed,ns1l,ns2l)
                 name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
                 name1= '%s%ss%s%s-%s%s.%d'%(self.LHCDescrip,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
                 if(seed<10):
