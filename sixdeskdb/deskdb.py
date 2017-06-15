@@ -1833,7 +1833,7 @@ class SixDeskDB(object):
                 elif alost1==0. and alost2==0.:
                     alost1=0
                     alost2=0
-                    fmt="Warning: tune %s_%s, angle %s, seed %d, range %s-%s: All particle survived"
+                    fmt="Warning: tune %s_%s, angle %s, seed %d, range %s-%s: All particle survived, DA set to 0"
                 print fmt%(tunex,tuney,angle,seed,ns1l,ns2l)
                 name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
                 name1= '%s%ss%s%s-%s%s.%d'%(self.LHCDescrip,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
@@ -1901,7 +1901,7 @@ class SixDeskDB(object):
             idx     =idxangle&(final['alost1']!=0)
             idxzero =idxangle&(final['alost1']==0)
             if all(idxzero==idxangle):
-                print "No data for angle %s"%angle
+                print "No sufficient data to determine DA for angle %s"%angle
                 continue
             for seed in final['seed'][idxzero]:
                 fmt="Warning: tune %s_%s, angle %s, seed %d, range %s-%s: all stable particles"
