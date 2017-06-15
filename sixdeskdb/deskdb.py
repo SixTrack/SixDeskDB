@@ -628,9 +628,13 @@ class SixDeskDB(object):
            mtime10_old=f10_data.get(six_id,0)
            if mtime10 > mtime10_old and os.path.getsize(f10)>0:
              countl = 1
-             for lines in gzip.open(f10,"r"):
+             try:
+               for lines in gzip.open(f10,"r"):
                 rows10.append([six_id,countl]+lines.split()+[mtime10])
                 countl += 1
+             except :
+                print "Error in opening: ",f10
+                raise Exception
              count10 += 1
         if fnfma_exists:
            mtimefma = os.path.getmtime(ffma)
@@ -2545,24 +2549,28 @@ class SixDeskDB(object):
     l1=np.array(self.execute(ss%('amp1',1))[1:])
     l2=np.array(self.execute(ss%('amp2',pairs))[:-1])
     return l1,l2
-  def compare_overlap_angle(self,tunes,seed,angle,colname):
+  def compare_overlap_angle(self,tunes,seed,angle,colname,threshold):
     l1,l2=self.get_overlap_angle(tunes,seed,angle,colname)
-    bad_amps=l1[l1[:,1]!=l2[:,1]]
-    return bad_amps[:,0]
-  def compare_overlap(self,colname):
+    check=l1[:,1]/l2[:,1]-1
+    idx=abs(check)>threshold
+    if len(check[idx])>0:
+        print check[idx],l1[idx,1],l2[idx,1]
+    return l1[idx,0]
+  def compare_overlap(self,colname,threshold):
     out=[]
     for tunes in self.get_tunes():
       for seed in self.get_seeds():
          for angle in self.get_angles():
-            amps=self.compare_overlap_angle(tunes,seed,angle,colname)
+            amps=self.compare_overlap_angle(tunes,seed,angle,colname,threshold)
             if len(amps)>0:
                out.append([tunes,seed,angle,colname,amps])
     return out
   def check_overlap(self):
     turnse=self.env_var['turnse']
     st=self.env_var['nsincl']
-    for colname in ['sturns1']:
-      res=self.compare_overlap('sturns1')
+    checks=[('sturns1',0)]
+    for colname,threshold in checks:
+      res=self.compare_overlap(colname,threshold)
       for tunes,seed,angle,colname,amps in res:
         amps=['%g-%g:%g-%g'%(a-st,a,a,st+a) for a in amps]
         msg="Error in tunes=%s, seed=%s, angle=%s, colname=%s, amps=%s"
