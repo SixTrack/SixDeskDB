@@ -1831,8 +1831,8 @@ class SixDeskDB(object):
                     alost2=rad*sigx1[-1]
                     fmt="Warning: tune %s_%s, angle %s, seed %d, range %s-%s: stepwise survival"
                 elif alost1==0. and alost2==0.:
-                    alost1=rad*sigx1[-1]
-                    alost2=rad*sigx1[-1]
+                    alost1=0
+                    alost2=0
                     fmt="Warning: tune %s_%s, angle %s, seed %d, range %s-%s: All particle survived"
                 print fmt%(tunex,tuney,angle,seed,ns1l,ns2l)
                 name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
