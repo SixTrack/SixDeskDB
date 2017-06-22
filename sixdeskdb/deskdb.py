@@ -2589,9 +2589,17 @@ class SixDeskDB(object):
         pl.savefig('%s/DAsurv.%s.png'%(dirname,turnse))
         print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
     return noproblem
+  def check_zero_fort10(self):
+      lst=self.execute('select  seed,tunex,tuney,amp1,amp2,turns,angle from results where betx==0')
+      noproblem=True
+      for res in lst:
+          noproblem=False
+          print "Zero results for %s"%list(res)
+      return noproblem
   def check_results(self):
-     noproblem=True
-     noproblem &=self.check_overlap()
+     noproblem =self.check_zero_fort10()
+     if noproblem:
+        noproblem =self.check_overlap()
      return noproblem
   def get_fort3(self,seed,amp1,angle,tunes=None):
     ss="""select fort3 from six_input
