@@ -2556,10 +2556,12 @@ class SixDeskDB(object):
     return l1,l2
   def compare_overlap_angle(self,tunes,seed,angle,colname,threshold):
     l1,l2=self.get_overlap_angle(tunes,seed,angle,colname)
-    check=l1[:,1]/l2[:,1]-1
+    check=l1[:,1]-l2[:,1]
     idx=abs(check)>threshold
     if len(check[idx])>0:
-        print check[idx],l1[idx,1],l2[idx,1]
+        print "Check %s: %s != %s"%(
+                  [tunes,seed,angle,colname],
+                  l1[idx,1],l2[idx,1])
     return l1[idx,0]
   def compare_overlap(self,colname,threshold):
     out=[]
