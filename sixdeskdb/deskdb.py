@@ -2585,14 +2585,15 @@ class SixDeskDB(object):
         msg="Error in tunes=%s, seed=%s, angle=%s, colname=%s, amps=%s"
         print(msg%(tunes,seed,angle,colname,', '.join(amps)))
         try:
-          self.get_surv_2d(seed,tunes)
+          self.get_surv(seed,tunes)
           dirname=self.mk_analysis_dir(seed,tunes)
           pl.close('all')
           pl.figure(figsize=(6,6))
           self.plot_surv_2d(seed,tunes)#suvival plot
           pl.savefig('%s/DAsurv.%s.png'%(dirname,turnse))
           print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
-        except:
+        except Exception as e:
+          print e
           print('... malformed datasets in seed=%s turnes=%s'%(seed,tunes))
     return noproblem
   def check_zero_fort10(self):
