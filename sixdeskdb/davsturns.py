@@ -146,7 +146,7 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep):
     dawtraperrint   = np.abs(((ajtrap*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum())*angstep*ampstep)
     dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint
     dastraperr      = ampstep/2
-    dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
+    dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*(angmax+1))
     dastraperrepamp = ampstep/2
     dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)
     # ---- simpson rule (simp)
