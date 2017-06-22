@@ -2574,9 +2574,11 @@ class SixDeskDB(object):
     turnse=self.env_var['turnse']
     st=self.env_var['nsincl']
     checks=[('sturns1',0)]
+    noproblem=True
     for colname,threshold in checks:
       res=self.compare_overlap(colname,threshold)
       for tunes,seed,angle,colname,amps in res:
+        noproblem=False
         amps=['%g-%g:%g-%g'%(a-st,a,a,st+a) for a in amps]
         msg="Error in tunes=%s, seed=%s, angle=%s, colname=%s, amps=%s"
         print(msg%(tunes,seed,angle,colname,', '.join(amps)))
@@ -2586,8 +2588,11 @@ class SixDeskDB(object):
         self.plot_surv_2d(seed,tunes)#suvival plot
         pl.savefig('%s/DAsurv.%s.png'%(dirname,turnse))
         print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
+    return noproblem
   def check_results(self):
-     self.check_overlap()
+     noproblem=True
+     noproblem &=self.check_overlap()
+     return noproblem
   def get_fort3(self,seed,amp1,angle,tunes=None):
     ss="""select fort3 from six_input
           where seed=%s and
