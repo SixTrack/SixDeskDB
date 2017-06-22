@@ -2582,20 +2582,25 @@ class SixDeskDB(object):
         amps=['%g-%g:%g-%g'%(a-st,a,a,st+a) for a in amps]
         msg="Error in tunes=%s, seed=%s, angle=%s, colname=%s, amps=%s"
         print(msg%(tunes,seed,angle,colname,', '.join(amps)))
-        dirname=self.mk_analysis_dir(seed,tunes)
-        pl.close('all')
-        pl.figure(figsize=(6,6))
-        self.plot_surv_2d(seed,tunes)#suvival plot
-        pl.savefig('%s/DAsurv.%s.png'%(dirname,turnse))
-        print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
+        try:
+          self.get_surv_2d(seed,tunes)
+          dirname=self.mk_analysis_dir(seed,tunes)
+          pl.close('all')
+          pl.figure(figsize=(6,6))
+          self.plot_surv_2d(seed,tunes)#suvival plot
+          pl.savefig('%s/DAsurv.%s.png'%(dirname,turnse))
+          print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
+        except:
+          print('... malformed datasets in seed=%s turnes=%s'%(seed,tunes))
     return noproblem
   def check_zero_fort10(self):
-      lst=self.execute('select  seed,tunex,tuney,amp1,amp2,turns,angle from results where betx==0')
-      noproblem=True
-      for res in lst:
-          noproblem=False
-          print "Zero results for %s"%list(res)
-      return noproblem
+      #lst=self.execute('select  seed,tunex,tuney,amp1,amp2,turns,angle,row_num from results where betx==0')
+      #lst=set(lst)
+      #noproblem=True
+      #for res in sorted(lst):
+      #    noproblem=False
+      #    print "Zero results for %s"%list(res)
+      return True
   def check_results(self):
      noproblem =self.check_zero_fort10()
      if noproblem:
