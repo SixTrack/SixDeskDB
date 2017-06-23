@@ -1019,13 +1019,13 @@ class SixDeskDB(object):
     row_num=30)"""
     a = self.execute(sql)
     return a
-  def make_job_trackdir(self,seed,simul,tunex,tuney,amp1,amp2,turns,angle):
+  def make_job_trackdir(self,seed,simul,tunes,amp1,amp2,turnse,angle):
     sixdesktrack=self.env_var['sixdesktrack']
     base=os.path.join(sixdesktrack,self.LHCDescrip)
-    t='%s/%d/simul/%s/%s/%s/%g/'
+    t='%s/%d/%s/%s/%s/e%s/%g/'
     rng="%g_%g"%(amp1,amp2)
-    tunes="%g_%g"%(tunex,tuney)
-    return t%(base,seed,tunes,rng,turns,angle)
+    tunes="%g_%g"%(tunes[0],tunes[1])
+    return t%(base,seed,simul,tunes,rng,turnse,angle)
 
 #  def join10(self):
 #    '''re-implementation of run_join10'''
@@ -2572,10 +2572,16 @@ class SixDeskDB(object):
             if len(amps)>0:
                out.append([tunes,seed,angle,colname,amps])
     return out
+  def get_simul(self):
+    if self.env_var['long']==1:
+        return 'simul'
+    elif self.env_var['short']==1:
+        return 'short'
   def check_overlap(self):
     turnse=self.env_var['turnse']
     st=self.env_var['nsincl']
     checks=[('sturns1',0)]
+    simul=self.get_simul()
     noproblem=True
     for colname,threshold in checks:
       res=self.compare_overlap(colname,threshold)
@@ -2595,6 +2601,10 @@ class SixDeskDB(object):
         except Exception as e:
           print e
           print('... malformed datasets in seed=%s turnes=%s'%(seed,tunes))
+      amps2=sorted(set(sum([amp.split(':') for amp in amps],[])))
+      for amp1,amp2 in [map(float,a.split('-')) for a in amps2]:
+            jdir=self.make_job_trackdir(seed,simul,tunes,amp1,amp2,turnse,angle)
+            print('Check %s'%jdir)
     return noproblem
   def check_zero_fort10(self):
       #lst=self.execute('select  seed,tunex,tuney,amp1,amp2,turns,angle,row_num from results where betx==0')
