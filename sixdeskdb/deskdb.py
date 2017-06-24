@@ -2601,8 +2601,8 @@ class SixDeskDB(object):
         except Exception as e:
           print e
           print('... malformed datasets in seed=%s turnes=%s'%(seed,tunes))
-      amps2=sorted(set(sum([amp.split(':') for amp in amps],[])))
-      for amp1,amp2 in [map(float,a.split('-')) for a in amps2]:
+        amps2=sorted(set(sum([amp.split(':') for amp in amps],[])))
+        for amp1,amp2 in [map(float,a.split('-')) for a in amps2]:
             jdir=self.make_job_trackdir(seed,simul,tunes,amp1,amp2,turnse,angle)
             print('Check %s'%jdir)
     return noproblem
