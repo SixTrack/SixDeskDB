@@ -1014,9 +1014,10 @@ class SixDeskDB(object):
     # cur = conn.cursor()
     # env_var = self.env_var
     # newid = self.newid
+    pairs=self.env_var['sixdeskpairs']
     sql = """select seed,tunex,tuney,amp1,amp2,turns,angle from six_input
     where not exists(select 1 from six_results where id=six_input_id and 
-    row_num=30)"""
+    row_num=%d)"""%(pairs)
     a = self.execute(sql)
     return a
   def make_job_trackdir(self,seed,simul,tunes,amp1,amp2,turnse,angle):
@@ -1689,6 +1690,7 @@ class SixDeskDB(object):
     anumber=1
     angles=self.get_db_angles()
     seeds=self.get_db_seeds()
+    pairs=self.env_var['sixdeskpairs']
     mtime=self.execute('SELECT max(mtime) from results')[0][0]
     final=[]
     sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 AND turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
@@ -1739,7 +1741,7 @@ class SixDeskDB(object):
                 turn_max=inp['turn_max'].max()
                 amp2=inp['amp2'][-1]
                 row_num=inp['row_num'][-1]
-                if row_num<30 or amp2<ns2l:
+                if row_num<pairs :
                     truncated=True
                 else:
                     truncated=False
