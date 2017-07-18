@@ -2616,8 +2616,15 @@ class SixDeskDB(object):
       #    noproblem=False
       #    print "Zero results for %s"%list(res)
       return True
+  def check_completed_results(self):
+      print ("Check missing results")
+      for job in self.get_missing_jobs():
+          print job, 'missing'
+      return len(self.get_missing_jobs())==0
   def check_results(self):
-     noproblem =self.check_zero_fort10()
+     noproblem=self.check_completed_results()
+     if noproblem:
+        noproblem =self.check_zero_fort10()
      if noproblem:
         noproblem =self.check_overlap()
      return noproblem
