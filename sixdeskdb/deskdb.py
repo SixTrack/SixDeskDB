@@ -1318,8 +1318,7 @@ class SixDeskDB(object):
     '''generate jobparams based on values '''
     if self.env_var['long']==1:
       simul='simul'
-      turns = '%E'%(float(self.env_var['turnsl']))
-      turns = 'e'+str(int(turns.split('+')[1]))
+      turns = 'e'+self.env_var['turnsle']
       for seed in self.get_seeds():
         for tunex,tuney in self.get_tunes():
           for amp1,amp2 in self.get_amplitudes():
@@ -1327,8 +1326,7 @@ class SixDeskDB(object):
               yield (seed,simul,tunex,tuney,amp1,amp2,turns,angle)
     if self.env_var['short']==1:
       simul='short'
-      turns = '%E'%(float(self.env_var['turnss']))
-      turns = 'e'+str(int(turns.split('+')[1]))
+      turns = 'e'+self.env_var['turnsse']
       for seed in self.get_seeds():
         for tunex,tuney in self.get_tunes():
           for amp1,amp2 in self.get_amplitudes():
