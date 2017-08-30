@@ -1691,7 +1691,7 @@ class SixDeskDB(object):
     pairs=self.env_var['sixdeskpairs']
     mtime=self.execute('SELECT max(mtime) from results')[0][0]
     final=[]
-    sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 AND turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
+    sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>1e-10 AND emity>1e-10 AND turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
     LHCDescrip=self.LHCDescrip
     for tunex,tuney in self.get_db_tunes():
         sixdesktunes="%s_%s"%(tunex,tuney)
@@ -1744,10 +1744,12 @@ class SixDeskDB(object):
                 else:
                     truncated=False
                 zero = 1e-10
-                xidx=(betx>zero) & (emitx>zero)
-                yidx=(bety>zero) & (emity>zero)
-                sigx1[xidx]=np.sqrt(betx[xidx]*emitx[xidx])
-                sigy1[yidx]=np.sqrt(bety[yidx]*emity[yidx])
+                #xidx=(betx>zero) & (emitx>zero)
+                #yidx=(bety>zero) & (emity>zero)
+                #sigx1[xidx]=np.sqrt(betx[xidx]*emitx[xidx])
+                #sigy1[yidx]=np.sqrt(bety[yidx]*emity[yidx])
+                sigx1=np.sqrt(betx*emitx)
+                sigy1=np.sqrt(bety*emity)
                 iel=inp.size-1
                 rat=0
 
