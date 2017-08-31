@@ -2605,8 +2605,8 @@ class SixDeskDB(object):
         for amp1,amp2 in [map(float,a.split('-')) for a in amps2]:
             jdir=self.make_job_trackdir(seed,simul,tunes,amp1,amp2,turnse,angle)
             print('Check %s'%jdir)
-            job = seed,simul,tunes[0],tunes[1],amp1,amp2,turnse,angle
-            bad_jobs.add(self.make_job_work_string(self, job))
+            job = (seed,simul,tunes[0],tunes[1],amp1,amp2,"e"+str(turnse),angle)
+            bad_jobs.add(job)
     return noproblem
   def check_zero_fort10(self, bad_jobs):
       #lst=self.execute('select  seed,tunex,tuney,amp1,amp2,turns,angle,row_num from results where betx==0')
@@ -2621,26 +2621,26 @@ class SixDeskDB(object):
       print ("Check missing results")
       for job in self.get_missing_jobs():
           print job, 'missing'
-          bad_jobs.add(self.make_job_work_string(job))
+          bad_jobs.add(job)
       return len(self.get_missing_jobs())==0
 
   def make_job_work_string(self, job):
-    tmp="%s%%%s%%s%%%s%%%s%%%s%%%s\n"
+    tmp="%s%%%s%%s%%%s%%%s%%%s%%%g\n"
     name=self.LHCDescrip
     seed,simul,tunex,tuney,amp1,amp2,turns,angle=job
-    ranges="%s_%s"%(int(amp1),int(amp2)) #need a better way to format than int()
+    ranges="%g_%g"%(amp1,amp2)
     tunes="%s_%s"%(tunex,tuney)
-    return tmp%(name,seed,tunes,ranges,turns[1:],int(angle)) #...also here!
+    return tmp%(name,seed,tunes,ranges,turns[1:],angle)
 
   def update_work_dir(self, bad_jobs):
-    with open("work/test_complete_cases", "a") as complete:
-      with open("work/incomplete_cases", "r") as incomplete:
-        for job in incomplete:
-          if job not in bad_jobs:
-            complete.write(job)
-      with open("work/test_incomplete_cases", "w") as incomplete:
-        for job in bad_jobs:
-          incomplete.write(job)
+    good_jobs = set(self.gen_job_params())-bad_jobs
+    def write_jobs(filename, jobs):
+      with open(filename, "w") as f:
+        jobs = [self.make_job_work_string(job) for job in sorted(jobs)]
+        for job in jobs:
+          f.write(job)
+    write_jobs("work/complete_cases"  ,good_jobs)
+    write_jobs("work/incomplete_cases", bad_jobs)
 
   def check_results(self):
      bad_jobs=set()
@@ -2650,6 +2650,8 @@ class SixDeskDB(object):
      if noproblem:
         noproblem=self.check_overlap(bad_jobs)
      self.update_work_dir(bad_jobs)
+     if noproblem:
+       print "No problem spotted!"
      return noproblem
   def get_fort3(self,seed,amp1,angle,tunes=None):
     ss="""select fort3 from six_input
