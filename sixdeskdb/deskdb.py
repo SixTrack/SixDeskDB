@@ -2636,9 +2636,8 @@ class SixDeskDB(object):
     good_jobs = set(self.gen_job_params())-bad_jobs
     def write_jobs(filename, jobs):
       with open(filename, "w") as f:
-        jobs = [self.make_job_work_string(job) for job in sorted(jobs)]
-        for job in jobs:
-          f.write(job)
+        for job in sorted(jobs):
+          f.write(self.make_job_work_string(job))
     write_jobs("work/complete_cases"  ,good_jobs)
     write_jobs("work/incomplete_cases", bad_jobs)
 
