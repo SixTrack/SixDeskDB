@@ -90,6 +90,9 @@ def obj2num(s):
      except ValueError:
          return s
 
+def mkrange(a,b,s):
+   return map(float,np.round(np.arange(a,b*(1+1e-16),s),12))
+
 def tune_dir(tune):
   """converts the list of tuples into the standard directory name, e.g. (62.31, 60.32) -> 62.31_60.32"""
   return str(tune[0])+'_'+str(tune[1])
@@ -1243,7 +1246,8 @@ class SixDeskDB(object):
     nsincl = float(env_var['nsincl'])
     ns1l = float(env_var['ns1l'])
     ns2l = float(env_var['ns2l'])
-    return [(a,a+nsincl) for a in np.arange(ns1l,ns2l,nsincl)]
+    return [(float(a),float(np.round(a+nsincl,12)))
+            for a in mkrange(ns1l,ns2l,nsincl)]
 
   def iter_tunes(self):
     '''get tunes from env variables'''
@@ -1257,7 +1261,14 @@ class SixDeskDB(object):
 
   def get_tunes(self):
     '''get tunes from env variables'''
-    return list(self.iter_tunes())
+    env_var = self.env_var
+    tunex = float(env_var['tunex'])
+    tuney = float(env_var['tuney'])
+    tunex1 = float(env_var['tunex1'])
+    tuney1 = float(env_var['tuney1'])
+    deltax = float(env_var['deltax'])
+    deltay = float(env_var['deltay'])
+    return zip(mkrange(tunex,tunex1,deltax),mkrange(tuney,tuney1,deltay))
 
   def get_anbn_fort16(self):
     '''returns a dictionary of the multipolar errors asigned to each element
