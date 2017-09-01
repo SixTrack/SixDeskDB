@@ -2624,11 +2624,11 @@ class SixDeskDB(object):
           bad_jobs.add(job)
       return len(self.get_missing_jobs())==0
   def make_job_work_string(self, job):
-    tmp="%s%%%s%%s%%%s%%%s%%%s%%%g\n"
+    tmp="%s%%%s%%s%%%s%%%s%%%s%%%.14g\n"
     name=self.LHCDescrip
     seed,simul,tunex,tuney,amp1,amp2,turns,angle=job
-    ranges="%g_%g"%(amp1,amp2)
-    tunes="%s_%s"%(tunex,tuney)
+    ranges="%.14g_%.14g"%(amp1,amp2)
+    tunes="%.14g_%.14g"%(tunex,tuney)
     return tmp%(name,seed,tunes,ranges,turns[1:],angle)
   def update_work_dir(self, bad_jobs):
     good_jobs = set(self.gen_job_params())-bad_jobs
