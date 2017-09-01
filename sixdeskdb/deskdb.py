@@ -2623,7 +2623,6 @@ class SixDeskDB(object):
           print job, 'missing'
           bad_jobs.add(job)
       return len(self.get_missing_jobs())==0
-
   def make_job_work_string(self, job):
     tmp="%s%%%s%%s%%%s%%%s%%%s%%%g\n"
     name=self.LHCDescrip
@@ -2631,7 +2630,6 @@ class SixDeskDB(object):
     ranges="%g_%g"%(amp1,amp2)
     tunes="%s_%s"%(tunex,tuney)
     return tmp%(name,seed,tunes,ranges,turns[1:],angle)
-
   def update_work_dir(self, bad_jobs):
     good_jobs = set(self.gen_job_params())-bad_jobs
     def write_jobs(filename, jobs):
@@ -2640,17 +2638,15 @@ class SixDeskDB(object):
           f.write(self.make_job_work_string(job))
     write_jobs("work/complete_cases"  ,good_jobs)
     write_jobs("work/incomplete_cases", bad_jobs)
-
-  def check_results(self):
+  def check_results(self, update_work=False):
      bad_jobs=set()
      noproblem=self.check_completed_results(bad_jobs)
      if noproblem:
         noproblem=self.check_zero_fort10(bad_jobs)
      if noproblem:
         noproblem=self.check_overlap(bad_jobs)
-     self.update_work_dir(bad_jobs)
-     if noproblem:
-       print "No problem spotted!"
+     if update_work:
+        self.update_work_dir(bad_jobs)
      return noproblem
   def get_fort3(self,seed,amp1,angle,tunes=None):
     ss="""select fort3 from six_input
