@@ -2636,7 +2636,7 @@ class SixDeskDB(object):
       with open(filename, "w") as f:
         for job in sorted(jobs):
           f.write(self.make_job_work_string(job))
-    write_jobs("work/complete_cases"  ,good_jobs)
+    write_jobs("work/completed_cases"  ,good_jobs)
     write_jobs("work/incomplete_cases", bad_jobs)
   def check_results(self, update_work=False):
      bad_jobs=set()
