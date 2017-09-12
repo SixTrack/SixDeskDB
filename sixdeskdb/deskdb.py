@@ -2590,7 +2590,7 @@ class SixDeskDB(object):
         return 'simul'
     elif self.env_var['short']==1:
         return 'short'
-  def check_overlap(self):
+  def check_overlap(self, bad_jobs):
     turnse=self.env_var['turnse']
     st=self.env_var['nsincl']
     checks=[('sturns1',0)]
@@ -2618,26 +2618,48 @@ class SixDeskDB(object):
         for amp1,amp2 in [map(float,a.split('-')) for a in amps2]:
             jdir=self.make_job_trackdir(seed,simul,tunes,amp1,amp2,turnse,angle)
             print('Check %s'%jdir)
+            job = (seed,simul,tunes[0],tunes[1],amp1,amp2,"e"+str(turnse),angle)
+            bad_jobs.add(job)
     return noproblem
-  def check_zero_fort10(self):
+  def check_zero_fort10(self, bad_jobs):
       #lst=self.execute('select  seed,tunex,tuney,amp1,amp2,turns,angle,row_num from results where betx==0')
       #lst=set(lst)
       #noproblem=True
       #for res in sorted(lst):
       #    noproblem=False
       #    print "Zero results for %s"%list(res)
+      #    bad_jobs.add( ??? )
       return True
-  def check_completed_results(self):
+  def check_completed_results(self, bad_jobs):
       print ("Check missing results")
       for job in self.get_missing_jobs():
           print job, 'missing'
+          bad_jobs.add(job)
       return len(self.get_missing_jobs())==0
-  def check_results(self):
-     noproblem=self.check_completed_results()
+  def make_job_work_string(self, job):
+    tmp="%s%%%s%%s%%%s%%%s%%%s%%%.14g\n"
+    name=self.LHCDescrip
+    seed,simul,tunex,tuney,amp1,amp2,turns,angle=job
+    ranges="%.14g_%.14g"%(amp1,amp2)
+    tunes="%.14g_%.14g"%(tunex,tuney)
+    return tmp%(name,seed,tunes,ranges,turns[1:],angle)
+  def update_work_dir(self, bad_jobs):
+    good_jobs = set(self.gen_job_params())-bad_jobs
+    def write_jobs(filename, jobs):
+      with open(filename, "w") as f:
+        for job in sorted(jobs):
+          f.write(self.make_job_work_string(job))
+    write_jobs("work/completed_cases"  ,good_jobs)
+    write_jobs("work/incomplete_cases", bad_jobs)
+  def check_results(self, update_work=False):
+     bad_jobs=set()
+     noproblem=self.check_completed_results(bad_jobs)
      if noproblem:
-        noproblem =self.check_zero_fort10()
+        noproblem=self.check_zero_fort10(bad_jobs)
      if noproblem:
-        noproblem =self.check_overlap()
+        noproblem=self.check_overlap(bad_jobs)
+     if update_work:
+        self.update_work_dir(bad_jobs)
      return noproblem
   def get_fort3(self,seed,amp1,angle,tunes=None):
     ss="""select fort3 from six_input
