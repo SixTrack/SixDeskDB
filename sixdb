@@ -29,6 +29,13 @@ def str2bool(st):
     return False
 
 
+def guess_toolkit():
+  try:
+    import PyQt4
+    return 'qt'
+  except ImportError:
+    return 'tk'
+
 class SixDB(object):
     def __init__(self,argsv):
         self.args=argsv[1:]
@@ -289,7 +296,8 @@ db.plot_polar_col('sturns1',1)
 """
         print
         if hasattr(IPython,'start_ipython'):
-          IPython.start_ipython(user_ns={'db':db},argv=['--pylab'])
+          tk=guess_toolkit()
+          IPython.start_ipython(user_ns={'db':db},argv=['--pylab=%s'%tk])
         else:
           from IPython.terminal.embed import InteractiveShellEmbed
           ipshell = InteractiveShellEmbed(user_ns={db:'db'})
