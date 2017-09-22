@@ -91,7 +91,7 @@ def obj2num(s):
          return s
 
 def mkrange(a,b,s):
-   return map(float,np.round(np.arange(a,b*(1+1e-16),s),12))
+   return map(float,np.round(np.arange(a,b*(1+1e-15),s),12))
 
 def tune_dir(tune):
   """converts the list of tuples into the standard directory name, e.g. (62.31, 60.32) -> 62.31_60.32"""
