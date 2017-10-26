@@ -304,6 +304,11 @@ class SixDeskDB(object):
       data=self.execute(sql)
       data=[(decompressBuf(mad),ii,mt) for mad,ii,mt in data]
       return data
+  def get_mad_in(self,seed):
+      sql="SELECT mad_in,run_id FROM mad6t_run WHERE seed=%d ORDER BY mad_out_mtime "%seed
+      data=self.execute(sql)
+      data=[(decompressBuf(mad),ii) for mad,ii in data]
+      return data
   def extract_mad_out(self,seed):
       data=self.get_mad_out(seed)
       out=[]
@@ -1247,7 +1252,7 @@ class SixDeskDB(object):
     ns1l = float(env_var['ns1l'])
     ns2l = float(env_var['ns2l'])
     return [(float(a),float(np.round(a+nsincl,12)))
-            for a in mkrange(ns1l,ns2l,nsincl)]
+            for a in mkrange(ns1l,ns2l,nsincl)[:-1]]
 
   def iter_tunes(self):
     '''get tunes from env variables'''
@@ -2692,5 +2697,23 @@ class SixDeskDB(object):
     sixtrackln=os.path.join(dest,'sixtrack')
     if not os.path.exists(sixtrackln):
       os.symlink(sixtrack,sixtrackln)
+  def extract_madinout(self,dest,seed):
+    madin=self.get_mad_in(seed)
+    madin=dict( (ii,data) for data,ii in madin)
+    madout=self.get_mad_out(seed)
+    madout=dict( (ii,data) for data,ii,mt in madout)
+    print(madin,madout)
+    for run in madin.keys():
+      print("Prepare directory '%s/%s'"%(dest,run))
+      if not os.path.isdir(dest):
+        os.mkdir(dest)
+      fn=self.LHCDescrip+".%d.madx"%selfseed
+      open(os.path.join(dest,run,fn),'w').write(madin[run])
+    for run in madout.keys():
+      print("Prepare directory '%s/%s'"%(dest,run))
+      if not os.path.isdir(dest):
+        os.mkdir(dest)
+      fn=self.LHCDescrip+".%d.madx"%selfseed
+      open(os.path.join(dest,run,fn),'w').write(madout[run])
 
 
