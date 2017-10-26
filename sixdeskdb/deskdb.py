@@ -638,8 +638,14 @@ class SixDeskDB(object):
              countl = 1
              try:
                for lines in gzip.open(f10,"r"):
-                rows10.append([six_id,countl]+lines.split()+[mtime10])
-                countl += 1
+                line=[six_id,countl]+lines.split()+[mtime10]
+                if len(line)!=63:
+                    print(line)
+                    print("Error in %s"%f10)
+                    print("%d columns found expected 60"%len(line) )
+                else:
+                    rows10.append(line)
+                    countl += 1
              except :
                 print "Error in opening: ",f10
                 raise Exception
