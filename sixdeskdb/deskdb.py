@@ -643,9 +643,9 @@ class SixDeskDB(object):
                     print(line)
                     print("Error in %s"%f10)
                     print("%d columns found expected 60"%len(line) )
-                else:
-                    rows10.append(line)
-                    countl += 1
+                    raise Exception
+                rows10.append(line)
+                countl += 1
              except :
                 print "Error in opening: ",f10
                 raise Exception
