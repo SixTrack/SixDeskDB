@@ -391,7 +391,9 @@ class SixDeskDB(object):
       a = [str(i[0]) for i in a]
     print "Looking for fort.2, fort.8, fort.16 in %s"%workdir
     data=[]
-    for dirName in glob.glob(os.path.join(workdir,'mad.dorun_*')):
+    dirNames =glob.glob(os.path.join(workdir,'mad.dorun_*'))
+    dirNames+=glob.glob(os.path.join(workdir,'mad.mad6t*'))
+    for dirName in dirNames:
         print 'found mad run',dirName.split('/')[-1]
         for filename in os.listdir(dirName):
           if not (filename.endswith('.mask') or 'out' in filename
