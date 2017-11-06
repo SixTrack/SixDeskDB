@@ -466,6 +466,7 @@ class SixDeskDB(object):
             else:
               print "%s missing inserted null"%ffn
               row.append("")
+              mtime=0
         row.append(mtime)
         rows.append(row)
     if rows:

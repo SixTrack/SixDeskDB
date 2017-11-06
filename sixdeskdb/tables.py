@@ -260,7 +260,7 @@ acc_var = ['BNL','COLUMNS','CORR_TEST','G_FILENAME_ENCODING','LHCDesHome',
     'sixdeskpath','sixdeskplatform','sixdeskpts','sixdeskstudy','sixdesktrack',
     'sixdeskturns','sixdeskwork','sixtrack_input','sussix','trackdir','tune',
     'tunex','tunex1','tuney','tuney1','turnse','turnsemax','turnsl','turnsle',
-    'workspace','writebinl']
+    'workspace','writebinl','xing','emit_beam']
 
 def_var = ['COMPIZ_BIN_PATH', 'COMPIZ_CONFIG_PROFILE',
     'DBUS_SESSION_BUS_ADDRESS', 'DEFAULTS_PATH', 'DESKTOP_SESSION',
