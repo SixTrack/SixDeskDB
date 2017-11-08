@@ -395,30 +395,39 @@ class SixDeskDB(object):
     dirNames+=glob.glob(os.path.join(workdir,'mad.mad6t*'))
     for dirName in dirNames:
         print 'found mad run',dirName.split('/')[-1]
+        done=set()
         for filename in os.listdir(dirName):
-          if not (filename.endswith('.mask') or 'out' in filename
-              or filename.endswith('log') or filename.endswith('lsf')):
-            fnroot,seed=os.path.splitext(filename)
-            time = None
-            if seed[1:].isdigit():
+          time = None
+          fnroot,seed=os.path.splitext(filename)
+          if seed[1:].isdigit():
+              if not fnroot.endswith('.out'):
                 seed=int(seed[1:])
                 run_id = dirName.split('/')[-1]
-                mad_in = sqlite3.Binary(
-                  compressBuf(os.path.join(dirName, filename))
-                  )
+                mad_in = sqlite3.Binary(compressBuf(os.path.join(dirName, filename)))
                 out_file=os.path.join(dirName,fnroot+'.out.%d'%seed)
                 log_file=os.path.join(dirName,fnroot+'_mad6t_%d.log'%seed)
                 lsf_file=os.path.join(dirName,'mad6t_%d.lsf'%seed)
                 mad_out = sqlite3.Binary(compressBuf(out_file))
-                mad_lsf = sqlite3.Binary(compressBuf(lsf_file))
-                mad_log = sqlite3.Binary(compressBuf(log_file))
+                done.add(out_file)
+                if os.path.isfile(log_file):
+                  done.add(log_file)
+                  mad_log = sqlite3.Binary(compressBuf(log_file))
+                else:
+                  mad_log = None
+                if os.path.isfile(lsf_file):
+                  done.add(lsf_file)
+                  mad_lsf = sqlite3.Binary(compressBuf(lsf_file))
+                else:
+                  mad_lsf = None
                 if os.path.isfile(out_file):
                   time = os.path.getmtime( out_file)
-            data.append([run_id, seed, mad_in, mad_out, mad_lsf,mad_log,time])
-          if filename.endswith('.mask'):
-            path = os.path.join(dirName, filename)
-            key = path.replace(env_var['scratchdir']+'/','')
-            extra_files.append([key,path])
+                data.append([run_id, seed, mad_in, mad_out, mad_lsf,mad_log,time])
+          else:
+            path=os.path.join(dirName, filename)
+            if path not in done:
+              key = path.replace(env_var['scratchdir']+'/','')
+              path = os.path.join(dirName, filename)
+              extra_files.append([key,path])
         if len(data)>0:
           tab.insertl(data)
     if extra_files:
