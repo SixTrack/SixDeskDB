@@ -7,7 +7,7 @@ import sys
 import getopt
 import numpy as np
 import os
-from plots import *
+from postPlot import *
 from deskdb import *
 import sqlite3
 from sqltable import SQLTable

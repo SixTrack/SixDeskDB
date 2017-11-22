@@ -3,7 +3,7 @@ import getopt
 from deskdb import *
 import numpy as np
 import os
-from plots import *
+from postPlot import *
 from datafromFort import *
 
 studyName='job_tracking'

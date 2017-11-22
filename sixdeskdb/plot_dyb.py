@@ -8,7 +8,7 @@ import getopt
 from deskdb import *
 import numpy as np
 import os
-from plots import *
+from postPlot import *
 import sqlite3
 
 

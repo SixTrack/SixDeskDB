@@ -1,4 +1,4 @@
-from plots import *
+from postPlot import *
 import os
 import shutil
 import gzip
