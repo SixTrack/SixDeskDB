@@ -19,7 +19,7 @@ if sys.version_info < (2, 6):
   print "SixDeskDB requires Python version >=2.6"
   sys.exit(1)
 
-from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns,RunDaVsTurnsAng,PlotDaVsTurns,PlotCompDaVsTurns
+from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns,RunDaVsTurnsAng,PlotDaVsTurns,PlotCompDaVsTurns, plots
 #from dbtocentral,config
 
 def str2bool(st):
@@ -326,6 +326,42 @@ db.plot_polar_col('sturns1',1)
         new=self.args[3]
         SixDeskDB(study).vars_replace_all(old,new)
 
+    def plot(self, study):
+      """Generate one postprocessing plot.
+
+    Usage: sixdb <dbname> plot <option> <seed> <angle>
+    
+    option being one between: averem, distance, kvar, maxslope, smear, survival """
+
+      sd = SixDeskDB(study)
+      args = self.args
+      if len(args)!=5:
+         print "Not enough arguments for plotting"
+         sys.exit(1)
+
+      option  = args[args.index('plot')+1]
+      seed    = int(args[args.index('plot')+2])
+      angle   = int(args[args.index('plot')+3])
+      print args
+      try:
+        plot = getattr(plots, 'plot_{name}'.format(name=option))
+      except Exception, e:
+        print
+        print "Wrong plot option: %s"%name
+        sys.exit(1)
+
+      if seed < 1 or seed > len(sd.get_seeds()):
+        print('Error in plot: incorrect seed!')
+        sys.exit(1)
+      if angle < 0 or angle >= len(sd.get_angles()):
+        print('Error in da_vs_turns: incorrect angle!')
+        sys.exit(1)
+
+      nturns=100000
+      a0 = 6
+      a1 = 14
+      result = plot(sd, seed, angle, a0, a1, nturns)
+      
 
 if __name__=="__main__":
     import sys
