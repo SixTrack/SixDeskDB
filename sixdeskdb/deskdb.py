@@ -1292,7 +1292,18 @@ class SixDeskDB(object):
     tuney1 = float(env_var['tuney1'])
     deltax = float(env_var['deltax'])
     deltay = float(env_var['deltay'])
-    return zip(mkrange(tunex,tunex1,deltax),mkrange(tuney,tuney1,deltay))
+    out=[(tunex,tuney)]
+    while  tunex<=tunex1 and tuney<=tuney1:
+        if len(out)>1000:
+            raise ValueError("Too many tunes to generate")
+        if tunex<tunex1:
+          tunex=round(tunex+deltax,12)
+        if tuney<tuney1:
+          tuney=round(tuney+deltay,12)
+        out.append((tunex,tuney))
+        if tunex==tunex1 and tuney==tuney1:
+            break
+    return out
 
   def get_anbn_fort16(self):
     '''returns a dictionary of the multipolar errors asigned to each element
@@ -2506,11 +2517,13 @@ class SixDeskDB(object):
     pl.ylim([0,ampmax])
     pl.xlabel(r'Horizontal amplitude [$\sigma$]',labelpad=10,fontsize=12)
     pl.ylabel(r'Vertical amplitude [$\sigma$]',labelpad=10,fontsize=12)
-  def get_da_angle(self):
+  def get_da_angle(self,tunes=None):
     """returns DA results for all seeds and angles"""
+    if tunes is None:
+        tunes=self.get_tunes()[0]
     angles=self.get_db_angles()
     seeds=self.get_db_seeds()
-    sql="SELECT seed,angle,alost1 FROM da_post ORDER by seed,angle"
+    sql="SELECT seed,angle,alost1 FROM da_post WHERE tunex==%s AND tuney==%s ORDER by seed,angle"%(tunes[0],tunes[1])
     if(not self.check_table('da_post')):
       print 'WARNING: Table da_post does not exist!'
       print '... running db.mk_da()'
