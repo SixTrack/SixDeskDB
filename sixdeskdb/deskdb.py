@@ -1731,7 +1731,6 @@ class SixDeskDB(object):
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
-    anumber=1
     angles=self.get_db_angles()
     seeds=self.get_db_seeds()
     pairs=self.env_var['sixdeskpairs']
@@ -1740,6 +1739,7 @@ class SixDeskDB(object):
     sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>1e-10 AND emity>1e-10 AND turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
     LHCDescrip=self.LHCDescrip
     for tunex,tuney in self.get_db_tunes():
+        anumber=1
         sixdesktunes="%s_%s"%(tunex,tuney)
         sql1+=' AND tunex=%s AND tuney=%s '%(tunex,tuney)
         for angle in angles:
