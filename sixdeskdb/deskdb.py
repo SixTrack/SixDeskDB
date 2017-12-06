@@ -1736,10 +1736,10 @@ class SixDeskDB(object):
     pairs=self.env_var['sixdeskpairs']
     mtime=self.execute('SELECT max(mtime) from results')[0][0]
     final=[]
-    sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>1e-10 AND emity>1e-10 AND turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
     LHCDescrip=self.LHCDescrip
-    for tunex,tuney in self.get_db_tunes():
+    for tunex,tuney in self.get_tunes():
         anumber=1
+        sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>1e-10 AND emity>1e-10 AND turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
         sixdesktunes="%s_%s"%(tunex,tuney)
         sql1+=' AND tunex=%s AND tuney=%s '%(tunex,tuney)
         for angle in angles:
@@ -1764,6 +1764,8 @@ class SixDeskDB(object):
                 if self.debug:
                     print sql
                 inp=np.array(self.execute(sql),dtype=rectype)
+                if self.debug:
+                    print inp.shape
                 if len(inp)==0:
                     msg="Warning: all particle lost for angle %s and seed %s"
                     print msg%(angle,seed)
