@@ -1564,11 +1564,15 @@ class SixDeskDB(object):
     data=np.fromiter(cur,dtype=ftype)
     a,t=np.sqrt(data['ampsq']),data['surv']
     return a,t
-  def plot_col(self,col,seed,angle,lbl=None,ls='-'):
-    a,t=self.get_col(col,seed,angle)
+  def plot_col(self,col,seed,angle,tunes=None,lbl=None,ls='-'):
+    if tunes is None:
+        tunes=self.get_tunes()[0]
+    a,t=self.get_col(col,seed,angle,tunes=tunes)
     if lbl==None:
       llb=col
-    pl.plot(a,t,ls,label=lbl)
+    pl.plot(a[a>0],t[a>0],ls,label=lbl)
+    if any(a==0):
+      pl.plot(a[a==0],t[a==0],'x',label=lbl)
   def count_result_byseed(self):
     return self.execute('SELECT seed,count(*) FROM results GROUP BY seed')
   def plot_results(self):
@@ -1966,7 +1970,8 @@ class SixDeskDB(object):
             smini=final['seed'][idx][imini]
             imaxi=np.argmax(finalalost)
             maxi=finalalost[imaxi]
-            eqaper = np.where((final['alost2'] == final['Amin']))[0]
+            eqaper = np.where(
+                    (final['alost2'][idxangle] == final['Amin'][idxangle]))[0]
             smaxi=final['seed'][idx][imaxi]
             toAvg = np.abs(final['alost1'][idx])
             i = len(toAvg)
@@ -1986,8 +1991,10 @@ class SixDeskDB(object):
             else:
               if i < int(self.env_var['iend']):
                 maxi = -Amax
+                print "Dynamic Aperture above:  %.2f Sigma"%Amax
               elif len(eqaper)>0:
                 mini = -Amin
+                print "Dynamic Aperture below:  %.2f Sigma"%Amin
               print "Minimum:  %.2f  Sigma at Seed #: %d" %(mini, smini)
               print "Maximum:  %.2f  Sigma at Seed #: %d" %(maxi, smaxi)
               print "Average: %.2f Sigma" %(mean)
