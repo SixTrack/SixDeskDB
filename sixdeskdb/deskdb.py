@@ -2527,23 +2527,23 @@ class SixDeskDB(object):
     pl.ylim([0,ampmax])
     pl.xlabel(r'Horizontal amplitude [$\sigma$]',labelpad=10,fontsize=12)
     pl.ylabel(r'Vertical amplitude [$\sigma$]',labelpad=10,fontsize=12)
-  def get_da_angle(self,tunes=None):
+  def get_da_angle(self,tunes=None,alost='alost1'):
     """returns DA results for all seeds and angles"""
     if tunes is None:
         tunes=self.get_tunes()[0]
     angles=self.get_db_angles()
     seeds=self.get_db_seeds()
-    sql="SELECT seed,angle,alost1 FROM da_post WHERE tunex==%s AND tuney==%s ORDER by seed,angle"%(tunes[0],tunes[1])
+    sql="SELECT seed,angle,%s FROM da_post WHERE tunex==%s AND tuney==%s ORDER by seed,angle"%(alost,tunes[0],tunes[1])
     if(not self.check_table('da_post')):
       print 'WARNING: Table da_post does not exist!'
       print '... running db.mk_da()'
       self.mk_da()
     data=np.array(self.execute(sql)).reshape(len(seeds),len(angles),-1)
     return data
-  def get_da_angle_seed(self,seed):
+  def get_da_angle_seed(self,seed,alost='alost1'):
     """returns DA results for seed *seed* and all angles"""
     angles=self.get_db_angles()
-    sql="SELECT seed,angle,alost1 FROM da_post WHERE seed==%s ORDER by seed,angle"%(seed)
+    sql="SELECT seed,angle,%s FROM da_post WHERE seed==%s ORDER by seed,angle"%(alost,seed)
     if(not self.check_table('da_post')):
       print 'WARNING: Table da_post does not exist!'
       print '... running db.mk_da()'
@@ -2551,9 +2551,11 @@ class SixDeskDB(object):
     data=np.array(self.execute(sql))
     return data
   def plot_da_angle(self,label=None,color='r',ashift=0,marker='o',
-                    alpha=0.1,mec='none',**args):
+                    alpha=None,mec='none',alost='alost1',tunes=None,**args):
     """plot DA (alost1) vs sigma_x and sigma_y"""
-    data=self.get_da_angle()
+    data=self.get_da_angle(tunes=tunes,alost=alost)
+    if alpha is None:
+        alpha=1./len(data)
     for ddd in data:
         s,angle,sig=ddd.T
         angle=(angle+ashift)*np.pi/180
@@ -2574,9 +2576,9 @@ class SixDeskDB(object):
     pl.xlabel(r'$\sigma_x$')
     pl.ylabel(r'$\sigma_y$')
     return self
-  def plot_da_seed(self,seed,label=None,color='k',marker='o',linestyle='-',alpha=1.0,mec='none'):
+  def plot_da_seed(self,seed,label=None,color='k',marker='o',linestyle='-',alpha=1.0,mec='none',tunes=None,alost='alost1'):
     """plot the angle vs the DA (alost1) for one seed *seed*"""
-    data=self.get_da_angle_seed(seed)
+    data=self.get_da_angle_seed(seed,tunes=tunes,alost=alost)
     if label is None:
       pl.plot(data[:,1],data[:,2],marker=marker,linestyle=linestyle,mfc=color,mec=mec,alpha=alpha)
     else:
@@ -2584,10 +2586,10 @@ class SixDeskDB(object):
       pl.legend()
     pl.xlabel('angle')
     pl.ylabel(r'DA [$\sigma$]')
-  def plot_da_angle_seed(self,seed,label=None,color='k',ashift=0,marker='o',linestyle='-',alpha=1.0,mec='none'):
+  def plot_da_angle_seed(self,seed,label=None,color='k',ashift=0,marker='o',linestyle='-',alpha=1.0,mec='none',tunes=None,alost='alost1'):
     """plot the DA (alost1) expressed in sigmax
     and sigmay for one seed *seed*"""
-    data=self.get_da_angle_seed(seed)
+    data=self.get_da_angle_seed(seed,tunes=tunes,alost=alost)
     s,angle,sig=data.T
     angle=(angle+ashift)*np.pi/180
     x=abs(sig)*np.cos(angle)
