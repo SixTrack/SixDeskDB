@@ -1293,15 +1293,16 @@ class SixDeskDB(object):
     deltax = float(env_var['deltax'])
     deltay = float(env_var['deltay'])
     out=[(tunex,tuney)]
-    while  tunex<=tunex1 and tuney<=tuney1:
+    if deltax!=0 or deltay!=0:
+      while  abs(tunex-tunex1)>1e-12 or abs(tuney-tuney1)>1e-12:
         if len(out)>1000:
             raise ValueError("Too many tunes to generate")
-        if tunex<tunex1:
+        if abs(tunex-tunex1)>1e-12:
           tunex=round(tunex+deltax,12)
-        if tuney<tuney1:
+        if abs(tuney-tuney1)>1e-12:
           tuney=round(tuney+deltay,12)
         out.append((tunex,tuney))
-        if tunex==tunex1 and tuney==tuney1:
+        if abs(tunex-tunex1)<1e-12 and  abs(tuney-tuney1)<1e-12:
             break
     return out
 
