@@ -1933,7 +1933,12 @@ class SixDeskDB(object):
     data=np.fromiter(cur,dtype=ftype)
     data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
     angles=len(set(data['angle']))
-    return data.reshape(angles,-1)
+    try:
+      return data.reshape(angles,-1)
+    except ValueError:
+      print("Cannot reshape array of size %s into "%(len(data))+
+            "shape (%s,newaxis). Skip this seed %s!"%(angles,seed))
+      return None
 
   def plot_da_vst(self,seed,tune,ldat,ldaterr,ampmin,ampmax,tmax,slog,sfit,fitndrop):
     """plot dynamic aperture vs number of turns where ldat,ldaterr is the data and 
