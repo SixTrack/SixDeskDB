@@ -142,9 +142,25 @@ class Six_Res(object):
   ('delta', 'float', 'Dummy7'),
   ('dnms', 'float', 'Internal1'),
   ('trttime', 'float', 'Internal2'),
-  ('mtime','float','last modification time')]
+  ('mtime','float','last modification time')
+  ]
   key=['six_input_id','row_num']
 
+class Six_Post(object):
+  fields=[('six_input_id','int','unique id for each fort10 file'),
+          ('row_num','int','row number'),
+          ('rad', 'float', 'radius of the aperture'),
+          ('rad1', 'float', 'radius1 of the aperture'),
+          ('alost1', 'float', 'particles lost 1'),
+          ('alost2', 'float', 'particles lost 2'),
+          ('alost3', 'float', 'particles lost 3'),
+          ('achaos', 'float', ''),
+          ('achaos1', 'float', ''),
+          ('amin', 'float', ''),
+          ('amax', 'float', ''),
+          ('f14', 'int', 'flag to produce the fort.14 file'),
+          ('al', 'blob', 'array')]
+  key=['six_input_id','row_num']
 
 class Da_Post(object):
   fields=[('name', 'str',''),
@@ -168,6 +184,34 @@ class Files(object):
   ('content','blob','file content'),
   ('mtime','float','file modification time')]
   key=['path']
+
+class Fma(object):
+  fields=[
+  ('six_input_id','int','unique id for each fma_sixtrack file'),
+  ('row_num','int','row number'),
+  ('inputfile' ,'str', 'input file name'),
+  ('method', 'str', 'method used to calculate particle tunes'),
+  ('part_id', 'int', 'particle id'),
+  ('q1', 'float', 'tune mode 1'),
+  ('q2', 'float', 'tune mode 2'),
+  ('q3', 'float', 'tune mode 3'),
+  ('eps1_min', 'float', 'minimum emittance mode 1 [mum]'),
+  ('eps2_min', 'float', 'minimum emittance mode 2 [mum]'),
+  ('eps3_min', 'float', 'minimum emittance mode 3 [mum]'),
+  ('eps1_max', 'float', 'maximum emittance mode 1 [mum]'),
+  ('eps2_max', 'float', 'maximum emittance mode 2 [mum]'),
+  ('eps3_max', 'float', 'maximum emittance mode 3 [mum]'),
+  ('eps1_avg', 'float', 'average emittance mode 1 [mum]'),
+  ('eps2_avg', 'float', 'average emittance mode 2 [mum]'),
+  ('eps3_avg', 'float', 'average emittance mode 3 [mum]'),
+  ('eps1_0', 'float', 'initial emittance mode 1 [mum]'),
+  ('eps2_0', 'float', 'initial emittance mode 2 [mum]'),
+  ('eps3_0', 'float', 'initial emittance mode 3 [mum]'),
+  ('phi1_0', 'float', 'initial phase mode 1 [rad]'),
+  ('phi2_0', 'float', 'initial phase mode 2 [rad]'),
+  ('phi3_0', 'float', 'initial phase mode 3 [rad]'),
+  ('mtime_fma','float','last modification time')]
+  key=['six_input_id','inputfile','method','part_id']
 
 class Da_Vst(object):
   fields=[
@@ -232,7 +276,7 @@ acc_var = ['BNL','COLUMNS','CORR_TEST','G_FILENAME_ENCODING','LHCDesHome',
     'sixdeskpath','sixdeskplatform','sixdeskpts','sixdeskstudy','sixdesktrack',
     'sixdeskturns','sixdeskwork','sixtrack_input','sussix','trackdir','tune',
     'tunex','tunex1','tuney','tuney1','turnse','turnsemax','turnsl','turnsle',
-    'workspace','writebinl']
+    'workspace','writebinl','xing','emit_beam']
 
 def_var = ['COMPIZ_BIN_PATH', 'COMPIZ_CONFIG_PROFILE',
     'DBUS_SESSION_BUS_ADDRESS', 'DEFAULTS_PATH', 'DESKTOP_SESSION',

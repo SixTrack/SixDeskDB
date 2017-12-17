@@ -146,7 +146,7 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep):
     dawtraperrint   = np.abs(((ajtrap*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum())*angstep*ampstep)
     dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint
     dastraperr      = ampstep/2
-    dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*angmax)
+    dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*(angmax+1))
     dastraperrepamp = ampstep/2
     dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)
     # ---- simpson rule (simp)
@@ -298,7 +298,8 @@ def plot_surv_2d_comp(db,dbcomp,lbl,complbl,seed,tune,ampmax):
   plot_surv_2d_stab(dbcomp,complbl,2,'r',seed,tune,ampmax)
   pl.legend(loc='best')
 def plot_comp_da_vst(db,dbcomp,ldat,ldaterr,lblname,complblname,seed,tune,ampmin,ampmax,tmax,slog,sfit,fitndrop):
-  """plot dynamic aperture vs number of turns, blue/green=simple average, red/orange=weighted average"""
+  """plot dynamic aperture vs number of turns, 
+  blue/green=simple average, red/orange=weighted average"""
   pl.close('all')
   pl.figure(figsize=(6,6))
   for dbbb in [db,dbcomp]:
