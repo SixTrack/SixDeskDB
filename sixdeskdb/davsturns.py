@@ -406,6 +406,11 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
       dirname=db.mk_analysis_dir(seed,tune)#directory struct already created in clean_dir_da_vst, only get dir name (string) here
       print('... get survival data')
       dasurv= db.get_surv(seed,tune)
+      if dasurv is None:
+        print("ERROR: survival data could not be retrieved due to "+
+              "and error in the database or tracking data. Skip "
+              "this seed %s"%(seed))
+        continue
       print('... get da vs turns data')
       daout = db.get_da_vst(seed,tune)
       if(len(daout)>0):#reload data, if input data has changed redo the analysis
