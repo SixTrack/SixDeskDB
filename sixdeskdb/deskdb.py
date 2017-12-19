@@ -2039,7 +2039,7 @@ class SixDeskDB(object):
   def get_fma_methods(self):
     """returns list of all methods available for FMA analysis
     """
-    return ['TUNENEWT1','TUNEABT','TUNEABT2','TUNENEWT','TUNEFIT','TUNEAPA','TUNEFFT','TUNEFFTI','TUNELASK']
+    return ['TUNENEWT1','TUNEABT','TUNEABT2','TUNENEWT','TUNEFIT','TUNEAPA','TUNEFFT','TUNEFFTI','TUNELASK','NAFF']
   def get_db_fma_inputfile_method(self):
     """returns a list of inputfiles and methods used 
     in db for FMA analysis
