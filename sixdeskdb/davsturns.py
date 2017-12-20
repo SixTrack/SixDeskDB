@@ -480,6 +480,47 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
       print("Error in -fitopt: <data> has to be 'dawtrap','dastrap','dawsimp' or 'dassimp' - Aborting!")
       sys.exit(0)
 
+def PlotFMA(db,args=[]):
+  for tunes in db.get_tunes():
+    for seed in db.get_seeds():
+      turnse='e'+ str(db.env_var['turnse'])
+      method_inputfile = db.get_db_fma_inputfile_method()
+      dirname=db.mk_analysis_dir(seed,tunes)
+      pl.close('all')
+      ##### If only one inputfile is detected or defined by user 
+      if ( (len(method_inputfile)==1) or (len(args) == 2) ) :
+        if  (len(method_inputfile)==1):
+          method = method_inputfile[0][1]
+          db.plot_fma_footprint(seed,tunes,turnse,method_inputfile[0][0],method_inputfile[0][1])
+        else:
+          method = args[1]
+          db.plot_fma_footprint(seed,tunes,turnse, args[0],args[1])
+        print('... saving plot %s/Footprint.%s.%s.png'%(dirname,turnse,method))
+        pl.savefig('%s/Footprint.%s.%s.png'%(dirname,turnse,method))
+      else:
+        ##### If inputfiles have been defined manually 
+        if (len(args) == 4):
+          it = iter(args)
+          n_args = zip(it, it)
+          ##### Find other files with the same method
+          results = [t for t in n_args if t[1] == n_args[0][1]]
+        ##### If inputfiles have been detected from fma_sixtrack.gz
+        elif not args:
+          results = [t for t in method_inputfile if t[1] == method_inputfile[0][1]]
+        if (len(results)==1):
+          print "Only one file with %s method has been found!You need at least two files with the same method to compute tune diffusion."%(results[0][1])
+          return -1
+        method = results[0][1]
+        db.plot_fma_scatter(seed,tunes,turnse,results)
+        print('... saving plot %s/FMA_config.%s.%s.png'%(dirname,turnse,method))
+        pl.savefig('%s/FMA_config.%s.%s.png'%(dirname,turnse,method))
+        pl.close('all')
+        db.plot_fma_scatter(seed,tunes,turnse,results, var1 ='q1' ,var2 ='q2' ,dqlim=5e-3)
+        db.plot_res_order(15)
+        print('... saving plot %s/FMA.%s.%s.png'%(dirname,turnse,method))
+        pl.savefig('%s/FMA.%s.%s.png'%(dirname,turnse,method))
+
+
 def PlotDaVsTurns(db,ldat,ldaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop):
   '''plot survival plots and da vs turns for list of data ldat and associated error ldaterr'''
   turnsl=db.env_var['turnsl']

@@ -210,7 +210,10 @@ class Fma(object):
   ('phi1_0', 'float', 'initial phase mode 1 [rad]'),
   ('phi2_0', 'float', 'initial phase mode 2 [rad]'),
   ('phi3_0', 'float', 'initial phase mode 3 [rad]'),
-  ('mtime_fma','float','last modification time')]
+  ('mtime_fma','float','last modification time'),
+  ('norm_flag','int','normalisation flag'),
+  ('first_turn','int','first turn'),
+  ('last_turn','int','last turn') ]
   key=['six_input_id','inputfile','method','part_id']
 
 class Da_Vst(object):
