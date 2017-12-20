@@ -19,7 +19,7 @@ if sys.version_info < (2, 6):
   print "SixDeskDB requires Python version >=2.6"
   sys.exit(1)
 
-from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns,RunDaVsTurnsAng,PlotDaVsTurns,PlotCompDaVsTurns
+from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns,RunDaVsTurnsAng,PlotDaVsTurns,PlotCompDaVsTurns,PlotFMA
 #from dbtocentral,config
 
 def str2bool(st):
@@ -218,19 +218,40 @@ Usage: sixdb <dbname> da_vs_turns
        RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap,outfilefit)
 
     def plot_fma(self, study):
-      """Plot FMA"""
+      """Plot FMA.
+
+Usage: sixdb <dbname> plot_fma
+    Info: Plots the footprint if one inputfile is found in fma_sixtrack.gz, or frequency maps in frequency domain and configuration space if two inputfiles with the same method are detected. User-defined inputfile and method are also supported.  
+
+    Options:
+    - -F                  : returns a list of all the inputfiles and methods found in fma_sixtrack.gz
+    -<inputfile> <method> : option for user-defined inputfile and method to plot. 
+                            example1: $sixdb ats40_62.31_60.32.db plot_fma dump1 NAFF 
+                            example2: $sixdb ats40_62.31_60.32.db plot_fma dump1 NAFF dump2 NAFF 
+    
+      """
+      args=self.args
       try:
-        import matplotlib.pyplot as plt
-        db=SixDeskDB(study)        
-        plt.figure(1)
-        db.plot_fma_scatter(1,(64.31,59.32),'e3',[('dump1','NAFF'),('dump2','NAFF')])
-        plt.figure(2)
-        db.plot_fma_scatter(1,(64.31,59.32),'e3',[('dump1','NAFF'),('dump2','NAFF')], var1 ='q1' ,var2 ='q2' )
-        db.plot_res_order(15)
-        plt.show()
+        db=SixDeskDB(study) 
       except:
         print('Error in plot_fma: database not found!')
         return -1.
+      if (args[-1] == '-F'):
+        print "The inputfiles and methods found are:"
+        print db.get_db_fma_inputfile_method()
+        return
+      if (len(args)>2):
+        ### Check if user-defined inputfile and method exist
+        it = iter(args[2:])
+        user_defined =  zip(it, it)
+        if set(user_defined).issubset(db.get_db_fma_inputfile_method()):    
+          PlotFMA(db, args[2:]) 
+        else:
+          print "ERROR: The inputfile and method are not defined. Run sixdb -F for all the possible options."
+          return -1
+      else:
+        PlotFMA(db) 
+
 
     def plot_da_vs_turns(self,study):
        """Create survival and da vs turns plots.
