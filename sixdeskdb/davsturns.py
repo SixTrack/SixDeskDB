@@ -516,7 +516,7 @@ def PlotFMA(db,args=[]):
         pl.savefig('%s/FMA_config.%s.%s.png'%(dirname,turnse,method))
         pl.close('all')
         db.plot_fma_scatter(seed,tunes,turnse,results, var1 ='q1' ,var2 ='q2' ,dqlim=5e-3)
-        db.plot_res_order(15)
+        db.plot_res_upto_order(15)
         print('... saving plot %s/FMA.%s.%s.png'%(dirname,turnse,method))
         pl.savefig('%s/FMA.%s.%s.png'%(dirname,turnse,method))
 
