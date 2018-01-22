@@ -2389,6 +2389,11 @@ class SixDeskDB(object):
     of order l and frequency qz in current plot
     range"""
     footprint.plot_res_order(o=o,l=l,qz=qz,c1=c1,lst1=lst1,c2=c2,lst2=lst2,c3=c3,annotate=annotate)
+  def plot_res_upto_order(self,o,l=0,qz=0,c1='b',lst1='-',c2='b',lst2='--',c3='g',annotate=False):
+    """plot resonance lines of order o and sidebands
+    of order l and frequency qz in current plot
+    range"""
+    footprint.plot_res_upto_order(o=o,l=l,qz=qz,c1=c1,lst1=lst1,c2=c2,lst2=lst2,c3=c3,annotate=annotate)
 # -------------------------------- da_vs_turns -----------------------------------------------------------
   def st_da_vst(self,data,recreate=False):
     ''' store da vs turns data in database'''
