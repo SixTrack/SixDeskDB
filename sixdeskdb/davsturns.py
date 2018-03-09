@@ -520,6 +520,32 @@ def PlotFMA(db,args=[]):
         print('... saving plot %s/FMA.%s.%s.png'%(dirname,turnse,method))
         pl.savefig('%s/FMA.%s.%s.png'%(dirname,turnse,method))
 
+def PlotGrid(db,args=[]):
+  for tunes in db.get_tunes():
+    for seed in db.get_seeds():
+      turnse='e'+ str(db.env_var['turnse'])
+      method_inputfile = db.get_db_fma_inputfile_method()
+      dirname=db.mk_analysis_dir(seed,tunes)
+      pl.close('all')
+      ##### If one inputfile is detected or defined by user 
+      if ( (len(method_inputfile)==1) or (len(args) == 2) ) :
+        if  (len(method_inputfile)==1):
+          method = method_inputfile[0][1]
+          db.plot_fma_footprint(seed,tunes,turnse,method_inputfile[0][0],method_inputfile[0][1],grid=True)
+        else:
+          method = args[1]
+          db.plot_fma_footprint(seed,tunes,turnse, args[0],args[1], grid=True)
+        print('... saving plot %s/Grid.%s.%s.png'%(dirname,turnse,method))
+        pl.savefig('%s/Grid.%s.%s.png'%(dirname,turnse,method))
+      elif (len(args)<2):
+        print "More than 1 inputfiles have been detected. The first one will be used"
+        method = method_inputfile[0][1]
+        db.plot_fma_footprint(seed,tunes,turnse,method_inputfile[0][0],method_inputfile[0][1],grid=True)
+        print('... saving plot %s/Grid.%s.%s.png'%(dirname,turnse,method))
+        pl.savefig('%s/Grid.%s.%s.png'%(dirname,turnse,method))
+      else:  
+        print "You have manually defined more than one file.Please choose one method/inputfile or the first method/inputfile found will be used automatically"
+        return -1
 
 def PlotDaVsTurns(db,ldat,ldaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop):
   '''plot survival plots and da vs turns for list of data ldat and associated error ldaterr'''

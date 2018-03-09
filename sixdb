@@ -19,7 +19,7 @@ if sys.version_info < (2, 6):
   print "SixDeskDB requires Python version >=2.6"
   sys.exit(1)
 
-from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns,RunDaVsTurnsAng,PlotDaVsTurns,PlotCompDaVsTurns,PlotFMA
+from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns,RunDaVsTurnsAng,PlotDaVsTurns,PlotCompDaVsTurns,PlotFMA,PlotGrid
 #from dbtocentral,config
 
 def str2bool(st):
@@ -72,7 +72,7 @@ Usage: sixdb <cmd> <help>
         """
         cmds=['load_dir', 'update_dir', 'info',
                'da', 'da_vs_turns', 'plot_da_vs_turns',
-               'mad', 'interactive','set','replace','check_results','plot_fma']
+               'mad', 'interactive','set','replace','check_results','plot_fma','plot_tune_grid']
         msg="""sixdb: command line interface of SixDeskDB
 Usage: sixdb <study> <cmd> <options> or sixdb <cmd> to get additional help
         """
@@ -251,6 +251,41 @@ Usage: sixdb <dbname> plot_fma
           return -1
       else:
         PlotFMA(db) 
+
+    def plot_tune_grid(self, study):
+      """Plot grid footprint.
+
+Usage: sixdb <dbname> plot_tune_grid
+    Info: Plots the footprint in the form of a grid for a user specified inputfile and method, otherwise it uses the first inputfile and method found.  
+
+    Options:
+    - -F                  : returns a list of all the inputfiles and methods found in fma_sixtrack.gz
+    
+      """
+      args=self.args
+      try:
+        db=SixDeskDB(study) 
+      except:
+        print('Error in plot_fma: database not found!')
+        return -1.
+      if (args[-1] == '-F'):
+        print "The inputfiles and methods found are:"
+        print db.get_db_fma_inputfile_method()
+        return
+      
+      if (len(args)>2):
+        ### Check if user-defined inputfile and method exist
+        it = iter(args[2:])
+        user_defined =  zip(it, it)
+        if set(user_defined).issubset(db.get_db_fma_inputfile_method()):    
+          PlotGrid(db, args[2:]) 
+        else:
+          print "ERROR: The inputfile and method are not defined. Run sixdb -F for all the possible options."
+          return -1
+      else:
+        PlotGrid(db) 
+      
+
 
 
     def plot_da_vs_turns(self,study):
