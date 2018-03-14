@@ -2186,7 +2186,7 @@ class SixDeskDB(object):
       cmd="""DROP TABLE IF EXISTS %s"""%(t)
       self.conn.cursor().execute(cmd)
     return data
-  def plot_fma_footprint(self,seed,tune,turns,inputfile,method,eps1='eps1_0',eps2='eps2_0',dq=None,vmin=None,vmax=None):
+  def plot_fma_footprint(self,seed,tune,turns,inputfile,method,eps1='eps1_0',eps2='eps2_0',dq=None,vmin=None,vmax=None,grid=False):
     """plot q1 vs q2 colorcoded by sqrt((eps1+eps2)/eps0)
     
     Parameters:
@@ -2207,6 +2207,7 @@ class SixDeskDB(object):
         are saturated)
     dq: plot range is (tune-dq,tune+dq)
     """
+    config_fma_flag = False
     data=self.get_fma(seed,tune,turns,inputfile,method)
     eps0=self.env_var['emit']*self.env_var['pmass']/self.env_var['e0']
     amp=np.sqrt((data[eps1]+data[eps2])/eps0)
@@ -2216,19 +2217,57 @@ class SixDeskDB(object):
       vmax_db=np.max(self.get_db_amplitudes())+self.env_var['nsincl']
       if vmax>vmax_db:# sometimes very large amplitudes occur, which are not important -> saturate them
           vmax=vmax_db
-    pl.scatter(data['q1'],data['q2'],c=amp,vmin=vmin,vmax=vmax,linewidth=0)
-    cbar=pl.colorbar()
-    cbar.set_label(r'$\sigma=\sqrt{\frac{\epsilon_{1,%s}+\epsilon_{2,%s}}{\epsilon_0}}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f  \ \mu \rm m$'%(eps1.split('_')[1],eps2.split('_')[1],self.env_var['emit']),labelpad=30,rotation=270)
-    pl.xlabel(r'$Q_1$')
-    pl.ylabel(r'$Q_2$')
-    pl.title('%s %s'%(inputfile,method))
-# limit plotrange to 1.e-2 distance from lattice tune
-    if dq==None: dq=1.e-2
-    print """plot_fma_footprint: limit plotrange to %2.2e distance from lattice tune
-  in order to exclude chaotic tunes"""%dq
-    pl.xlim(np.modf(tune[0])[0]-dq,np.modf(tune[0])[0]+dq)
-    pl.ylim(np.modf(tune[1])[0]-dq,np.modf(tune[1])[0]+dq)
+    if (grid == False):
+      pl.scatter(data['q1'],data['q2'],c=amp,vmin=vmin,vmax=vmax,linewidth=0)
+      cbar=pl.colorbar()
+      cbar.set_label(r'$\sigma=\sqrt{\frac{\epsilon_{1,%s}+\epsilon_{2,%s}}{\epsilon_0}}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f  \ \mu \rm m$'%(eps1.split('_')[1],eps2.split('_')[1],self.env_var['emit']),labelpad=30,rotation=270)
+    else:
+      from itertools import groupby
+      from operator import itemgetter
+      fma_config = os.path.join(os.getcwd() + "/FMA_config.py")
+      if os.path.exists(fma_config):
+        print "FMA_config file has been detected in sixjobs and it will be used for the configuration of the plots"
+        config_fma_flag = True
+        sys.path.append(os.getcwd())
+        import FMA_config
+        c_grid = FMA_config.plot['c_grid']
+      else:
+        c_grid = 'k'
+      for key, group in groupby(data, key=lambda d: (d['angle'])):
+        qx = []
+        qy = []
+        for elem in group:
+          qx.append(elem[16])
+          qy.append(elem[17])
+        pl.plot(qx,qy,linewidth=1, c=c_grid)
+      grouper = itemgetter("part_id", "amp1")
+      for key, group in groupby(sorted(data, key = grouper), grouper):
+        qx = []
+        qy = []
+        for elem in group:
+          qx.append(elem[16])
+          qy.append(elem[17])
+        pl.plot(qx,qy,linewidth=1, c=c_grid)
+    if config_fma_flag:
+      pl.xlabel(FMA_config.plot['xaxis']['xlabel'],fontsize=FMA_config.plot['xaxis']['fontsize'])
+      pl.ylabel(FMA_config.plot['yaxis']['ylabel'], fontsize=FMA_config.plot['yaxis']['fontsize'])
+      pl.tick_params(labelsize=FMA_config.plot['ticks'])
+      pl.xlim(FMA_config.plot['xaxis']['xmin'], FMA_config.plot['xaxis']['xmax'])
+      pl.ylim(FMA_config.plot['yaxis']['ymin'], FMA_config.plot['yaxis']['ymax'])
+      pl.title(FMA_config.plot['title'], fontsize= FMA_config.plot['title_fontsize'])
+      if FMA_config.plot['tight_layout']:
+        pl.tight_layout()
+    else:
+      pl.xlabel(r'$Q_1$')
+      pl.ylabel(r'$Q_2$')
+      pl.title('%s %s'%(inputfile,method))
+      # limit plotrange to 1.e-2 distance from lattice tune
+      if dq==None: dq=1.e-2
+      print """plot_fma_footprint: limit plotrange to %2.2e distance from lattice tune in order to exclude chaotic tunes"""%dq
+      pl.xlim(np.modf(tune[0])[0]-dq,np.modf(tune[0])[0]+dq)
+      pl.ylim(np.modf(tune[1])[0]-dq,np.modf(tune[1])[0]+dq)
     pl.grid()
+
   def plot_fma_action_tune(self,seed,tune,turns,inputfile,method,mode,eps1='eps1_0',eps2='eps2_0',vmin=None,vmax=None):
     """plot sig1 vs sig2 colorcoded by the tune 
     of mode *mode* with 
@@ -2306,6 +2345,14 @@ class SixDeskDB(object):
         [vmin,vmax] are saturated)
         default values: vmin=-3,vmax=-7
     """
+    config_fma_flag = False
+    fma_config = os.path.join(os.getcwd() + "/FMA_config.py")
+    if os.path.exists(fma_config):
+      config_fma_flag = True
+      print "FMA_config file has been detected in sixjobs and it will be used for the configuration of the plots"
+      sys.path.append(os.getcwd())
+      import FMA_config
+
     data=self.get_fma_intersept(seed=seed,tune=tune,turns=turns,files=files)
     nfma = len(files)
     if nfma < 2:
@@ -2334,8 +2381,12 @@ class SixDeskDB(object):
     np.place(dqmax,dqmax==0,[1.e-60])
     dq=np.log10(dqmax)
 # default plot range for dq (colorbar)
-    if vmin == None: vmin = -3
-    if vmax == None: vmax = -7
+    if config_fma_flag:
+      vmin = FMA_config.plot['vmin']
+      vmax = FMA_config.plot['vmax']
+    else:
+      if vmin == None: vmin = -3
+      if vmax == None: vmax = -7
 # amplitude vs dq
     if('eps' in var1 and 'eps' in var2):
       eps0=self.env_var['emit']*self.env_var['pmass']/self.env_var['e0']
@@ -2353,10 +2404,16 @@ class SixDeskDB(object):
       pl.ylabel('$Q_%s$'%(var2.split('q')[1]))
 # limit plotrange to dqlim distance from lattice tune
       #dqlim=5.e-2
-      print """plot_fma_scatter: limit plotrange to %2.2e distance from lattice tune
-  in order to exclude chaotic tunes"""%dqlim
-      pl.xlim(np.modf(tune[0])[0]-dqlim,np.modf(tune[0])[0]+dqlim)
-      pl.ylim(np.modf(tune[1])[0]-dqlim,np.modf(tune[1])[0]+dqlim)
+      
+      if config_fma_flag:
+        print "limits set by the user from the FMA config file in sixjobs"
+        pl.xlim(FMA_config.plot['xaxis']['xmin'], FMA_config.plot['xaxis']['xmax'])
+        pl.ylim(FMA_config.plot['yaxis']['ymin'], FMA_config.plot['yaxis']['ymax'])
+        pl.title(FMA_config.plot['title'], fontsize= FMA_config.plot['title_fontsize'])
+      else:
+        print """plot_fma_scatter: limit plotrange to %2.2e distance from lattice tune in order to exclude chaotic tunes"""%dqlim
+        pl.xlim(np.modf(tune[0])[0]-dqlim,np.modf(tune[0])[0]+dqlim)
+        pl.ylim(np.modf(tune[1])[0]-dqlim,np.modf(tune[1])[0]+dqlim)
     elif('amp' in var1 or 'amp' in var2):
       npart = self.env_var['sixdeskpairs']
       ampr = data['fma0_amp1']+(data['fma0_amp2']-data['fma0_amp1'])/(npart-1)*(data['fma0_part_id']/2-1)
