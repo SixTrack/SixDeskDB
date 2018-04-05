@@ -107,8 +107,8 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
   ampstep=np.abs((s[s>0][1])-(s[s>0][0]))
   ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),
     ('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),
-    ('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('meanda', float),
-    ('meandaerr', float), ('nturn',float),('tlossmin',float),('nturnavg',float),('mtime',float)]
+    ('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),
+    ('nturn',float),('tlossmin',float),('nturnavg',float),('mtime',float)]
   l_turnstep=len(np.arange(turnstep,tmax,turnstep))
   daout=np.ndarray(l_turnstep,dtype=ftype)
   for nm in daout.dtype.names:
@@ -183,9 +183,6 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
     
     dastraperrepamp = ampstep/2
     dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)
-    # rms of the dynamic aperture
-    rmsda           = np.mean( mta_sigma )
-    rmsdaerr        = np.std(mta_sigma)
     # ---- simpson rule (simp)
     if(calcsimp):
       # int
@@ -211,7 +208,7 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
         dawsimperr,dassimperr                                              = np.zeros(2)
         
       daout[dacount]=(seed,tunex,tuney,turnsl,dawtrap,dastrap,dawsimp,dassimp,dawtraperr,dastraperr,dastraperrep,
-         dastraperrepang,dastraperrepamp,dawsimperr,dassimperr, rmsda, rmsdaerr, it-turnstep, tlossmin, nturnavg, mtime)
+         dastraperrepang,dastraperrepamp,dawsimperr,dassimperr, it-turnstep, tlossmin, nturnavg, mtime)
       dacount=dacount+1
     currentdastrap =dastrap
     currenttlossmin=tlossmin
