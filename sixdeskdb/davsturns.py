@@ -95,8 +95,6 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
   mtime=time.time()
   
   (tunex,tuney)=tune
-
-  #regemi=db.env_var['emit']          # get the emittance at which the simulation was carried out
   
   s,a,t=data['sigma'],data['angle'],data['sturn']
   
@@ -148,7 +146,6 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
         warnsimp=False
       calcsimp=False
 
-
     # prepare the arrays for unequal emittances
     mta_angle_ue = np.arctan(((emitx/emity)**0.5)*np.tan(mta_angle))                                                        # angle for unequal emittances
     angstep_ue   = angstep*((emitx/emity)**0.5)*((np.cos(mta_angle_ue)**2)/(np.cos(mta_angle)**2))                          # angular step for unequal emittances
@@ -156,51 +153,15 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
     mta_sigma_ue = mta_sigma/eR                                                                                             # rsigma for unequal emittances
     ampstep_ue   = eR*ampstep - ((emitx-emity)/regemi)*((np.cos(mta_angle_ue)*np.sin(mta_angle_ue))/eR**2)*mta_sigma_ue*angstep_ue    # amplitude step with unequal emittances
 
-#    print ""
-#    print "AMPSTEP OLD", ampstep
-#    print "AMPSTEP NEW", ampstep_ue
-#    print "LEN AMPSTEP", len(ampstep_ue)
-
-#    print ""
-#    print "MTA_SIGMA OLD", mta_sigma
-#    print "MTA_SIGMA NEW", mta_sigma_ue
-
-#    print ""
-    #print "ANGSTEP OLD  ", angstep
-    #print "ANGSTEP NEW  ", angstep_ue    
-#    print "MTA_ANGLE OLD", mta_angle
-    #print "MTA_ANGLE NEW", mta_angle_ue
-
-
     # get the integration steps (difference in angle) in the new coordinate system
     dtheta = np.diff(mta_angle_ue)                               # get the angular distance of the data points [integration constant]
     dtheta = np.insert(dtheta, 0, mta_angle_ue[0])               # add the first point (distance from x-axis)
     dtheta = np.append(dtheta, (np.pi/2-mta_angle_ue[-1]))       # add the last ponit  (distance from y-axis)
 
-#    print "dtheta       ", dtheta
-#    print "SUM,len      ", np.sum(dtheta), len(dtheta)
-#    print ""
-    
     # ---- trapezoidal rule (trap)
     # integral
     dawtrapint = ((ajtrap*(mta_sigma**4*np.sin(2*mta_angle))).sum())*angstep                                   # old
     dawtrap    = (dawtrapint)**(1/4.)                                                                          # old
-#    print "DAWTRAP OLD", dawtrap                                    # INFO
-
-
-
-#    dawtrapint = np.dot(angstep_ue,((ajtrap*(mta_sigma_ue**4*np.sin(2*mta_angle_ue))))).sum()                  # new [COMPLETE]
-#    dawtrap    = (dawtrapint)**(1/4.)                                                                          # new
-#    print "DAWTRAP NEW", dawtrap                                    # INFO    
-#    print "dawtrap NEW", dawtrap, regemi, emitx, emity, (regemi/emity)**0.5                                    # INFO
-
-
-#    print 'ajtrap', ajtrap
-#    print 'mta_sigma', mta_sigma
-    # version of dastrap assuming equal step size
-#    dastrap    = (2./np.pi)*(ajtrap*(mta_sigma)).sum()*angstep                                                 # old
-#    print ""
-#    print "DASTRAP OLD", dastrap
 
     #### PH: calculate dastrap with a generalized integration rule
     #        baseline is the open formula (4.1.15) in Press et al. NUMERICAL RECIPES in Fortran 77 [second edition]
@@ -212,17 +173,10 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
         dastrap_ue += (0.5)*( mta_sigma_ue[i] + mta_sigma_ue[i-1] )*dtheta[i]
     dastrap_ue = (2./np.pi)*dastrap_ue                    # multipy with 2/pi
     dastrap    = dastrap_ue                               # preliminary, change dastrap variable before merging with main branch
-        
-#    print "DASTRAP NEW",  dastrap                                                                              # INFO
-#    print ""
-
-    #sys.exit()
 
     # error
     dawtraperrint   = np.abs(((ajtrap*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum())*angstep*ampstep)                         # old
     dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint
-#    print "DAWTRAPERR OLD", dawtraperr
-
     
     dastraperr      = ampstep/2                                                                                 # old
     dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*(angmax+1))                               # PH: bugfix angmax -> angmax+1
@@ -239,13 +193,6 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
       dawsimp    = (dawsimpint)**(1/4.)
       dassimpint = (ajsimp*mta_sigma).sum()*angstep
       dassimp    = (2./np.pi)*dassimpint
-#      print "DAWSIMP, DASSIMP, OLD", dawsimp, dassimp
-
-#      dawsimpint = np.dot(angstep_ue,(ajsimp*((mta_sigma_ue**4)*np.sin(2*mta_angle_ue)))).sum()                  # NEW [COMPLETE]
-#      dawsimp    = (dawsimpint)**(1/4.)
-#      dassimpint = np.dot(angstep_ue,(ajsimp*mta_sigma_ue)).sum()
-#      dassimp    = (2./np.pi)*dassimpint
-#      print "DAWSIMP, DASSIMP, NEW", dawsimp, dassimp      
       
       # error
       dawsimperrint = (ajsimp*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum()*angstep*ampstep                      # old
@@ -253,30 +200,23 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
       dassimperr    = ampstep/2#simplified
 #      print "DAWSIMPERR, DASSIMPERR, OLD", dawsimperr, dassimperr
       
-#      dawsimperrint = np.dot(angstep_ue*ampstep_ue,(ajsimp*(2*(mta_sigma_ue**3)*np.sin(2*mta_angle_ue)))).sum()  # new [complete]
-#      dawsimperr    = np.abs(1/4.*dawsimpint**(-3/4.))*dawsimperrint
-#      dassimperr    = np.max(ampstep_ue)/2#simplified                                                            # new [complete]
-#      print "DAWSIMPERR, DASSIMPERR, NEW", dawsimperr, dassimperr      
-      
     else:
       (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
     tlossmin=np.min(mta['sturn'])
     nturnavg = (it-turnstep + tlossmin)/2.
     if (dastrap!=currentdastrap and it-turnstep >= 0 and tlossmin!=currenttlossmin) or (it==tmax):
       if emitx!=regemi or emity!=regemi:
-#        print 'nonequal emit'
 #        dawtrap = 0.
         dawtrap,dawsimp,dassimp,dawtraperr,dastraperr                      = np.zeros(5)
         dawsimperr,dassimperr                                              = np.zeros(2)
-#      else:
-#        print 'equal emittances'
+        
       daout[dacount]=(seed,tunex,tuney,turnsl,dawtrap,dastrap,dawsimp,dassimp,dawtraperr,dastraperr,dastraperrep,
          dastraperrepang,dastraperrepamp,dawsimperr,dassimperr, rmsda, rmsdaerr, it-turnstep, tlossmin, nturnavg, mtime)
       dacount=dacount+1
     currentdastrap =dastrap
     currenttlossmin=tlossmin
   if emitx!=regemi or emity!=regemi:
-    return daout[daout['seed']>0]
+    return daout[daout['dastrap']>0]
   else:
     return daout[daout['dawtrap']>0]#delete 0 from errors
 
