@@ -104,21 +104,20 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
   
   #set the 0 in t to tmax*100 in order to check if turnnumber<it (any(tang[tang<it])<it in get_min_turn_ang)
   t[s==0]=tmax*100
-  
-  angmax  = len(a[:,0])#number of angles
-  angstep = np.pi/(2*(angmax+1))#step in angle in rad
-  ampstep = np.abs((s[s>0][1])-(s[s>0][0]))
-  
-  ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
-  
-  l_turnstep = len(np.arange(turnstep,tmax,turnstep))
-  daout      = np.ndarray(l_turnstep,dtype=ftype)
-  
+  angmax=len(a[:,0])#number of angles
+  angstep=np.pi/(2*(angmax+1))#step in angle in rad
+  ampstep=np.abs((s[s>0][1])-(s[s>0][0]))
+  ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),
+    ('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),
+    ('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('meanda', float),
+    ('meandaerr', float), ('nturn',float),('tlossmin',float),('nturnavg',float),('mtime',float)]
+  l_turnstep=len(np.arange(turnstep,tmax,turnstep))
+  daout=np.ndarray(l_turnstep,dtype=ftype)
   for nm in daout.dtype.names:
     daout[nm]=np.zeros(l_turnstep)
     
   dacount=0
-  currentdawtrap=0
+  currentdastrap=0
   currenttlossmin=0
   #define integration coefficients at beginning and end which are unequal to 1
   ajtrap_s=np.array([3/2.])#Simpson rule
@@ -126,7 +125,7 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
   ajsimp_s=np.array([55/24.,-1/6.,11/8.])#Simpson rule
   ajsimp_e=np.array([11/8.,-1/6.,55/24.])
   warnsimp=True
-  for it in np.arange(turnstep,tmax,turnstep):
+  for it in np.arange(turnstep,tmax+turnstep,turnstep):
     mta=get_min_turn_ang(s,t,a,it)
     mta_angle=mta['angle']*np.pi/180#convert to rad
     l_mta_angle=len(mta_angle)
@@ -230,64 +229,9 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
     
     dastraperrepamp = ampstep/2
     dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)
-#    print 'dastraperrep before', dastraperrep
-#    print 'dastreperrepang before', dastraperrepang**2                                               # correct version implemented
-
-
-    dastraperrepang = 0
-    for i in range(1,len(dtheta)-1):
-      dastraperrepang += dtheta[i]*(2./np.pi)*np.abs(mta_sigma_ue[i-1]-mta_sigma_ue[i])/(2.)          
-#    print 'dastreperrepang after ', dastraperrepang**2
-
-  
-#    print ''
-#    print 'dastreperrepamp before', dastraperrepamp**2                                               
-
-    # PH JUN17 SECOND TERM OF THE ERROR FUNCTION
-
-    stepsize = []                                                                                 # determine the step size in the new coordinate system
-    for i,r in enumerate(s):
-      stepsize.append(np.diff(r)[np.diff(r)!=0].min())
-    stepsize = np.array(stepsize)
-    stepsize = stepsize/2.                                                                        # this is the error on r (DELTA r)
-
-
-    # PH JUN17 implement the generalized error function following the open trapezoidal rule with unequal step size
-    dastraperrepamp = 0
-    dastraperrepamp += ((dtheta[0]*stepsize[0] + dtheta[1]*stepsize[0]/2.))                       # first term 
-    dastraperrepamp += ((dtheta[-2]*stepsize[-1]/2. + dtheta[-1]*stepsize[-1] ))                  # last term
-    for i in range(1,len(stepsize)-1):
-      dastraperrepamp += ((1./2.)*(dtheta[i]*stepsize[i] + dtheta[i+1]*stepsize[i]))              # middle terms
-
-    dastraperrepamp = dastraperrepamp*(2./np.pi)
-#    print 'dastreperrepamp after ', dastraperrepamp**2
-#    print
-
-    dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)    
-
-#    print 'dastraperrrep', dastraperrrep
-    # debugging stuff
-#    dastraperr      = np.max(ampstep_ue)/2                                                                      # new [complete]
-#    dastraperrepang = ((np.abs(np.diff(mta_sigma_ue))).sum())/(2*angmax)                                        # new [complete]
-#    dastraperrepamp = np.max(ampstep_ue)/2                                                                      # new [complete]
-#    dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)    
-
-#    print 'lennpdiff', len(np.diff(mta_sigma))
-#    print 'ampstep  ', ampstep
-#    print 'angmas   ', angmax
-#    print 'ampstep_ue', ampstep_ue
-#    print 'mta_sigma', mta_sigma
-#    print 's        ', s
-#    print 'amstep_ue', ampstep_ue
-#    print 'angtep_ue', angstep_ue
-#    print 'sumangste', angstep_ue.sum()
-#    print 'lenampstp', len(ampstep_ue)
-#    print 'dtheta   ', dtheta
-#    print 'lendtheta', len(dtheta)
-#    print 'lenangstp', len(angstep_ue)
-    
-#    print 'dastraperrep', dastraperrep
-#    sys.exit()
+    # rms of the dynamic aperture
+    rmsda           = np.mean( mta_sigma )
+    rmsdaerr        = np.std(mta_sigma)
     # ---- simpson rule (simp)
     if(calcsimp):
       # int
@@ -317,15 +261,19 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
     else:
       (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
     tlossmin=np.min(mta['sturn'])
-    if(dawtrap!=currentdawtrap and it-turnstep >= 0 and tlossmin!=currenttlossmin):
+    nturnavg = (it-turnstep + tlossmin)/2.
+    if (dastrap!=currentdastrap and it-turnstep >= 0 and tlossmin!=currenttlossmin) or (it==tmax):
       if emitx!=regemi or emity!=regemi:
 #        print 'nonequal emit'
 #        dawtrap = 0.
         dawtrap,dawsimp,dassimp,dawtraperr,dastraperr                      = np.zeros(5)
-        dawsimperr,dassimperr                                              = np.zeros(2)            
-      daout[dacount]=(seed,tunex,tuney,turnsl,dawtrap,dastrap,dawsimp,dassimp,dawtraperr,dastraperr,dastraperrep,dastraperrepang,dastraperrepamp,dawsimperr,dassimperr,it-turnstep,tlossmin,mtime)
+        dawsimperr,dassimperr                                              = np.zeros(2)
+#      else:
+#        print 'equal emittances'
+      daout[dacount]=(seed,tunex,tuney,turnsl,dawtrap,dastrap,dawsimp,dassimp,dawtraperr,dastraperr,dastraperrep,
+         dastraperrepang,dastraperrepamp,dawsimperr,dassimperr, rmsda, rmsdaerr, it-turnstep, tlossmin, nturnavg, mtime)
       dacount=dacount+1
-    currentdawtrap =dawtrap
+    currentdastrap =dastrap
     currenttlossmin=tlossmin
   if emitx!=regemi or emity!=regemi:
     return daout[daout['seed']>0]
