@@ -76,7 +76,7 @@ def select_ang_surv(data,seed,nang):
   dataang['sigma'],dataang['angle'],dataang['sturn']=s,a,t
   return dataang
 #@profile
-def mk_da_vst(data,seed,tune,turnsl,turnstep):
+def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
   """returns 'seed','tunex','tuney','dawtrap','dastrap','dawsimp','dassimp',
              'dawtraperr','dastraperr','dastraperrep','dastraperrepang',
              'dastraperrepamp','dawsimperr','dassimperr','nturn','tlossmin',
@@ -93,21 +93,29 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep):
                             numerical recipes open formulas 4.1.15 and 4.1.18
   """
   mtime=time.time()
+
   (tunex,tuney)=tune
+
   s,a,t=data['sigma'],data['angle'],data['sturn']
+
   tmax=np.max(t[s>0])#maximum number of turns
+
   #set the 0 in t to tmax*100 in order to check if turnnumber<it (any(tang[tang<it])<it in get_min_turn_ang)
   t[s==0]=tmax*100
   angmax=len(a[:,0])#number of angles
   angstep=np.pi/(2*(angmax+1))#step in angle in rad
   ampstep=np.abs((s[s>0][1])-(s[s>0][0]))
-  ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+  ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),
+    ('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),
+    ('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),
+    ('nturn',float),('tlossmin',float),('nturnavg',float),('mtime',float)]
   l_turnstep=len(np.arange(turnstep,tmax,turnstep))
   daout=np.ndarray(l_turnstep,dtype=ftype)
   for nm in daout.dtype.names:
     daout[nm]=np.zeros(l_turnstep)
+
   dacount=0
-  currentdawtrap=0
+  currentdastrap=0
   currenttlossmin=0
   #define integration coefficients at beginning and end which are unequal to 1
   ajtrap_s=np.array([3/2.])#Simpson rule
@@ -115,7 +123,7 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep):
   ajsimp_s=np.array([55/24.,-1/6.,11/8.])#Simpson rule
   ajsimp_e=np.array([11/8.,-1/6.,55/24.])
   warnsimp=True
-  for it in np.arange(turnstep,tmax,turnstep):
+  for it in np.arange(turnstep,tmax+turnstep,turnstep):
     mta=get_min_turn_ang(s,t,a,it)
     mta_angle=mta['angle']*np.pi/180#convert to rad
     l_mta_angle=len(mta_angle)
@@ -137,38 +145,77 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep):
         print('WARNING! mk_da_vst - You need at least 7 angles to calculate the da vs turns with the simpson rule! da*simp* will be set to 0.')
         warnsimp=False
       calcsimp=False
+
+    # prepare the arrays for unequal emittances
+    mta_angle_ue = np.arctan(((emitx/emity)**0.5)*np.tan(mta_angle))                                                        # angle for unequal emittances
+    angstep_ue   = angstep*((emitx/emity)**0.5)*((np.cos(mta_angle_ue)**2)/(np.cos(mta_angle)**2))                          # angular step for unequal emittances
+    eR           = (((emitx/regemi)*np.cos(mta_angle_ue)**2 + (emity/regemi)*np.sin(mta_angle_ue)**2))**0.5                 # square root under rsigma
+    mta_sigma_ue = mta_sigma/eR                                                                                             # rsigma for unequal emittances
+    ampstep_ue   = eR*ampstep - ((emitx-emity)/regemi)*((np.cos(mta_angle_ue)*np.sin(mta_angle_ue))/eR**2)*mta_sigma_ue*angstep_ue    # amplitude step with unequal emittances
+
+    # get the integration steps (difference in angle) in the new coordinate system
+    dtheta = np.diff(mta_angle_ue)                               # get the angular distance of the data points [integration constant]
+    dtheta = np.insert(dtheta, 0, mta_angle_ue[0])               # add the first point (distance from x-axis)
+    dtheta = np.append(dtheta, (np.pi/2-mta_angle_ue[-1]))       # add the last ponit  (distance from y-axis)
+
     # ---- trapezoidal rule (trap)
     # integral
-    dawtrapint = ((ajtrap*(mta_sigma**4*np.sin(2*mta_angle))).sum())*angstep
-    dawtrap    = (dawtrapint)**(1/4.)
-    dastrap    = (2./np.pi)*(ajtrap*(mta_sigma)).sum()*angstep
+    dawtrapint = ((ajtrap*(mta_sigma**4*np.sin(2*mta_angle))).sum())*angstep                                   # old
+    dawtrap    = (dawtrapint)**(1/4.)                                                                          # old
+
+    #### PH: calculate dastrap with a generalized integration rule
+    #        baseline is the open formula (4.1.15) in Press et al. NUMERICAL RECIPES in Fortran 77 [second edition]
+    #        we generalize the formula for uneven distances between the sampling points
+    dastrap_ue  = 0
+    dastrap_ue += dtheta[0]*mta_sigma_ue[0]               # corner element from left  [open formula for trapezoidal rule]
+    dastrap_ue += dtheta[-1]*mta_sigma_ue[-1]             # corner element from right [open formula for trapezoidal rule]
+    for i in range(1,len(dtheta)-1):
+        dastrap_ue += (0.5)*( mta_sigma_ue[i] + mta_sigma_ue[i-1] )*dtheta[i]
+    dastrap_ue = (2./np.pi)*dastrap_ue                    # multipy with 2/pi
+    dastrap    = dastrap_ue                               # preliminary, change dastrap variable before merging with main branch
+
     # error
-    dawtraperrint   = np.abs(((ajtrap*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum())*angstep*ampstep)
+    dawtraperrint   = np.abs(((ajtrap*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum())*angstep*ampstep)                         # old
     dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint
-    dastraperr      = ampstep/2
-    dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*(angmax+1))
+
+    dastraperr      = ampstep/2                                                                                 # old
+    dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*(angmax+1))                               # PH: bugfix angmax -> angmax+1
+
     dastraperrepamp = ampstep/2
     dastraperrep    = np.sqrt(dastraperrepang**2+dastraperrepamp**2)
     # ---- simpson rule (simp)
     if(calcsimp):
       # int
-      dawsimpint = (ajsimp*((mta_sigma**4)*np.sin(2*mta_angle))).sum()*angstep
+      dawsimpint = (ajsimp*((mta_sigma**4)*np.sin(2*mta_angle))).sum()*angstep                                   # old
       dawsimp    = (dawsimpint)**(1/4.)
       dassimpint = (ajsimp*mta_sigma).sum()*angstep
       dassimp    = (2./np.pi)*dassimpint
+
       # error
-      dawsimperrint = (ajsimp*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum()*angstep*ampstep
+      dawsimperrint = (ajsimp*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum()*angstep*ampstep                      # old
       dawsimperr    = np.abs(1/4.*dawsimpint**(-3/4.))*dawsimperrint
       dassimperr    = ampstep/2#simplified
+#      print "DAWSIMPERR, DASSIMPERR, OLD", dawsimperr, dassimperr
+
     else:
       (dawsimp,dassimp,dawsimperr,dassimperr)=np.zeros(4)
     tlossmin=np.min(mta['sturn'])
-    if(dawtrap!=currentdawtrap and it-turnstep >= 0 and tlossmin!=currenttlossmin):
-      daout[dacount]=(seed,tunex,tuney,turnsl,dawtrap,dastrap,dawsimp,dassimp,dawtraperr,dastraperr,dastraperrep,dastraperrepang,dastraperrepamp,dawsimperr,dassimperr,it-turnstep,tlossmin,mtime)
+    nturnavg = (it-turnstep + tlossmin)/2.
+    if (dastrap!=currentdastrap and it-turnstep >= 0 and tlossmin!=currenttlossmin) or (it==tmax):
+      if emitx!=regemi or emity!=regemi:
+#        dawtrap = 0.
+        dawtrap,dawsimp,dassimp,dawtraperr,dastraperr                      = np.zeros(5)
+        dawsimperr,dassimperr                                              = np.zeros(2)
+
+      daout[dacount]=(seed,tunex,tuney,turnsl,dawtrap,dastrap,dawsimp,dassimp,dawtraperr,dastraperr,dastraperrep,
+         dastraperrepang,dastraperrepamp,dawsimperr,dassimperr, it-turnstep, tlossmin, nturnavg, mtime)
       dacount=dacount+1
-    currentdawtrap =dawtrap
+    currentdastrap =dastrap
     currenttlossmin=tlossmin
-  return daout[daout['dawtrap']>0]#delete 0 from errors
+  if emitx!=regemi or emity!=regemi:
+    return daout[daout['dastrap']>0]
+  else:
+    return daout[daout['dawtrap']>0]#delete 0 from errors
 
 # ----------- functions to calculat the fit -----------
 def get_fit_data(data,fitdat,fitdaterr,fitndrop,fitkap,b1):
@@ -298,7 +345,7 @@ def plot_surv_2d_comp(db,dbcomp,lbl,complbl,seed,tune,ampmax):
   plot_surv_2d_stab(dbcomp,complbl,2,'r',seed,tune,ampmax)
   pl.legend(loc='best')
 def plot_comp_da_vst(db,dbcomp,ldat,ldaterr,lblname,complblname,seed,tune,ampmin,ampmax,tmax,slog,sfit,fitndrop):
-  """plot dynamic aperture vs number of turns, 
+  """plot dynamic aperture vs number of turns,
   blue/green=simple average, red/orange=weighted average"""
   pl.close('all')
   pl.figure(figsize=(6,6))
@@ -386,7 +433,7 @@ def RunDaVsTurnsAng(db,seed,tune,turnstep):
     print('... save da vs turns data in {0}/DA.out').format(dirnameang)
 
 # in analysis - putting the pieces together
-def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap,outfilefit):
+def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap,outfilefit,emitx,emity):
   '''Da vs turns -- calculate da vs turns for study dbname, if davstfit=True also fit the data'''
   #---- calculate the da vs turns
   try:
@@ -398,6 +445,13 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
     print('!!! Seeds are missing in database !!!')
   turnsl=db.env_var['turnsl']#get turnsl for outputfile names
   turnse=db.env_var['turnse']
+  regemi=db.env_var['emit']           # get the emittance at which the simulation was carried out
+
+  print 'REGEMI  =', regemi
+  if emitx is None:                   # if the unequal emittance option is not used
+    emitx,emity = regemi, regemi
+  print 'EMITX   =', emitx
+  print 'EMITY   =', emity
   for seed in db.get_db_seeds():
     seed=int(seed)
     print('analyzing seed {0} ...').format(str(seed))
@@ -415,7 +469,7 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
           files=('DA.%s.out DAsurv.%s.out DA.%s.png DAsurv.%s.png DAsurv_log.%s.png DAsurv_comp.%s.png DAsurv_comp_log.%s.png'%(turnse,turnse,turnse,turnse,turnse,turnse,turnse)).split()+['DA.out','DAsurv.out','DA.png','DAsurv.png','DAsurv_log.png','DAsurv_comp.png','DAsurv_comp_log.png']
           clean_dir_da_vst(db,files)# create directory structure and delete old files
           print('... input data has changed or force=True - recalculate da vs turns')
-          daout=mk_da_vst(dasurv,seed,tune,turnsl,turnstep)
+          daout  = mk_da_vst(dasurv,seed,tune,turnsl,turnstep,emitx,emity,regemi)
           print('.... save data in database')
           #check if old table name da_vsturn exists, if yes delete it
           if(db.check_table('da_vsturn')):
@@ -424,7 +478,7 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
           db.st_da_vst(daout,recreate=True)
       else:#create data
         print('... calculate da vs turns')
-        daout=mk_da_vst(dasurv,seed,tune,turnsl,turnstep)
+        daout=mk_da_vst(dasurv,seed,tune,turnsl,turnstep,emitx,emity,regemi)
         print('.... save data in database')
         db.st_da_vst(daout,recreate=False)
       if(outfile):# create dasurv.out and da.out files
@@ -474,6 +528,9 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
     else:
       print("Error in -fitopt: <data> has to be 'dawtrap','dastrap','dawsimp' or 'dassimp' - Aborting!")
       sys.exit(0)
+  if emitx!=regemi or emity!=regemi:
+    print("WARNING: you are using the unequal emittances option! So far this option is only computing the correct value of dastrap. Take this into account in your analysis!")
+
 
 def PlotDaVsTurns(db,ldat,ldaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop):
   '''plot survival plots and da vs turns for list of data ldat and associated error ldaterr'''

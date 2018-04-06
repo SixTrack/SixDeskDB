@@ -1499,6 +1499,12 @@ class SixDeskDB(object):
     self._plot_polar(x,y,data['surv'].mean(axis=0),smooth=smooth)
     pl.title('Survived turns')
   def get_col(self,col,seed,angle):
+    """ Get the column from table results specified by the seed and the angle
+        as a function of the amplitude of the track particles in sigma
+
+        Example:
+            db.get_col('sturns1',1,45)
+    """
     cmd="""SELECT sigx1*sigx1+sigy1*sigy1,
             %s
             FROM results WHERE seed=%s AND angle=%s
@@ -2041,7 +2047,7 @@ class SixDeskDB(object):
 # q1={}
 # q1.setdefault((a1,a2),[]).append(...)
     if len(files) < 2:
-      raise Exception("ERROR in plot_fma_scatter: you need to define at least 2 (inputfile,method) pairs to calcute the difference in tune!!!")
+      raise Exception("ERROR in get_fma_intersept: you need to define at least 2 (inputfile,method) pairs to calcute the difference in tune!!!")
     (tunex,tuney)=tune
     nfma = len(files) # number of (inputfile,method)
     if(self.check_view('fma')):
@@ -2268,10 +2274,10 @@ class SixDeskDB(object):
         print 'WARNING: Table da_post does not exist! To create it and plot the DA, please run db.mk_da()!'
       else:
         self.plot_da_angle_seed(seed,marker=None,linestyle='-',color='k')
-      pl.xlabel(r'$\sigma_x=\frac{\epsilon_{1,%s}}{\epsilon_0}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var1.split('_')[1],self.env_var['emit']))
-      pl.ylabel(r'$\sigma_y=\frac{\epsilon_{2,%s}}{\epsilon_0}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var2.split('_')[1],self.env_var['emit']))
+      pl.xlabel(r'$\sigma_x=\sqrt{\frac{\epsilon_{1,%s}}{\epsilon_0}}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var1.split('_')[1],self.env_var['emit']))
+      pl.ylabel(r'$\sigma_y=\sqrt{\frac{\epsilon_{2,%s}}{\epsilon_0}}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(var2.split('_')[1],self.env_var['emit']))
 # tune vs dq
-    if('q' in var1 and 'q' in var2):
+    elif('q' in var1 and 'q' in var2):
       pl.scatter(data['fma0_%s'%var1],data['fma0_%s'%var2],c=dq,marker='.',linewidth=0,vmin=vmin,vmax=vmax,s=5)
       pl.xlabel('$Q_%s$'%(var1.split('q')[1]))
       pl.ylabel('$Q_%s$'%(var2.split('q')[1]))
@@ -2281,6 +2287,14 @@ class SixDeskDB(object):
   in order to exclude chaotic tunes"""%dqlim
       pl.xlim(np.modf(tune[0])[0]-dqlim,np.modf(tune[0])[0]+dqlim)
       pl.ylim(np.modf(tune[1])[0]-dqlim,np.modf(tune[1])[0]+dqlim)
+    elif('amp' in var1 or 'amp' in var2):
+      npart = self.env_var['sixdeskpairs']
+      ampr = data['fma0_amp1']+(data['fma0_amp2']-data['fma0_amp1'])/(npart-1)*(data['fma0_part_id']/2-1)
+      ampx = ampr*np.cos(data['fma0_angle']*np.pi/180.)
+      ampy = ampr*np.sin(data['fma0_angle']*np.pi/180.)
+      pl.scatter(ampx,ampy,c=dq,marker='.',linewidth=0,vmin=vmin,vmax=vmax,s=5)
+      pl.xlabel(r'$\sigma_x$')
+      pl.ylabel(r'$\sigma_y$')
     cbar=pl.colorbar()
     if nfma <2:
       if dqmode in ['q1','q2','q3']:
@@ -2322,7 +2336,7 @@ class SixDeskDB(object):
     (tunex,tuney)=tune
     #check if table da_vst exists in database
     if(self.check_table('da_vst')):
-      ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+      ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float), ('nturn',float),('tlossmin',float), ('nturnavg',float) , ('mtime',float)]
       cmd="""SELECT *
            FROM da_vst WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%d
            ORDER BY nturn"""
@@ -2521,3 +2535,37 @@ class SixDeskDB(object):
             print "Tune %s_%s, seed %d, angle %d has alost1=0"%(tunex,tuney,seed,angle)
       else:
         print "No DA command issued yet"
+  def compare_overlap_angle(self,tunes,seed,angle,colname):
+    ss="""select %%s,%s from results
+          where tunex=%s and tuney=%s and seed=%s and
+                angle=%s and row_num=%%s
+          order by amp1"""%(colname,tunes[0],tunes[1],seed,angle)
+    l1=self.execute(ss%('amp1',1))[1:]
+    l2=self.execute(ss%('amp2',30))[:-1]
+    return np.all(np.array(l1)==np.array(l2))
+  def compare_overlap(self,colname):
+    out=[]
+    for tunes in self.get_tunes():
+      for seed in self.get_seeds():
+         for angle in self.get_angles():
+            res=self.compare_overlap_angle(tunes,seed,angle,colname)
+            if not res:
+               out.append([tunes,seed,angle,colname])
+    return out
+  def check_overlap(self):
+    turnse=self.env_var['turnse']
+    for colname in ['sturns1']:
+      res=self.compare_overlap('sturns1')
+      for tunes,seed,angle,colname in res:
+        msg="Error in tunes=%s, seed=%s, angle=%s, colname=%s"
+        print(msg%(tunes,seed,angle,colname))
+        dirname=self.mk_analysis_dir(seed,tunes)
+        pl.close('all')
+        pl.figure(figsize=(6,6))
+        self.plot_surv_2d(seed,tunes)#suvival plot
+        pl.savefig('%s/DAsurv.%s.png'%(dirname,turnse))
+        print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
+  def check_results(self):
+     self.check_overlap()
+
+

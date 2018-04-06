@@ -64,7 +64,7 @@ Usage: sixdb <cmd> <help>
         """
         cmds=['load_dir', 'update_dir', 'info',
                'da', 'da_vs_turns', 'plot_da_vs_turns',
-               'mad', 'interactive','set','replace']
+               'mad', 'interactive','set','replace','check_results']
         msg="""sixdb: command line interface of SixDeskDB
 Usage: sixdb <study> <cmd> <options> or sixdb <cmd> to get additional help
         """
@@ -138,6 +138,11 @@ zeroda:  Check whether da analysis produce 0 values of DA
 
 Usage: sixdb <dbname> mad"""
        SixDeskDB(study).mad_out()
+    def check_results(self,study):
+       """Check results are consistent following euristic rules
+
+Usage: sixdb <dbname> check_results"""
+       SixDeskDB(study).check_results()
     def da_vs_turns(self,study):
        """Create table da_vst for DA versus turns
        analysis.
@@ -166,11 +171,14 @@ Usage: sixdb <dbname> da_vs_turns
                      fit of the da vs turns
                      For <error>='none' the errors of the data
                      are not taken into account
+    -emit <epsilon_x> <epsilon_y>:
+                     run the analysis with unequal emittances
+                     in x and y
     -outfilefit    : save da vs turns fit data in DAfit.out"""
        args=self.args
        try:
          db=SixDeskDB(study)
-       except ValueError: 
+       except ValueError:
          print('Error in da_vs_turns: database not found!')
          sys.exit(1)
        # define default values
@@ -200,7 +208,15 @@ Usage: sixdb <dbname> da_vs_turns
          fitskap   = args[args.index('-fitopt')+4]
          fitekap   = args[args.index('-fitopt')+5]
          fitdkap   = args[args.index('-fitopt')+6]
-       RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap,outfilefit)
+       if '-emit' in args:
+         davstuemi=True                                 # option for unequal emittances
+         emitx        = args[args.index('-emit')+1]     # horizontal emittance
+         emity        = args[args.index('-emit')+2]     # vertical emittance
+         emitx, emity = float(emitx), float(emity)      # convert to float
+         print "UNEQUAL EMITTANCES REQUESTED"
+       else:
+         emitx, emity = None, None  # set to zero if the emittance option is not selected
+       RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap,outfilefit,emitx,emity)
 
     def plot_da_vs_turns(self,study):
        """Create survival and da vs turns plots.
@@ -226,7 +242,7 @@ Usage: sixdb <dbname> plot_da_vs_turns
        args=self.args
        try:
          db=SixDeskDB(study)
-       except ValueError: 
+       except ValueError:
          print('Error in da_vs_turns: database not found!')
          sys.exit(1)
        # define default values
