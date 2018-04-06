@@ -1,0 +1,37 @@
+/ DUMP block
+DUMP
+ip3 1 1030 2 dump1 1 4096
+StartDUMP 1 1031 2 dump2 5905 10000
+/ -> ip3..1 1 1031 2 IP3_DUMP_2 5905 10000
+/ -> ip3..2 1 1032 2 IP3_DUMP_3 1 4096
+/ -> ip3..3 1 1033 2 IP3_DUMP_4 5905 10000
+NEXT
+/
+/ linear optics functions
+LINE
+ELEMENT 0 2 1 2.5 2.5
+NEXT
+/
+/ FMA analysis
+FMA
+dump1 TUNELASK
+dump2 TUNELASK
+dump1 TUNELASK 0
+dump2 TUNELASK 0
+dump1 NAFF 
+dump2 NAFF
+dump1 NAFF 0
+dump2 NAFF 0
+/ -> IP3_DUMP_2 TUNELASK
+/ -> IP3_DUMP_3 TUNELASK 0
+/ -> IP3_DUMP_4 TUNELASK 0
+NEXT
+/
+/ zip files in SixOut.zip
+//ZIPF
+//fma_sixtrack
+//IP3_DUMP_1
+//fort.90
+//NEXT
+/
+/ always end file with new line char

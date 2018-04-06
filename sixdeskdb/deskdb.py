@@ -31,6 +31,7 @@ except ImportError:
 
 import tables
 import lsfqueue
+from postProcessing import PostProcessing
 import madout
 from sqltable import SQLTable
 import footprint
@@ -89,6 +90,9 @@ def obj2num(s):
          return float(s)
      except ValueError:
          return s
+
+def mkrange(a,b,s):
+   return map(float,np.round(np.arange(a,b*(1+1e-15),s),12))
 
 def tune_dir(tune):
   """converts the list of tuples into the standard directory name, e.g. (62.31, 60.32) -> 62.31_60.32"""
@@ -301,6 +305,11 @@ class SixDeskDB(object):
       data=self.execute(sql)
       data=[(decompressBuf(mad),ii,mt) for mad,ii,mt in data]
       return data
+  def get_mad_in(self,seed):
+      sql="SELECT mad_in,run_id FROM mad6t_run WHERE seed=%d ORDER BY mad_out_mtime "%seed
+      data=self.execute(sql)
+      data=[(decompressBuf(mad),ii) for mad,ii in data]
+      return data
   def extract_mad_out(self,seed):
       data=self.get_mad_out(seed)
       out=[]
@@ -383,32 +392,43 @@ class SixDeskDB(object):
       a = [str(i[0]) for i in a]
     print "Looking for fort.2, fort.8, fort.16 in %s"%workdir
     data=[]
-    for dirName in glob.glob(os.path.join(workdir,'mad.dorun_*')):
+    dirNames =glob.glob(os.path.join(workdir,'mad.dorun_*'))
+    dirNames+=glob.glob(os.path.join(workdir,'mad.mad6t*'))
+    for dirName in dirNames:
         print 'found mad run',dirName.split('/')[-1]
+        done=set()
         for filename in os.listdir(dirName):
-          if not (filename.endswith('.mask') or 'out' in filename
-              or filename.endswith('log') or filename.endswith('lsf')):
-            fnroot,seed=os.path.splitext(filename)
-            time = None
-            if seed[1:].isdigit():
+          time = None
+          fnroot,seed=os.path.splitext(filename)
+          if seed[1:].isdigit():
+              if not fnroot.endswith('.out'):
                 seed=int(seed[1:])
                 run_id = dirName.split('/')[-1]
-                mad_in = sqlite3.Binary(
-                  compressBuf(os.path.join(dirName, filename))
-                  )
+                mad_in = sqlite3.Binary(compressBuf(os.path.join(dirName, filename)))
                 out_file=os.path.join(dirName,fnroot+'.out.%d'%seed)
                 log_file=os.path.join(dirName,fnroot+'_mad6t_%d.log'%seed)
                 lsf_file=os.path.join(dirName,'mad6t_%d.lsf'%seed)
                 mad_out = sqlite3.Binary(compressBuf(out_file))
-                mad_lsf = sqlite3.Binary(compressBuf(lsf_file))
-                mad_log = sqlite3.Binary(compressBuf(log_file))
+                done.add(out_file)
+                if os.path.isfile(log_file):
+                  done.add(log_file)
+                  mad_log = sqlite3.Binary(compressBuf(log_file))
+                else:
+                  mad_log = None
+                if os.path.isfile(lsf_file):
+                  done.add(lsf_file)
+                  mad_lsf = sqlite3.Binary(compressBuf(lsf_file))
+                else:
+                  mad_lsf = None
                 if os.path.isfile(out_file):
                   time = os.path.getmtime( out_file)
-            data.append([run_id, seed, mad_in, mad_out, mad_lsf,mad_log,time])
-          if filename.endswith('.mask'):
-            path = os.path.join(dirName, filename)
-            key = path.replace(env_var['scratchdir']+'/','')
-            extra_files.append([key,path])
+                data.append([run_id, seed, mad_in, mad_out, mad_lsf,mad_log,time])
+          else:
+            path=os.path.join(dirName, filename)
+            if path not in done:
+              key = path.replace(env_var['scratchdir']+'/','')
+              path = os.path.join(dirName, filename)
+              extra_files.append([key,path])
         if len(data)>0:
           tab.insertl(data)
     if extra_files:
@@ -456,6 +476,7 @@ class SixDeskDB(object):
             else:
               print "%s missing inserted null"%ffn
               row.append("")
+              mtime=0
         row.append(mtime)
         rows.append(row)
     if rows:
@@ -628,9 +649,19 @@ class SixDeskDB(object):
            mtime10_old=f10_data.get(six_id,0)
            if mtime10 > mtime10_old and os.path.getsize(f10)>0:
              countl = 1
-             for lines in gzip.open(f10,"r"):
-                rows10.append([six_id,countl]+lines.split()+[mtime10])
+             try:
+               for lines in gzip.open(f10,"r"):
+                line=[six_id,countl]+lines.split()+[mtime10]
+                if len(line)!=63:
+                    print(line)
+                    print("Error in %s"%f10)
+                    print("%d columns found expected 60"%len(line) )
+                    raise Exception
+                rows10.append(line)
                 countl += 1
+             except :
+                print "Error in opening: ",f10
+                raise Exception
              count10 += 1
         if fnfma_exists:
            mtimefma = os.path.getmtime(ffma)
@@ -1010,18 +1041,19 @@ class SixDeskDB(object):
     # cur = conn.cursor()
     # env_var = self.env_var
     # newid = self.newid
+    pairs=self.env_var['sixdeskpairs']
     sql = """select seed,tunex,tuney,amp1,amp2,turns,angle from six_input
     where not exists(select 1 from six_results where id=six_input_id and 
-    row_num=30)"""
+    row_num=%d)"""%(pairs)
     a = self.execute(sql)
     return a
-  def make_job_trackdir(self,seed,simul,tunex,tuney,amp1,amp2,turns,angle):
+  def make_job_trackdir(self,seed,simul,tunes,amp1,amp2,turnse,angle):
     sixdesktrack=self.env_var['sixdesktrack']
     base=os.path.join(sixdesktrack,self.LHCDescrip)
-    t='%s/%d/simul/%s/%s/%s/%g/'
+    t='%s/%d/%s/%s/%s/e%s/%g/'
     rng="%g_%g"%(amp1,amp2)
-    tunes="%g_%g"%(tunex,tuney)
-    return t%(base,seed,tunes,rng,turns,angle)
+    tunes="%g_%g"%(tunes[0],tunes[1])
+    return t%(base,seed,simul,tunes,rng,turnse,angle)
 
 #  def join10(self):
 #    '''re-implementation of run_join10'''
@@ -1238,7 +1270,8 @@ class SixDeskDB(object):
     nsincl = float(env_var['nsincl'])
     ns1l = float(env_var['ns1l'])
     ns2l = float(env_var['ns2l'])
-    return [(a,a+nsincl) for a in np.arange(ns1l,ns2l,nsincl)]
+    return [(float(a),float(np.round(a+nsincl,12)))
+            for a in mkrange(ns1l,ns2l,nsincl)[:-1]]
 
   def iter_tunes(self):
     '''get tunes from env variables'''
@@ -1252,7 +1285,26 @@ class SixDeskDB(object):
 
   def get_tunes(self):
     '''get tunes from env variables'''
-    return list(self.iter_tunes())
+    env_var = self.env_var
+    tunex = float(env_var['tunex'])
+    tuney = float(env_var['tuney'])
+    tunex1 = float(env_var['tunex1'])
+    tuney1 = float(env_var['tuney1'])
+    deltax = float(env_var['deltax'])
+    deltay = float(env_var['deltay'])
+    out=[(tunex,tuney)]
+    if deltax!=0 or deltay!=0:
+      while  abs(tunex-tunex1)>1e-12 or abs(tuney-tuney1)>1e-12:
+        if len(out)>1000:
+            raise ValueError("Too many tunes to generate")
+        if abs(tunex-tunex1)>1e-12:
+          tunex=round(tunex+deltax,12)
+        if abs(tuney-tuney1)>1e-12:
+          tuney=round(tuney+deltay,12)
+        out.append((tunex,tuney))
+        if abs(tunex-tunex1)<1e-12 and  abs(tuney-tuney1)<1e-12:
+            break
+    return out
 
   def get_anbn_fort16(self):
     '''returns a dictionary of the multipolar errors asigned to each element
@@ -1313,8 +1365,7 @@ class SixDeskDB(object):
     '''generate jobparams based on values '''
     if self.env_var['long']==1:
       simul='simul'
-      turns = '%E'%(float(self.env_var['turnsl']))
-      turns = 'e'+str(int(turns.split('+')[1]))
+      turns = 'e'+str(self.env_var['turnsle'])
       for seed in self.get_seeds():
         for tunex,tuney in self.get_tunes():
           for amp1,amp2 in self.get_amplitudes():
@@ -1322,8 +1373,7 @@ class SixDeskDB(object):
               yield (seed,simul,tunex,tuney,amp1,amp2,turns,angle)
     if self.env_var['short']==1:
       simul='short'
-      turns = '%E'%(float(self.env_var['turnss']))
-      turns = 'e'+str(int(turns.split('+')[1]))
+      turns = 'e'+str(self.env_var['turnsse'])
       for seed in self.get_seeds():
         for tunex,tuney in self.get_tunes():
           for amp1,amp2 in self.get_amplitudes():
@@ -1498,27 +1548,32 @@ class SixDeskDB(object):
     x,y,t=self.get_polar_col(col,1)
     self._plot_polar(x,y,data['surv'].mean(axis=0),smooth=smooth)
     pl.title('Survived turns')
-  def get_col(self,col,seed,angle):
+  def get_col(self,col,seed,angle,tunes=None):
     """ Get the column from table results specified by the seed and the angle
         as a function of the amplitude of the track particles in sigma
 
         Example:
             db.get_col('sturns1',1,45)
     """
-    cmd="""SELECT sigx1*sigx1+sigy1*sigy1,
-            %s
-            FROM results WHERE seed=%s AND angle=%s
-            ORDER BY sigx1*sigx1+sigy1*sigy1,row_num"""
-    cur=self.conn.cursor().execute(cmd%(col,seed,angle))
+    cmd="""SELECT sigx1*sigx1+sigy1*sigy1, %s FROM results
+            WHERE tunex=%s AND tuney=%s AND seed=%s AND angle=%s
+            ORDER BY amp1,row_num"""
+    if tunes is None:
+        tunes=self.get_tunes()[0]
+    cur=self.conn.cursor().execute(cmd%(col,tunes[0],tunes[1],seed,angle))
     ftype=[('ampsq',float),('surv',float)]
     data=np.fromiter(cur,dtype=ftype)
     a,t=np.sqrt(data['ampsq']),data['surv']
     return a,t
-  def plot_col(self,col,seed,angle,lbl=None,ls='-'):
-    a,t=self.get_col(col,seed,angle)
+  def plot_col(self,col,seed,angle,tunes=None,lbl=None,ls='-'):
+    if tunes is None:
+        tunes=self.get_tunes()[0]
+    a,t=self.get_col(col,seed,angle,tunes=tunes)
     if lbl==None:
       llb=col
-    pl.plot(a,t,ls,label=lbl)
+    pl.plot(a[a>0],t[a>0],ls,label=lbl)
+    if any(a==0):
+      pl.plot(a[a==0],t[a==0],'x',label=lbl)
   def count_result_byseed(self):
     return self.execute('SELECT seed,count(*) FROM results GROUP BY seed')
   def plot_results(self):
@@ -1588,7 +1643,7 @@ class SixDeskDB(object):
         smooth=np.ones(smooth)/float(smooth[0]*smooth[1])
         t=scipy.signal.fftconvolve(smooth,t,mode='full')
     #pl.pcolormesh(x,y,t,antialiased=True)
-    pl.scatter(x,y,bs=t)
+    pl.scatter(x,y,c=t)
     pl.xlabel(r'$\sigma_x$')
     pl.ylabel(r'$\sigma_y$')
     #pl.colorbar()
@@ -1681,14 +1736,15 @@ class SixDeskDB(object):
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
-    anumber=1
     angles=self.get_db_angles()
     seeds=self.get_db_seeds()
+    pairs=self.env_var['sixdeskpairs']
     mtime=self.execute('SELECT max(mtime) from results')[0][0]
     final=[]
-    sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>0 AND emity>0 AND turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
     LHCDescrip=self.LHCDescrip
-    for tunex,tuney in self.get_db_tunes():
+    for tunex,tuney in self.get_tunes():
+        anumber=1
+        sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>1e-10 AND emity>1e-10 AND turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
         sixdesktunes="%s_%s"%(tunex,tuney)
         sql1+=' AND tunex=%s AND tuney=%s '%(tunex,tuney)
         for angle in angles:
@@ -1713,6 +1769,8 @@ class SixDeskDB(object):
                 if self.debug:
                     print sql
                 inp=np.array(self.execute(sql),dtype=rectype)
+                if self.debug:
+                    print inp.shape
                 if len(inp)==0:
                     msg="Warning: all particle lost for angle %s and seed %s"
                     print msg%(angle,seed)
@@ -1734,15 +1792,17 @@ class SixDeskDB(object):
                 turn_max=inp['turn_max'].max()
                 amp2=inp['amp2'][-1]
                 row_num=inp['row_num'][-1]
-                if row_num<30 or amp2<ns2l:
+                if row_num<pairs :
                     truncated=True
                 else:
                     truncated=False
                 zero = 1e-10
-                xidx=(betx>zero) & (emitx>zero)
-                yidx=(bety>zero) & (emity>zero)
-                sigx1[xidx]=np.sqrt(betx[xidx]*emitx[xidx])
-                sigy1[yidx]=np.sqrt(bety[yidx]*emity[yidx])
+                #xidx=(betx>zero) & (emitx>zero)
+                #yidx=(bety>zero) & (emity>zero)
+                #sigx1[xidx]=np.sqrt(betx[xidx]*emitx[xidx])
+                #sigy1[yidx]=np.sqrt(bety[yidx]*emity[yidx])
+                sigx1=np.sqrt(betx*emitx)
+                sigy1=np.sqrt(bety*emity)
                 iel=inp.size-1
                 rat=0
 
@@ -1822,10 +1882,15 @@ class SixDeskDB(object):
                 firstamp=rad*sigx1[0]
                 lastamp=rad*sigx1[iel]
                 if alost1==0. and alost2==0. and truncated:
-                     alost1=rad*sigx1[-1]
-                     alost2=rad*sigx1[-1]
-                     fmt="Warning: tune %s_%s, angle %s, seed %d, range %s-%s: stepwise survival"
-                #print fmt%(tunex,tuney,angle,seed,ns1l,ns2l)
+                    alost1=rad*sigx1[-1]
+                    alost2=rad*sigx1[-1]
+                    fmt="Warning: tune %s_%s, angle %s, seed %d, range %s-%s: stepwise survival"
+                    print fmt%(tunex,tuney,angle,seed,ns1l,ns2l)
+                elif alost1==0. and alost2==0.:
+                    alost1=0
+                    alost2=0
+                    fmt="Warning: tune %s_%s, angle %s, seed %d, range %s-%s: All particle survived, DA set to 0"
+                    print fmt%(tunex,tuney,angle,seed,ns1l,ns2l)
                 name2 = "DAres.%s.%s.%s"%(self.LHCDescrip,sixdesktunes,turnse)
                 name1= '%s%ss%s%s-%s%s.%d'%(self.LHCDescrip,seed,sixdesktunes,ns1l, ns2l, turnse,anumber)
                 if(seed<10):
@@ -1862,9 +1927,11 @@ class SixDeskDB(object):
             res_mtime=self.execute('SELECT max(mtime) FROM six_results')[0][0]
             if res_mtime>an_mtime or force is True:
                 self.read10b()
+                #PostProcessing(self).readplotb()
                 final=datab.select(where=wh,orderby='angle,seed')
         else:
           self.read10b()
+          #PostProcessing(self).readplotb()
           final=datab.select(where=wh,orderby='angle,seed')
           if len(final)==0:
               print "Error: No data available for analysis for `%s`"%wh
@@ -1892,7 +1959,7 @@ class SixDeskDB(object):
             idx     =idxangle&(final['alost1']!=0)
             idxzero =idxangle&(final['alost1']==0)
             if all(idxzero==idxangle):
-                print "No data for angle %s"%angle
+                print "No sufficient data to determine DA for angle %s"%angle
                 continue
             for seed in final['seed'][idxzero]:
                 fmt="Warning: tune %s_%s, angle %s, seed %d, range %s-%s: all stable particles"
@@ -1904,7 +1971,8 @@ class SixDeskDB(object):
             smini=final['seed'][idx][imini]
             imaxi=np.argmax(finalalost)
             maxi=finalalost[imaxi]
-            eqaper = np.where((final['alost2'] == final['Amin']))[0]
+            eqaper = np.where(
+                    (final['alost2'][idxangle] == final['Amin'][idxangle]))[0]
             smaxi=final['seed'][idx][imaxi]
             toAvg = np.abs(final['alost1'][idx])
             i = len(toAvg)
@@ -1924,8 +1992,10 @@ class SixDeskDB(object):
             else:
               if i < int(self.env_var['iend']):
                 maxi = -Amax
+                print "Dynamic Aperture above:  %.2f Sigma"%Amax
               elif len(eqaper)>0:
                 mini = -Amin
+                print "Dynamic Aperture below:  %.2f Sigma"%Amin
               print "Minimum:  %.2f  Sigma at Seed #: %d" %(mini, smini)
               print "Maximum:  %.2f  Sigma at Seed #: %d" %(maxi, smaxi)
               print "Average: %.2f Sigma" %(mean)
@@ -1969,7 +2039,7 @@ class SixDeskDB(object):
   def get_fma_methods(self):
     """returns list of all methods available for FMA analysis
     """
-    return ['TUNENEWT1','TUNEABT','TUNEABT2','TUNENEWT','TUNEFIT','TUNEAPA','TUNEFFT','TUNEFFTI','TUNELASK']
+    return ['TUNENEWT1','TUNEABT','TUNEABT2','TUNENEWT','TUNEFIT','TUNEAPA','TUNEFFT','TUNEFFTI','TUNELASK','NAFF']
   def get_db_fma_inputfile_method(self):
     """returns a list of inputfiles and methods used 
     in db for FMA analysis
@@ -2009,7 +2079,7 @@ class SixDeskDB(object):
     """
     (tunex,tuney)=tune
     if(self.check_view('fma')):
-      ftype=np.dtype([('id',int),('seed',int),('simul','|S100'),('tunex',float),('tuney',float),('amp1',float),('amp2',float),('turns','|S100'),('angle',float),('fort3','V'),('mtime',float),('six_input_id',int), ('row_num',int), ('inputfile' ,'|S100'), ('method', '|S100'), ('part_id', int), ('q1', float), ('q2', float), ('q3', float), ('eps1_min', float), ('eps2_min', float), ('eps3_min', float), ('eps1_max', float), ('eps2_max', float), ('eps3_max', float), ('eps1_avg', float), ('eps2_avg', float), ('eps3_avg', float), ('eps1_0', float), ('eps2_0', float), ('eps3_0', float), ('phi1_0', float), ('phi2_0', float), ('phi3_0', float), ('mtime_fma',float)])
+      ftype=np.dtype([('id',int),('seed',int),('simul','|S100'),('tunex',float),('tuney',float),('amp1',float),('amp2',float),('turns','|S100'),('angle',float),('fort3','V'),('mtime',float),('six_input_id',int), ('row_num',int), ('inputfile' ,'|S100'), ('method', '|S100'), ('part_id', int), ('q1', float), ('q2', float), ('q3', float), ('eps1_min', float), ('eps2_min', float), ('eps3_min', float), ('eps1_max', float), ('eps2_max', float), ('eps3_max', float), ('eps1_avg', float), ('eps2_avg', float), ('eps3_avg', float), ('eps1_0', float), ('eps2_0', float), ('eps3_0', float), ('phi1_0', float), ('phi2_0', float), ('phi3_0', float), ('mtime_fma',float), ('norm_flag',int), ('first_turn',int),('last_turn',int)])
       cmd="""SELECT *
            FROM fma WHERE seed=%s AND tunex=%s AND tuney=%s AND turns='%s'
            AND inputfile='%s' AND method='%s' ORDER BY inputfile,method"""
@@ -2116,7 +2186,7 @@ class SixDeskDB(object):
       cmd="""DROP TABLE IF EXISTS %s"""%(t)
       self.conn.cursor().execute(cmd)
     return data
-  def plot_fma_footprint(self,seed,tune,turns,inputfile,method,eps1='eps1_0',eps2='eps2_0',dq=None,vmin=None,vmax=None):
+  def plot_fma_footprint(self,seed,tune,turns,inputfile,method,eps1='eps1_0',eps2='eps2_0',dq=None,vmin=None,vmax=None,grid=False):
     """plot q1 vs q2 colorcoded by sqrt((eps1+eps2)/eps0)
     
     Parameters:
@@ -2137,6 +2207,7 @@ class SixDeskDB(object):
         are saturated)
     dq: plot range is (tune-dq,tune+dq)
     """
+    config_fma_flag = False
     data=self.get_fma(seed,tune,turns,inputfile,method)
     eps0=self.env_var['emit']*self.env_var['pmass']/self.env_var['e0']
     amp=np.sqrt((data[eps1]+data[eps2])/eps0)
@@ -2146,19 +2217,57 @@ class SixDeskDB(object):
       vmax_db=np.max(self.get_db_amplitudes())+self.env_var['nsincl']
       if vmax>vmax_db:# sometimes very large amplitudes occur, which are not important -> saturate them
           vmax=vmax_db
-    pl.scatter(data['q1'],data['q2'],c=amp,vmin=vmin,vmax=vmax,linewidth=0)
-    cbar=pl.colorbar()
-    cbar.set_label(r'$\sigma=\sqrt{\frac{\epsilon_{1,%s}+\epsilon_{2,%s}}{\epsilon_0}}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f  \ \mu \rm m$'%(eps1.split('_')[1],eps2.split('_')[1],self.env_var['emit']),labelpad=30,rotation=270)
-    pl.xlabel(r'$Q_1$')
-    pl.ylabel(r'$Q_2$')
-    pl.title('%s %s'%(inputfile,method))
-# limit plotrange to 1.e-2 distance from lattice tune
-    if dq==None: dq=1.e-2
-    print """plot_fma_footprint: limit plotrange to %2.2e distance from lattice tune
-  in order to exclude chaotic tunes"""%dq
-    pl.xlim(np.modf(tune[0])[0]-dq,np.modf(tune[0])[0]+dq)
-    pl.ylim(np.modf(tune[1])[0]-dq,np.modf(tune[1])[0]+dq)
+    if (grid == False):
+      pl.scatter(data['q1'],data['q2'],c=amp,vmin=vmin,vmax=vmax,linewidth=0)
+      cbar=pl.colorbar()
+      cbar.set_label(r'$\sigma=\sqrt{\frac{\epsilon_{1,%s}+\epsilon_{2,%s}}{\epsilon_0}}, \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f  \ \mu \rm m$'%(eps1.split('_')[1],eps2.split('_')[1],self.env_var['emit']),labelpad=30,rotation=270)
+    else:
+      from itertools import groupby
+      from operator import itemgetter
+      fma_config = os.path.join(os.getcwd() + "/FMA_config.py")
+      if os.path.exists(fma_config):
+        print "FMA_config file has been detected in sixjobs and it will be used for the configuration of the plots"
+        config_fma_flag = True
+        sys.path.append(os.getcwd())
+        import FMA_config
+        c_grid = FMA_config.plot['c_grid']
+      else:
+        c_grid = 'k'
+      for key, group in groupby(data, key=lambda d: (d['angle'])):
+        qx = []
+        qy = []
+        for elem in group:
+          qx.append(elem[16])
+          qy.append(elem[17])
+        pl.plot(qx,qy,linewidth=1, c=c_grid)
+      grouper = itemgetter("part_id", "amp1")
+      for key, group in groupby(sorted(data, key = grouper), grouper):
+        qx = []
+        qy = []
+        for elem in group:
+          qx.append(elem[16])
+          qy.append(elem[17])
+        pl.plot(qx,qy,linewidth=1, c=c_grid)
+    if config_fma_flag:
+      pl.xlabel(FMA_config.plot['xaxis']['xlabel'],fontsize=FMA_config.plot['xaxis']['fontsize'])
+      pl.ylabel(FMA_config.plot['yaxis']['ylabel'], fontsize=FMA_config.plot['yaxis']['fontsize'])
+      pl.tick_params(labelsize=FMA_config.plot['ticks'])
+      pl.xlim(FMA_config.plot['xaxis']['xmin'], FMA_config.plot['xaxis']['xmax'])
+      pl.ylim(FMA_config.plot['yaxis']['ymin'], FMA_config.plot['yaxis']['ymax'])
+      pl.title(FMA_config.plot['title'], fontsize= FMA_config.plot['title_fontsize'])
+      if FMA_config.plot['tight_layout']:
+        pl.tight_layout()
+    else:
+      pl.xlabel(r'$Q_1$')
+      pl.ylabel(r'$Q_2$')
+      pl.title('%s %s'%(inputfile,method))
+      # limit plotrange to 1.e-2 distance from lattice tune
+      if dq==None: dq=1.e-2
+      print """plot_fma_footprint: limit plotrange to %2.2e distance from lattice tune in order to exclude chaotic tunes"""%dq
+      pl.xlim(np.modf(tune[0])[0]-dq,np.modf(tune[0])[0]+dq)
+      pl.ylim(np.modf(tune[1])[0]-dq,np.modf(tune[1])[0]+dq)
     pl.grid()
+
   def plot_fma_action_tune(self,seed,tune,turns,inputfile,method,mode,eps1='eps1_0',eps2='eps2_0',vmin=None,vmax=None):
     """plot sig1 vs sig2 colorcoded by the tune 
     of mode *mode* with 
@@ -2194,7 +2303,7 @@ class SixDeskDB(object):
     pl.xlabel(r'$\sigma_x=\sqrt{\frac{\epsilon_{1,%s}}{\epsilon_0}} , \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(eps1.split('_')[1],self.env_var['emit']))
     pl.ylabel(r'$\sigma_y=\sqrt{\frac{\epsilon_{2,%s}}{\epsilon_0}} , \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(eps2.split('_')[1],self.env_var['emit']))
     pl.title('%s %s'%(inputfile,method))
-  def plot_fma_scatter(self,seed,tune,turns,files,var1='eps1_0',var2='eps2_0',dqmode='trans',vmin=None,vmax=None):
+  def plot_fma_scatter(self,seed,tune,turns,files,var1='eps1_0',var2='eps2_0',dqmode='trans',vmin=None,vmax=None, dqlim=5.e-2):
     """scatter plot var1 vs var2 of inputfile_0 colorcoded by the 
     difference in tune over all (inputfile,method) pairs in *files*.
     With the parameter *dqmode* the calculation of the difference in
@@ -2236,6 +2345,14 @@ class SixDeskDB(object):
         [vmin,vmax] are saturated)
         default values: vmin=-3,vmax=-7
     """
+    config_fma_flag = False
+    fma_config = os.path.join(os.getcwd() + "/FMA_config.py")
+    if os.path.exists(fma_config):
+      config_fma_flag = True
+      print "FMA_config file has been detected in sixjobs and it will be used for the configuration of the plots"
+      sys.path.append(os.getcwd())
+      import FMA_config
+
     data=self.get_fma_intersept(seed=seed,tune=tune,turns=turns,files=files)
     nfma = len(files)
     if nfma < 2:
@@ -2264,8 +2381,12 @@ class SixDeskDB(object):
     np.place(dqmax,dqmax==0,[1.e-60])
     dq=np.log10(dqmax)
 # default plot range for dq (colorbar)
-    if vmin == None: vmin = -3
-    if vmax == None: vmax = -7
+    if config_fma_flag:
+      vmin = FMA_config.plot['vmin']
+      vmax = FMA_config.plot['vmax']
+    else:
+      if vmin == None: vmin = -3
+      if vmax == None: vmax = -7
 # amplitude vs dq
     if('eps' in var1 and 'eps' in var2):
       eps0=self.env_var['emit']*self.env_var['pmass']/self.env_var['e0']
@@ -2282,11 +2403,17 @@ class SixDeskDB(object):
       pl.xlabel('$Q_%s$'%(var1.split('q')[1]))
       pl.ylabel('$Q_%s$'%(var2.split('q')[1]))
 # limit plotrange to dqlim distance from lattice tune
-      dqlim=5.e-2
-      print """plot_fma_scatter: limit plotrange to %2.2e distance from lattice tune
-  in order to exclude chaotic tunes"""%dqlim
-      pl.xlim(np.modf(tune[0])[0]-dqlim,np.modf(tune[0])[0]+dqlim)
-      pl.ylim(np.modf(tune[1])[0]-dqlim,np.modf(tune[1])[0]+dqlim)
+      #dqlim=5.e-2
+      
+      if config_fma_flag:
+        print "limits set by the user from the FMA config file in sixjobs"
+        pl.xlim(FMA_config.plot['xaxis']['xmin'], FMA_config.plot['xaxis']['xmax'])
+        pl.ylim(FMA_config.plot['yaxis']['ymin'], FMA_config.plot['yaxis']['ymax'])
+        pl.title(FMA_config.plot['title'], fontsize= FMA_config.plot['title_fontsize'])
+      else:
+        print """plot_fma_scatter: limit plotrange to %2.2e distance from lattice tune in order to exclude chaotic tunes"""%dqlim
+        pl.xlim(np.modf(tune[0])[0]-dqlim,np.modf(tune[0])[0]+dqlim)
+        pl.ylim(np.modf(tune[1])[0]-dqlim,np.modf(tune[1])[0]+dqlim)
     elif('amp' in var1 or 'amp' in var2):
       npart = self.env_var['sixdeskpairs']
       ampr = data['fma0_amp1']+(data['fma0_amp2']-data['fma0_amp1'])/(npart-1)*(data['fma0_part_id']/2-1)
@@ -2319,6 +2446,11 @@ class SixDeskDB(object):
     of order l and frequency qz in current plot
     range"""
     footprint.plot_res_order(o=o,l=l,qz=qz,c1=c1,lst1=lst1,c2=c2,lst2=lst2,c3=c3,annotate=annotate)
+  def plot_res_upto_order(self,o,l=0,qz=0,c1='b',lst1='-',c2='b',lst2='--',c3='g',annotate=False):
+    """plot resonance lines of order o and sidebands
+    of order l and frequency qz in current plot
+    range"""
+    footprint.plot_res_upto_order(o=o,l=l,qz=qz,c1=c1,lst1=lst1,c2=c2,lst2=lst2,c3=c3,annotate=annotate)
 # -------------------------------- da_vs_turns -----------------------------------------------------------
   def st_da_vst(self,data,recreate=False):
     ''' store da vs turns data in database'''
@@ -2393,7 +2525,12 @@ class SixDeskDB(object):
     data=np.fromiter(cur,dtype=ftype)
     data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
     angles=len(set(data['angle']))
-    return data.reshape(angles,-1)
+    try:
+      return data.reshape(angles,-1)
+    except ValueError:
+      print("Cannot reshape array of size %s into "%(len(data))+
+            "shape (%s,newaxis). Skip this seed %s!"%(angles,seed))
+      return None
 
   def plot_da_vst(self,seed,tune,ldat,ldaterr,ampmin,ampmax,tmax,slog,sfit,fitndrop):
     """plot dynamic aperture vs number of turns where ldat,ldaterr is the data and 
@@ -2457,21 +2594,23 @@ class SixDeskDB(object):
     pl.ylim([0,ampmax])
     pl.xlabel(r'Horizontal amplitude [$\sigma$]',labelpad=10,fontsize=12)
     pl.ylabel(r'Vertical amplitude [$\sigma$]',labelpad=10,fontsize=12)
-  def get_da_angle(self):
+  def get_da_angle(self,tunes=None,alost='alost1'):
     """returns DA results for all seeds and angles"""
+    if tunes is None:
+        tunes=self.get_tunes()[0]
     angles=self.get_db_angles()
     seeds=self.get_db_seeds()
-    sql="SELECT seed,angle,alost1 FROM da_post ORDER by seed,angle"
+    sql="SELECT seed,angle,%s FROM da_post WHERE tunex==%s AND tuney==%s ORDER by seed,angle"%(alost,tunes[0],tunes[1])
     if(not self.check_table('da_post')):
       print 'WARNING: Table da_post does not exist!'
       print '... running db.mk_da()'
       self.mk_da()
     data=np.array(self.execute(sql)).reshape(len(seeds),len(angles),-1)
     return data
-  def get_da_angle_seed(self,seed):
+  def get_da_angle_seed(self,seed,alost='alost1'):
     """returns DA results for seed *seed* and all angles"""
     angles=self.get_db_angles()
-    sql="SELECT seed,angle,alost1 FROM da_post WHERE seed==%s ORDER by seed,angle"%(seed)
+    sql="SELECT seed,angle,%s FROM da_post WHERE seed==%s ORDER by seed,angle"%(alost,seed)
     if(not self.check_table('da_post')):
       print 'WARNING: Table da_post does not exist!'
       print '... running db.mk_da()'
@@ -2479,9 +2618,11 @@ class SixDeskDB(object):
     data=np.array(self.execute(sql))
     return data
   def plot_da_angle(self,label=None,color='r',ashift=0,marker='o',
-                    alpha=0.1,mec='none',**args):
+                    alpha=None,mec='none',alost='alost1',tunes=None,**args):
     """plot DA (alost1) vs sigma_x and sigma_y"""
-    data=self.get_da_angle()
+    data=self.get_da_angle(tunes=tunes,alost=alost)
+    if alpha is None:
+        alpha=1./len(data)
     for ddd in data:
         s,angle,sig=ddd.T
         angle=(angle+ashift)*np.pi/180
@@ -2502,9 +2643,9 @@ class SixDeskDB(object):
     pl.xlabel(r'$\sigma_x$')
     pl.ylabel(r'$\sigma_y$')
     return self
-  def plot_da_seed(self,seed,label=None,color='k',marker='o',linestyle='-',alpha=1.0,mec='none'):
+  def plot_da_seed(self,seed,label=None,color='k',marker='o',linestyle='-',alpha=1.0,mec='none',tunes=None,alost='alost1'):
     """plot the angle vs the DA (alost1) for one seed *seed*"""
-    data=self.get_da_angle_seed(seed)
+    data=self.get_da_angle_seed(seed,tunes=tunes,alost=alost)
     if label is None:
       pl.plot(data[:,1],data[:,2],marker=marker,linestyle=linestyle,mfc=color,mec=mec,alpha=alpha)
     else:
@@ -2512,10 +2653,10 @@ class SixDeskDB(object):
       pl.legend()
     pl.xlabel('angle')
     pl.ylabel(r'DA [$\sigma$]')
-  def plot_da_angle_seed(self,seed,label=None,color='k',ashift=0,marker='o',linestyle='-',alpha=1.0,mec='none'):
+  def plot_da_angle_seed(self,seed,label=None,color='k',ashift=0,marker='o',linestyle='-',alpha=1.0,mec='none',tunes=None,alost='alost1'):
     """plot the DA (alost1) expressed in sigmax
     and sigmay for one seed *seed*"""
-    data=self.get_da_angle_seed(seed)
+    data=self.get_da_angle_seed(seed,tunes=tunes,alost=alost)
     s,angle,sig=data.T
     angle=(angle+ashift)*np.pi/180
     x=abs(sig)*np.cos(angle)
@@ -2535,37 +2676,157 @@ class SixDeskDB(object):
             print "Tune %s_%s, seed %d, angle %d has alost1=0"%(tunex,tuney,seed,angle)
       else:
         print "No DA command issued yet"
-  def compare_overlap_angle(self,tunes,seed,angle,colname):
+  def get_overlap_angle(self,tunes,seed,angle,colname):
     ss="""select %%s,%s from results
           where tunex=%s and tuney=%s and seed=%s and
                 angle=%s and row_num=%%s
           order by amp1"""%(colname,tunes[0],tunes[1],seed,angle)
-    l1=self.execute(ss%('amp1',1))[1:]
-    l2=self.execute(ss%('amp2',30))[:-1]
-    return np.all(np.array(l1)==np.array(l2))
-  def compare_overlap(self,colname):
+    pairs=self.env_var['sixdeskpairs']
+    l1=np.array(self.execute(ss%('amp1',1))[1:])
+    l2=np.array(self.execute(ss%('amp2',pairs))[:-1])
+    return l1,l2
+  def compare_overlap_angle(self,tunes,seed,angle,colname,threshold):
+    l1,l2=self.get_overlap_angle(tunes,seed,angle,colname)
+    check=l1[:,1]-l2[:,1]
+    idx=abs(check)>threshold
+    if len(check[idx])>0:
+        print "Check %s: %s != %s"%(
+                  [tunes,seed,angle,colname],
+                  l1[idx,1],l2[idx,1])
+    return l1[idx,0]
+  def compare_overlap(self,colname,threshold):
     out=[]
     for tunes in self.get_tunes():
       for seed in self.get_seeds():
          for angle in self.get_angles():
-            res=self.compare_overlap_angle(tunes,seed,angle,colname)
-            if not res:
-               out.append([tunes,seed,angle,colname])
+            amps=self.compare_overlap_angle(tunes,seed,angle,colname,threshold)
+            if len(amps)>0:
+               out.append([tunes,seed,angle,colname,amps])
     return out
-  def check_overlap(self):
+  def get_simul(self):
+    if self.env_var['long']==1:
+        return 'simul'
+    elif self.env_var['short']==1:
+        return 'short'
+  def check_overlap(self, bad_jobs):
     turnse=self.env_var['turnse']
-    for colname in ['sturns1']:
-      res=self.compare_overlap('sturns1')
-      for tunes,seed,angle,colname in res:
-        msg="Error in tunes=%s, seed=%s, angle=%s, colname=%s"
-        print(msg%(tunes,seed,angle,colname))
-        dirname=self.mk_analysis_dir(seed,tunes)
-        pl.close('all')
-        pl.figure(figsize=(6,6))
-        self.plot_surv_2d(seed,tunes)#suvival plot
-        pl.savefig('%s/DAsurv.%s.png'%(dirname,turnse))
-        print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
-  def check_results(self):
-     self.check_overlap()
+    st=self.env_var['nsincl']
+    checks=[('sturns1',0)]
+    simul=self.get_simul()
+    noproblem=True
+    for colname,threshold in checks:
+      res=self.compare_overlap(colname,threshold)
+      for tunes,seed,angle,colname,amps in res:
+        noproblem=False
+        amps=['%g-%g:%g-%g'%(a-st,a,a,st+a) for a in amps]
+        msg="Error in tunes=%s, seed=%s, angle=%s, colname=%s, amps=%s"
+        print(msg%(tunes,seed,angle,colname,', '.join(amps)))
+        try:
+          self.get_surv(seed,tunes)
+          dirname=self.mk_analysis_dir(seed,tunes)
+          pl.close('all')
+          pl.figure(figsize=(6,6))
+          self.plot_surv_2d(seed,tunes)#suvival plot
+          pl.savefig('%s/DAsurv.%s.png'%(dirname,turnse))
+          print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
+        except Exception as e:
+          print e
+          print('... malformed datasets in seed=%s turnes=%s'%(seed,tunes))
+        amps2=sorted(set(sum([amp.split(':') for amp in amps],[])))
+        for amp1,amp2 in [map(float,a.split('-')) for a in amps2]:
+            jdir=self.make_job_trackdir(seed,simul,tunes,amp1,amp2,turnse,angle)
+            print('Check %s'%jdir)
+            job = (seed,simul,tunes[0],tunes[1],amp1,amp2,"e"+str(turnse),angle)
+            bad_jobs.add(job)
+    return noproblem
+  def check_zero_fort10(self, bad_jobs):
+      #lst=self.execute('select  seed,tunex,tuney,amp1,amp2,turns,angle,row_num from results where betx==0')
+      #lst=set(lst)
+      #noproblem=True
+      #for res in sorted(lst):
+      #    noproblem=False
+      #    print "Zero results for %s"%list(res)
+      #    bad_jobs.add( ??? )
+      return True
+  def check_completed_results(self, bad_jobs):
+      print ("Check missing results")
+      for job in self.get_missing_jobs():
+          print job, 'missing'
+          bad_jobs.add(job)
+      return len(self.get_missing_jobs())==0
+  def make_job_work_string(self, job):
+    tmp="%s%%%s%%s%%%s%%%s%%%s%%%.14g\n"
+    name=self.LHCDescrip
+    seed,simul,tunex,tuney,amp1,amp2,turns,angle=job
+    ranges="%.14g_%.14g"%(amp1,amp2)
+    tunes="%.14g_%.14g"%(tunex,tuney)
+    return tmp%(name,seed,tunes,ranges,turns[1:],angle)
+  def update_work_dir(self, bad_jobs):
+    good_jobs = set(self.gen_job_params())-bad_jobs
+    def write_jobs(filename, jobs):
+      with open(filename, "w") as f:
+        for job in sorted(jobs):
+          f.write(self.make_job_work_string(job))
+    write_jobs("work/completed_cases"  ,good_jobs)
+    write_jobs("work/incomplete_cases", bad_jobs)
+  def check_results(self, update_work=False):
+     bad_jobs=set()
+     noproblem=self.check_completed_results(bad_jobs)
+     if noproblem:
+        noproblem=self.check_zero_fort10(bad_jobs)
+     if noproblem:
+        noproblem=self.check_overlap(bad_jobs)
+     if update_work:
+        self.update_work_dir(bad_jobs)
+     return noproblem
+  def get_fort3(self,seed,amp1,angle,tunes=None):
+    ss="""select fort3 from six_input
+          where seed=%s and
+                tunex=%s and tuney=%s and
+                amp1=%s and turns='%s'
+                and angle=%s"""
+    if tunes is None:
+        tunes=self.get_tunes()[0]
+    turns='e%g'%self.env_var['turnsle']
+    ss=ss%(seed,tunes[0],tunes[1],amp1,turns,angle)
+    fort3=self.execute(ss)[0][0]
+    return decompressBuf(decompressBuf(fort3))
+  def get_fort_2_8_16(self,seed):
+    ss="""select fort2, fort8, fort16 from mad6t_results
+          where seed=%s"""%(seed)
+    forts=map(decompressBuf,self.execute(ss)[0])
+    return forts
+  def extract_job(self,dest,seed,amp1,angle,tunes=None):
+    fc2,fc8,fc16=self.get_fort_2_8_16(seed)
+    fc3=self.get_fort3(seed,amp1,angle,tunes)
+    print("Prepare directory '%s'"%dest)
+    if not os.path.isdir(dest):
+      os.mkdir(dest)
+    open(os.path.join(dest,'fort.2'),'w').write(fc2)
+    open(os.path.join(dest,'fort.3'),'w').write(fc3)
+    open(os.path.join(dest,'fort.8'),'w').write(fc8)
+    open(os.path.join(dest,'fort.16'),'w').write(fc16)
+    sixtrack=self.env_var['SIXTRACKEXE']
+    sixtrackln=os.path.join(dest,'sixtrack')
+    if not os.path.exists(sixtrackln):
+      os.symlink(sixtrack,sixtrackln)
+  def extract_madinout(self,dest,seed):
+    madin=self.get_mad_in(seed)
+    madin=dict( (ii,data) for data,ii in madin)
+    madout=self.get_mad_out(seed)
+    madout=dict( (ii,data) for data,ii,mt in madout)
+    print(madin,madout)
+    for run in madin.keys():
+      print("Prepare directory '%s/%s'"%(dest,run))
+      if not os.path.isdir(dest):
+        os.mkdir(dest)
+      fn=self.LHCDescrip+".%d.madx"%selfseed
+      open(os.path.join(dest,run,fn),'w').write(madin[run])
+    for run in madout.keys():
+      print("Prepare directory '%s/%s'"%(dest,run))
+      if not os.path.isdir(dest):
+        os.mkdir(dest)
+      fn=self.LHCDescrip+".%d.madx"%selfseed
+      open(os.path.join(dest,run,fn),'w').write(madout[run])
 
 

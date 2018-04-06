@@ -142,6 +142,13 @@ def plot_res_order(o,l=0,qz=0,c1='b',lst1='-',c2='b',lst2='--',c3='g',annotate=F
   pl.xlim(a,b)
   pl.ylim(c,d)
 
+def plot_res_upto_order(o,l=0,qz=0,c1='b',lst1='-',c2='b',lst2='--',c3='g',annotate=False):
+  """plot resonance lines up to order o and sidebands
+  of order l and frequency qz in current plot
+  range"""
+  for i in range (-o,+o+1):
+    plot_res_order( i,l,qz,c1,lst1,c2,lst2,c3,annotate)
+
 def plot_res(m,n,l=0,qz=0,color='b',linestyle='-'):
   """plot resonance of order (m,n,l) where l is
   the order of the sideband with frequency qz in

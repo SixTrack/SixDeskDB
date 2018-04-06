@@ -1,0 +1,22 @@
+This is an example for the plot_fma functionality in sixdb (5D without BB)
+
+Results at dares_ats40_62.31_60.32
+
+Parameters:
+
+mask: E=6.5TeV, Ioct=510A, BB switch OFF, b_t_dist=25ns, Qx=62.31, Qy=60.31, b*=40cm, VRF ON, qprime=0
+
+sixdeskenv: 30 pairs, ns1l=0.2, reduce_angs_with_amplitude=4, ns2l=8, nsincl=0.2, turnsl=10000, kinil=1, kendl=9,dpini=0.00027
+
+How to test:
+
+$sixdb ats40_62.31_60.32.db plot_fma   -> FMA and configuration space
+$sixdb ats40_62.31_60.32.db plot_fma dump1 NAFF  -> Footprint, colorbar is the amplitude
+$sixdb ats40_62.31_60.32.db plot_fma dump1 NAFF dump2 NAFF ->  manually select inpufiles
+
+Sanity checks:
+
+$sixdb ats40_62.31_60.32.db plot_fma dump1 NAFF dump2 TUNELASK ->  error, method should be the same in both inputfiles to compute tune diffusion
+$sixdb ats40_62.31_60.32.db plot_fma dump3 NAFF ->  error, file does not exist in in fma_sixtrack.gz
+
+

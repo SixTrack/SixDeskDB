@@ -19,7 +19,7 @@ if sys.version_info < (2, 6):
   print "SixDeskDB requires Python version >=2.6"
   sys.exit(1)
 
-from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns,RunDaVsTurnsAng,PlotDaVsTurns,PlotCompDaVsTurns
+from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns,RunDaVsTurnsAng,PlotDaVsTurns,PlotCompDaVsTurns,PlotFMA,PlotGrid
 #from dbtocentral,config
 
 def str2bool(st):
@@ -28,6 +28,13 @@ def str2bool(st):
   else:
     return False
 
+
+def guess_toolkit():
+  try:
+    import PyQt4
+    return 'qt'
+  except ImportError:
+    return 'tk'
 
 class SixDB(object):
     def __init__(self,argsv):
@@ -58,13 +65,14 @@ class SixDB(object):
                 #print "%s: %s"%(e.__class__.__name__,e.message)
                 print
                 self.help(cmd)
+                sys.exit(1)
     def help(self,cmd=None):
         """Get help on commands
 Usage: sixdb <cmd> <help>
         """
         cmds=['load_dir', 'update_dir', 'info',
                'da', 'da_vs_turns', 'plot_da_vs_turns',
-               'mad', 'interactive','set','replace','check_results']
+               'mad', 'interactive','set','replace','check_results','plot_fma','plot_tune_grid']
         msg="""sixdb: command line interface of SixDeskDB
 Usage: sixdb <study> <cmd> <options> or sixdb <cmd> to get additional help
         """
@@ -142,7 +150,9 @@ Usage: sixdb <dbname> mad"""
        """Check results are consistent following euristic rules
 
 Usage: sixdb <dbname> check_results"""
-       SixDeskDB(study).check_results()
+       noproblem=SixDeskDB(study).check_results()
+       if noproblem is False:
+          sys.exit(1)
     def da_vs_turns(self,study):
        """Create table da_vst for DA versus turns
        analysis.
@@ -217,6 +227,77 @@ Usage: sixdb <dbname> da_vs_turns
        else:
          emitx, emity = None, None  # set to zero if the emittance option is not selected
        RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap,outfilefit,emitx,emity)
+
+    def plot_fma(self, study):
+      """Plot FMA.
+
+Usage: sixdb <dbname> plot_fma
+    Info: Plots the footprint if one inputfile is found in fma_sixtrack.gz, or frequency maps in frequency domain and configuration space if two inputfiles with the same method are detected. User-defined inputfile and method are also supported.  
+
+    Options:
+    - -F                  : returns a list of all the inputfiles and methods found in fma_sixtrack.gz
+    -<inputfile> <method> : option for user-defined inputfile and method to plot. 
+                            example1: $sixdb ats40_62.31_60.32.db plot_fma dump1 NAFF 
+                            example2: $sixdb ats40_62.31_60.32.db plot_fma dump1 NAFF dump2 NAFF 
+    
+      """
+      args=self.args
+      try:
+        db=SixDeskDB(study) 
+      except:
+        print('Error in plot_fma: database not found!')
+        return -1.
+      if (args[-1] == '-F'):
+        print "The inputfiles and methods found are:"
+        print db.get_db_fma_inputfile_method()
+        return
+      if (len(args)>2):
+        ### Check if user-defined inputfile and method exist
+        it = iter(args[2:])
+        user_defined =  zip(it, it)
+        if set(user_defined).issubset(db.get_db_fma_inputfile_method()):    
+          PlotFMA(db, args[2:]) 
+        else:
+          print "ERROR: The inputfile and method are not defined. Run sixdb -F for all the possible options."
+          return -1
+      else:
+        PlotFMA(db) 
+
+    def plot_tune_grid(self, study):
+      """Plot grid footprint.
+
+Usage: sixdb <dbname> plot_tune_grid
+    Info: Plots the footprint in the form of a grid for a user specified inputfile and method, otherwise it uses the first inputfile and method found.  
+
+    Options:
+    - -F                  : returns a list of all the inputfiles and methods found in fma_sixtrack.gz
+    
+      """
+      args=self.args
+      try:
+        db=SixDeskDB(study) 
+      except:
+        print('Error in plot_fma: database not found!')
+        return -1.
+      if (args[-1] == '-F'):
+        print "The inputfiles and methods found are:"
+        print db.get_db_fma_inputfile_method()
+        return
+      
+      if (len(args)>2):
+        ### Check if user-defined inputfile and method exist
+        it = iter(args[2:])
+        user_defined =  zip(it, it)
+        if set(user_defined).issubset(db.get_db_fma_inputfile_method()):    
+          PlotGrid(db, args[2:]) 
+        else:
+          print "ERROR: The inputfile and method are not defined. Run sixdb -F for all the possible options."
+          return -1
+      else:
+        PlotGrid(db) 
+      
+
+
 
     def plot_da_vs_turns(self,study):
        """Create survival and da vs turns plots.
@@ -297,7 +378,8 @@ db.plot_polar_col('sturns1',1)
 """
         print
         if hasattr(IPython,'start_ipython'):
-          IPython.start_ipython(user_ns={'db':db},argv=['--pylab'])
+          tk=guess_toolkit()
+          IPython.start_ipython(user_ns={'db':db},argv=['--pylab=%s'%tk])
         else:
           from IPython.terminal.embed import InteractiveShellEmbed
           ipshell = InteractiveShellEmbed(user_ns={db:'db'})
@@ -326,6 +408,42 @@ db.plot_polar_col('sturns1',1)
         new=self.args[3]
         SixDeskDB(study).vars_replace_all(old,new)
 
+    def plot(self, study):
+      """Generate one postprocessing plot.
+
+    Usage: sixdb <dbname> plot <option> <seed> <angle>
+    
+    option being one between: averem, distance, kvar, maxslope, smear, survival """
+
+      sd = SixDeskDB(study)
+      args = self.args
+      if len(args)!=5:
+         print "Not enough arguments for plotting"
+         sys.exit(1)
+
+      option  = args[args.index('plot')+1]
+      seed    = int(args[args.index('plot')+2])
+      angle   = int(args[args.index('plot')+3])
+      print args
+      try:
+        plot = getattr(plots, 'plot_{name}'.format(name=option))
+      except Exception, e:
+        print
+        print "Wrong plot option: %s"%name
+        sys.exit(1)
+
+      if seed < 1 or seed > len(sd.get_seeds()):
+        print('Error in plot: incorrect seed!')
+        sys.exit(1)
+      if angle < 0 or angle >= len(sd.get_angles()):
+        print('Error in da_vs_turns: incorrect angle!')
+        sys.exit(1)
+
+      nturns=100000
+      a0 = 6
+      a1 = 14
+      result = plot(sd, seed, angle, a0, a1, nturns)
+      
 
 if __name__=="__main__":
     import sys
