@@ -1,3 +1,5 @@
+import sys
+
 import sqlite3
 import numpy as np
 import sixdeskdir
@@ -123,8 +125,8 @@ class SQLTable(object):
       cur.executemany(sql_cmd, data)
     except sqlite3.ProgrammingError, e:
       print "%s: %s"%(e.__class__.__name__,e.message)
-      #print data
-      #print sql_cmd
+      print data
+      print sql_cmd
       sys.exit(0)
       raise sqlite3.ProgrammingError
     count = cur.rowcount
