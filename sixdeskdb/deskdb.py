@@ -2468,7 +2468,7 @@ class SixDeskDB(object):
     (tunex,tuney)=tune
     #check if table da_vst exists in database
     if(self.check_table('da_vst')):
-      ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+      ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float), ('nturn',float),('tlossmin',float), ('nturnavg',float) , ('mtime',float)]
       cmd="""SELECT *
            FROM da_vst WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%d
            ORDER BY nturn"""
