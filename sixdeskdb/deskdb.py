@@ -25,8 +25,9 @@ try:
       matplotlib.use('Agg')
   import matplotlib.pyplot as pl
   import scipy.signal
-except ImportError:
+except ImportError as e:
   print "No module found: numpy matplotlib and scipy modules should be present to run sixdb"
+  print e
   raise ImportError
 
 import tables
