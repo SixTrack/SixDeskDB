@@ -1,6 +1,8 @@
 import sys
 
 import sqlite3
+sqlite3.register_adapter(bytes,lambda x: x.decode())
+
 import numpy as np
 from . import sixdeskdir
 from .tables import Env

@@ -10,6 +10,7 @@ import os
 from .postPlot import *
 from .deskdb import *
 import sqlite3
+sqlite3.register_adapter(bytes,lambda x: x.decode())
 from .sqltable import SQLTable
 from .postPlot import Post_Plot
 

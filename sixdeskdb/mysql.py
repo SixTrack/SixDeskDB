@@ -15,6 +15,7 @@
 import sys
 import os
 import sqlite3
+sqlite3.register_adapter(bytes,lambda x: x.decode())
 from warnings import filterwarnings
 
 from .sqltable import SQLTable
