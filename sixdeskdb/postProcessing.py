@@ -7,11 +7,11 @@ import sys
 import getopt
 import numpy as np
 import os
-from postPlot import *
-from deskdb import *
+from .postPlot import *
+from .deskdb import *
 import sqlite3
-from sqltable import SQLTable
-from postPlot import Post_Plot
+from .sqltable import SQLTable
+from .postPlot import Post_Plot
 
 ment=1000
 epsilon = 1e-38
@@ -28,7 +28,7 @@ class PostProcessing:
 
     def checkInjection(self):
         if(np.abs(self.Einj)< epsilon):
-                print "ERROR: Injection energy too small"
+                print("ERROR: Injection energy too small")
                 sys.exit()
 
     def readplotb(self):
@@ -110,7 +110,7 @@ class PostProcessing:
                     
                     if len(inp)==0:
                          msg="all particle lost for angle = %s and seed = %s"
-                         print msg%(angle,seed)
+                         print(msg%(angle,seed))
                          continue
 
                     six_id = inp['six_input_id']

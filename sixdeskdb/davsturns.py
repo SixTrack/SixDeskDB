@@ -3,13 +3,13 @@ import numpy as np
 from scipy import optimize
 import matplotlib.pyplot as pl
 import glob, sys, os, time
-from deskdb import SixDeskDB,tune_dir,mk_dir
+from .deskdb import SixDeskDB,tune_dir,mk_dir
 import matplotlib
 # ------------- basic functions -----------
 def get_divisors(n):
   """finds the divisors of an integer number"""
   large_divisors = []
-  for i in xrange(1, int(np.sqrt(n) + 1)):
+  for i in range(1, int(np.sqrt(n) + 1)):
     if n % i is 0:
       yield i
       if i is not n / i:
@@ -65,9 +65,9 @@ def get_min_turn_ang(s,t,a,it):
 def select_ang_surv(data,seed,nang):
   """returns data reduced to ((angmax+1)/nang)-1 angles -> nang being the divisor of angmax"""
   angmax=len(data['angle'][:,0])#number of angles
-  print nang
+  print(nang)
   if((nang not in list(get_divisors(angmax+1))) or ((angmax+1)/nang-1<3)):
-    print('%s is not a divisor of %s or two large (((angmax+1)/nang)-1<3)')%(nang,angmax+1)
+    print(('%s is not a divisor of %s or two large (((angmax+1)/nang)-1<3)')%(nang,angmax+1))
     sys.exit(0)
   #define variables for only selection of angles
   s,a,t=data['sigma'][nang::nang+1],data['angle'][nang::nang+1],data['sturn'][nang::nang+1]
@@ -276,8 +276,8 @@ def mk_da_vst_fit(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap):
   (tunex,tuney)=tune
   print('calculating b1mean ...')
   (b1mean,b1meanerr,b1std)=get_b1mean(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap)
-  print('average over %s seeds: b1mean=%s, b1meanerr=%s, b1std=%s'%(round(len(db.get_db_seeds())),round(b1mean,3),round(b1meanerr,3),round(b1std,3)))
-  print('start scan over kappa for fixed b1=%s to find kappa with minimum residual ...'%b1mean)
+  print(('average over %s seeds: b1mean=%s, b1meanerr=%s, b1std=%s'%(round(len(db.get_db_seeds())),round(b1mean,3),round(b1meanerr,3),round(b1std,3))))
+  print(('start scan over kappa for fixed b1=%s to find kappa with minimum residual ...'%b1mean))
   ftype=[('kappa',float),('dkappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float)]
   lkap=np.zeros(len(np.arange(fitskap,fitekap+fitdkap,fitdkap))-1,dtype=ftype)#-1 as kappa=0 is not used
   ftype=[('seed',float),('tunex',float),('tuney',float),('turn_max',int),('fitdat',np.str_, 30),('fitdaterr',np.str_, 30),('fitndrop',float),('kappa',float),('dkappa',float),('res',float),('dinf',float),('dinferr',float),('b0',float),('b0err',float),('b1mean',float),('b1meanerr',float),('b1std',float),('mtime',float)]
@@ -393,7 +393,7 @@ def clean_dir_da_vst(db,files):
           ppf=os.path.join(pp,filename)
           if(os.path.exists(ppf)): os.remove(ppf)
   if(len(files)>0):
-    print('remove old {0} ... files in '+db.LHCDescrip).format(files)
+    print(('remove old {0} ... files in '+db.LHCDescrip).format(files))
 
 # for error analysis - data is not saved in database but output files are generated
 def RunDaVsTurnsAng(db,seed,tune,turnstep):
@@ -406,14 +406,14 @@ def RunDaVsTurnsAng(db,seed,tune,turnstep):
     print('Error in RunDaVsTurns: turnstep must be integer values!')
     sys.exit(0)
   if(seed not in db.get_db_seeds()):
-    print('WARNING: Seed %s is missing in database !!!'%seed)
+    print(('WARNING: Seed %s is missing in database !!!'%seed))
     sys.exit(0)
   if(tune not in db.get_db_tunes()):
-    print('WARNING: tune %s is missing in database !!!'%tune)
+    print(('WARNING: tune %s is missing in database !!!'%tune))
     sys.exit(0)
   turnsl=db.env_var['turnsl']#get turnsl for outputfile names
   seed=int(seed)
-  print('analyzing seed {0} and tune {1}...').format(str(seed),str(tune))
+  print(('analyzing seed {0} and tune {1}...').format(str(seed),str(tune)))
   dirname=db.mk_analysis_dir(seed,tune)#directory struct already created in clean_dir_da_vst, only get dir name (string) here
   print('... get survival data')
   dasurvtot= db.get_surv(seed,tune)
@@ -422,7 +422,7 @@ def RunDaVsTurnsAng(db,seed,tune,turnstep):
   #use only divisors nang with (angmax+1)/nang-1>=3 = minimum number of angles for trapezoidal rule
   divsall=np.array(list(get_divisors(angmax+1)))
   divs=divsall[(angmax+1)/divsall-1>2]
-  print('... number of angles: %s, divisors: %s'%(angmax,str(divs)))
+  print(('... number of angles: %s, divisors: %s'%(angmax,str(divs))))
   for nang in divs:
     dirnameang='%s/%s'%(dirname,nang)
     mk_dir(dirnameang)
@@ -430,7 +430,7 @@ def RunDaVsTurnsAng(db,seed,tune,turnstep):
     print('... calculate da vs turns')
     daout=mk_da_vst(dasurv,seed,tune,turnsl,turnstep)
     save_daout(daout,dirnameang)
-    print('... save da vs turns data in {0}/DA.out').format(dirnameang)
+    print(('... save da vs turns data in {0}/DA.out').format(dirnameang))
 
 # in analysis - putting the pieces together
 def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap,outfilefit,emitx,emity):
@@ -447,23 +447,23 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
   turnse=db.env_var['turnse']
   regemi=db.env_var['emit']           # get the emittance at which the simulation was carried out
 
-  print 'REGEMI  =', regemi
+  print('REGEMI  =', regemi)
   if emitx is None:                   # if the unequal emittance option is not used
     emitx,emity = regemi, regemi
-  print 'EMITX   =', emitx
-  print 'EMITY   =', emity
+  print('EMITX   =', emitx)
+  print('EMITY   =', emity)
   for seed in db.get_db_seeds():
     seed=int(seed)
-    print('analyzing seed {0} ...').format(str(seed))
+    print(('analyzing seed {0} ...').format(str(seed)))
     for tune in db.get_db_tunes():
-      print('analyzing tune {0} ...').format(str(tune))
+      print(('analyzing tune {0} ...').format(str(tune)))
       dirname=db.mk_analysis_dir(seed,tune)#directory struct already created in clean_dir_da_vst, only get dir name (string) here
       print('... get survival data')
       dasurv= db.get_surv(seed,tune)
       if dasurv is None:
-        print("ERROR: survival data could not be retrieved due to "+
+        print(("ERROR: survival data could not be retrieved due to "+
               "and error in the database or tracking data. Skip "
-              "this seed %s"%(seed))
+              "this seed %s"%(seed)))
         continue
       print('... get da vs turns data')
       daout = db.get_da_vst(seed,tune)
@@ -489,14 +489,14 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
       if(outfile):# create dasurv.out and da.out files
         fnsurv='%s/DAsurv.%s.out'%(dirname,turnse)
         save_dasurv(dasurv,fnsurv)
-        print('... save survival data in {0}').format(fnsurv)
+        print(('... save survival data in {0}').format(fnsurv))
         fndaout='%s/DA.%s.out'%(dirname,turnse)
         save_daout(daout,fndaout)
-        print('... save da vs turns data in {0}').format(fndaout)
+        print(('... save da vs turns data in {0}').format(fndaout))
       if(outfileold):
         fndaoutold='%s/DAold.%s.out'%(dirname,turnse)
         save_daout_old(daout,fndaoutold)
-        print('... save da vs turns (old data format) data in {0}').format(fndaoutold)
+        print(('... save da vs turns (old data format) data in {0}').format(fndaoutold))
   #---- fit the data
   if(davstfit):
     if(fitdat in ['dawtrap','dastrap','dawsimp','dassimp']):
@@ -515,7 +515,7 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
           sys.exit(0)
         if((np.arange(fitskap,fitekap+fitdkap,fitdkap)).any()):
           for tune in db.get_db_tunes():
-            print('fit da vs turns for tune {0} ...').format(str(tune))
+            print(('fit da vs turns for tune {0} ...').format(str(tune)))
             fitdaout=mk_da_vst_fit(db,tune,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap)
             print('.... save fitdata in database')
             db.st_da_vst_fit(fitdaout,recreate=False)
@@ -524,7 +524,7 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
               sixdesktunes="%g_%g"%(tunex,tuney)
               fndot='%s/DAfit.%s.%s.%s.%s.%s.plot'%(db.mk_analysis_dir(),db.LHCDescrip,sixdesktunes,turnse,fitdat,fitdaterr)
               save_davst_fit(fitdaout,fndot)
-              print('... save da vs turns fit data in {0}').format(fndot)
+              print(('... save da vs turns fit data in {0}').format(fndot))
         else:
           print('Error in RunDaVsTurns: empty scan range for fitkap!')
       else:
@@ -552,29 +552,29 @@ def PlotFMA(db,args=[]):
         else:
           method = args[1]
           db.plot_fma_footprint(seed,tunes,turnse, args[0],args[1])
-        print('... saving plot %s/Footprint.%s.%s.png'%(dirname,turnse,method))
+        print(('... saving plot %s/Footprint.%s.%s.png'%(dirname,turnse,method)))
         pl.savefig('%s/Footprint.%s.%s.png'%(dirname,turnse,method))
       else:
         ##### If inputfiles have been defined manually 
         if (len(args) == 4):
           it = iter(args)
-          n_args = zip(it, it)
+          n_args = list(zip(it, it))
           ##### Find other files with the same method
           results = [t for t in n_args if t[1] == n_args[0][1]]
         ##### If inputfiles have been detected from fma_sixtrack.gz
         elif not args:
           results = [t for t in method_inputfile if t[1] == method_inputfile[0][1]]
         if (len(results)==1):
-          print "Only one file with %s method has been found!You need at least two files with the same method to compute tune diffusion."%(results[0][1])
+          print("Only one file with %s method has been found!You need at least two files with the same method to compute tune diffusion."%(results[0][1]))
           return -1
         method = results[0][1]
         db.plot_fma_scatter(seed,tunes,turnse,results)
-        print('... saving plot %s/FMA_config.%s.%s.png'%(dirname,turnse,method))
+        print(('... saving plot %s/FMA_config.%s.%s.png'%(dirname,turnse,method)))
         pl.savefig('%s/FMA_config.%s.%s.png'%(dirname,turnse,method))
         pl.close('all')
         db.plot_fma_scatter(seed,tunes,turnse,results, var1 ='q1' ,var2 ='q2' ,dqlim=5e-3)
         db.plot_res_upto_order(15)
-        print('... saving plot %s/FMA.%s.%s.png'%(dirname,turnse,method))
+        print(('... saving plot %s/FMA.%s.%s.png'%(dirname,turnse,method)))
         pl.savefig('%s/FMA.%s.%s.png'%(dirname,turnse,method))
 
 def PlotGrid(db,args=[]):
@@ -592,16 +592,16 @@ def PlotGrid(db,args=[]):
         else:
           method = args[1]
           db.plot_fma_footprint(seed,tunes,turnse, args[0],args[1], grid=True)
-        print('... saving plot %s/Grid.%s.%s.png'%(dirname,turnse,method))
+        print(('... saving plot %s/Grid.%s.%s.png'%(dirname,turnse,method)))
         pl.savefig('%s/Grid.%s.%s.png'%(dirname,turnse,method))
       elif (len(args)<2):
-        print "More than 1 inputfiles have been detected. The first one will be used"
+        print("More than 1 inputfiles have been detected. The first one will be used")
         method = method_inputfile[0][1]
         db.plot_fma_footprint(seed,tunes,turnse,method_inputfile[0][0],method_inputfile[0][1],grid=True)
-        print('... saving plot %s/Grid.%s.%s.png'%(dirname,turnse,method))
+        print(('... saving plot %s/Grid.%s.%s.png'%(dirname,turnse,method)))
         pl.savefig('%s/Grid.%s.%s.png'%(dirname,turnse,method))
       else:  
-        print "You have manually defined more than one file.Please choose one method/inputfile or the first method/inputfile found will be used automatically"
+        print("You have manually defined more than one file.Please choose one method/inputfile or the first method/inputfile found will be used automatically")
         return -1
 
 def PlotDaVsTurns(db,ldat,ldaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop):
@@ -632,14 +632,14 @@ def PlotDaVsTurns(db,ldat,ldaterr,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlo
       pl.figure(figsize=(6,6))
       db.plot_surv_2d(seed,tune,ampmaxsurv)#suvival plot
       pl.savefig('%s/DAsurv.%s.png'%(dirname,turnse))
-      print('... saving plot %s/DAsurv.%s.png'%(dirname,turnse))
+      print(('... saving plot %s/DAsurv.%s.png'%(dirname,turnse)))
       db.plot_da_vst(seed,tune,ldat,ldaterr,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop)#da vs turns plot
       if(plotlog==True):
         pl.savefig('%s/DA_log.%s.png'%(dirname,turnse))
-        print('... saving plot %s/DA_log.%s.png'%(dirname,turnse))
+        print(('... saving plot %s/DA_log.%s.png'%(dirname,turnse)))
       else:
         pl.savefig('%s/DA.%s.png'%(dirname,turnse))
-        print('... saving plot %s/DA.%s.png'%(dirname,turnse))
+        print(('... saving plot %s/DA.%s.png'%(dirname,turnse)))
 
 def PlotCompDaVsTurns(db,dbcomp,ldat,ldaterr,lblname,complblname,ampmaxsurv,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop):
   '''Comparison of two studies: survival plots (area of stable particles) and Da vs turns plots'''
@@ -649,13 +649,13 @@ def PlotCompDaVsTurns(db,dbcomp,ldat,ldaterr,lblname,complblname,ampmaxsurv,ampm
   turnsldbcomp=dbcomp.env_var['turnsl']
   turnsedbcomp=dbcomp.env_var['turnse']
   if(not turnsldb==turnsldbcomp):
-    print('Warning! Maximum turn number turn_max of %s and %s differ!'%(db.LHCDescrip,dbcomp.LHCDescrip))
+    print(('Warning! Maximum turn number turn_max of %s and %s differ!'%(db.LHCDescrip,dbcomp.LHCDescrip)))
   try:
     ampmaxsurv=float(ampmaxsurv)
     ampmindavst=float(ampmindavst)
     ampmaxdavst=float(ampmaxdavst)
     tmax=int(float(tmax))
-  except ValueError,NameError:
+  except ValueError as NameError:
     print('Error in PlotCompDaVsTurns: ampmaxsurv and amprangedavst must be float values and tmax an integer value!')
     sys.exit(0)
   #remove all files
@@ -675,11 +675,11 @@ def PlotCompDaVsTurns(db,dbcomp,ldat,ldaterr,lblname,complblname,ampmaxsurv,ampm
         pl.close('all')
         plot_surv_2d_comp(db,dbcomp,lblname,complblname,seed,tune,ampmaxsurv)
         pl.savefig('%s/DAsurv_comp.%s.png'%(dirname,turnsedb))
-        print('... saving plot %s/DAsurv_comp.%s.png'%(dirname,turnsedb))
+        print(('... saving plot %s/DAsurv_comp.%s.png'%(dirname,turnsedb)))
         plot_comp_da_vst(db,dbcomp,ldat,ldaterr,lblname,complblname,seed,tune,ampmindavst,ampmaxdavst,tmax,plotlog,plotfit,fitndrop)
         if(plotlog==True):
           pl.savefig('%s/DA_comp_log.%s.png'%(dirname,turnsedb),bbox_inches='tight')
-          print('... saving plot %s/DA_comp_log.%s.png'%(dirname,turnsedb))
+          print(('... saving plot %s/DA_comp_log.%s.png'%(dirname,turnsedb)))
         else:
           pl.savefig('%s/DA_comp.%s.png'%(dirname,turnsedb),bbox_inches='tight')
-          print('... saving plot %s/DA_comp.%s.png'%(dirname,turnsedb))
+          print(('... saving plot %s/DA_comp.%s.png'%(dirname,turnsedb)))

@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from datafromFort import Fort
+from .datafromFort import Fort
 import sys 
 
 postpr_plots = 'averem distance kvar maxslope smear survival'.split()
@@ -21,9 +21,9 @@ class Post_Plot:
     def process_args(self, name, seed, angle):
         try:
           plot = getattr(self, 'plot_{name}'.format(name=name))
-        except Exception, e:
-          print
-          print "Wrong plot option: %s"%name
+        except Exception as e:
+          print()
+          print("Wrong plot option: %s"%name)
           sys.exit(1)
 
         if seed and (seed < 1 or seed > len(self.db.get_seeds())):
@@ -57,7 +57,7 @@ class Post_Plot:
         else:
             dirname=self.db.mk_analysis_dir(seed,tune)
             fn = "%s/averem.%s.%s.png"%(dirname, self.nturns, angle+1)
-            print fn
+            print(fn)
             plt.savefig(fn)
 
 
@@ -85,7 +85,7 @@ class Post_Plot:
         else:
             dirname=self.db.mk_analysis_dir(seed,tune)
             fn = "%s/distance.%s.%s.png"%(dirname, self.nturns, angle+1)
-            print fn
+            print(fn)
             plt.savefig(fn)
 
 
@@ -119,7 +119,7 @@ class Post_Plot:
         else:
             dirname=self.db.mk_analysis_dir(seed,tune)
             fn = "%s/kvar.%s.%s.png"%(dirname, self.nturns, angle+1)
-            print fn
+            print(fn)
             plt.savefig(fn)
 
 
@@ -145,7 +145,7 @@ class Post_Plot:
         else:
             dirname=self.db.mk_analysis_dir(seed,tune)
             fn = "%s/maxslope.%s.%s.png"%(dirname, self.nturns, angle+1)
-            print fn
+            print(fn)
             plt.savefig(fn)
 
 
@@ -170,7 +170,7 @@ class Post_Plot:
         else:
             dirname=self.db.mk_analysis_dir(seed,tune)
             fn = "%s/smear.%s.%s.png"%(dirname, self.nturns, angle+1)
-            print fn
+            print(fn)
             plt.savefig(fn)
 
     def plot_survival(self, seed, angle, tune, show=False):
@@ -196,7 +196,7 @@ class Post_Plot:
         else:
             dirname=self.db.mk_analysis_dir(seed,tune)
             fn = "%s/survival.%s.%s.png"%(dirname, self.nturns, angle+1)
-            print fn
+            print(fn)
             plt.savefig(fn)
 
     def plot_all(self, seed = None, angle= None, tune=None):
@@ -210,7 +210,7 @@ class Post_Plot:
         seed=int(seed)
         for tune in self.db.get_db_tunes():
           dirname=self.db.mk_analysis_dir(seed,tune)
-          for angle in xrange(len(self.db.get_db_angles())):
+          for angle in range(len(self.db.get_db_angles())):
               plt.close('all')
               plt.figure(figsize=(6,6))
               self.plot_averem(seed, angle, tune)

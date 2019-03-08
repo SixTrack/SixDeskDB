@@ -2,8 +2,8 @@ import sys
 
 import sqlite3
 import numpy as np
-import sixdeskdir
-from tables import Env
+from . import sixdeskdir
+from .tables import Env
 
 class SQLTable(object):
   @staticmethod
@@ -35,11 +35,11 @@ class SQLTable(object):
       elif ttt.kind == 'S': types.append('TEXT')
       elif ttt.kind in 'iu': types.append('INTEGER')
       else:
-        raise ValueError,"%s not understood"% ttt
+        raise ValueError("%s not understood"% ttt)
     return [' '.join(c) for c in zip(names,types)]
   @staticmethod
   def query_from_dict(query):
-    return ' AND '.join(['%s=%s'%(k,repr(v)) for k,v in query.items()])
+    return ' AND '.join(['%s=%s'%(k,repr(v)) for k,v in list(query.items())])
   def __init__(self,db,name,cols,keys=None,dbtype="sql",recreate=False):
     self.db=db
     self.name=name
@@ -123,10 +123,10 @@ class SQLTable(object):
     sql_cmd=sql%(table,vals)
     try:
       cur.executemany(sql_cmd, data)
-    except sqlite3.ProgrammingError, e:
-      print "%s: %s"%(e.__class__.__name__,e.message)
-      print data
-      print sql_cmd
+    except sqlite3.ProgrammingError as e:
+      print("%s: %s"%(e.__class__.__name__,e.message))
+      print(data)
+      print(sql_cmd)
       sys.exit(0)
       raise sqlite3.ProgrammingError
     count = cur.rowcount
@@ -170,7 +170,7 @@ class SQLTable(object):
         elif type(i) == str: types.append('|S100')
         elif type(i) == int: types.append('int')
       names=[i[0] for i in cur.description]
-      data = np.array(data, dtype = zip(names,types))
+      data = np.array(data, dtype = list(zip(names,types)))
     return data
 
 
@@ -183,21 +183,21 @@ if __name__=='__main__':
   records=[(1,2,3),(4,5,6),(7,8,9),(1,5,2)]
   data=np.array(records,dtype=rectype)
   cols=SQLTable.cols_from_dtype(data.dtype)
-  print cols
+  print(cols)
   db=sqlite3.connect(':memory:')
   tab=SQLTable(db,'tab1',cols,['f1','f2'])
   tab.insert(data)
-  print tab.select()
-  print tab.select('f3 f2',where='f3 = 2',orderby='f3 f2')
+  print(tab.select())
+  print(tab.select('f3 f2',where='f3 = 2',orderby='f3 f2'))
   tab.insert(data)
   tab.select()
   try:
     tab.insert(data,replace=False)
-  except sqlite3.IntegrityError,msg:
-    print 'ERROR:',msg
+  except sqlite3.IntegrityError as msg:
+    print('ERROR:',msg)
   data=np.random.rand(10000*3).view(rectype)
   tab.insert(data)
-  print tab.select()
+  print(tab.select())
 
   #rectype=[(i,ttt) for i,ttt,desc in Env.fields]
   #a = sixdeskdir.parse_env('./files/w7/sixjobs/')

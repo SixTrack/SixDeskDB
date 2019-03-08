@@ -1,4 +1,4 @@
-from postPlot import *
+from .postPlot import *
 import os
 import shutil
 import gzip
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     exp = 5
     expDir="e%d" %exp
     #createStructuresAndPlots(sd, nSeeds, nAngles, a0, a1, nturns,exp)
-    print a1
+    print(a1)
     # plot_averem(sd, 1, 0, a0, a1, nturns)
     # plot_kvar(sd, 1, 0, a0, a1, nturns, exp)
     plot_distance(sd, 1, 0, a0, a1, nturns)

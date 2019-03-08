@@ -1,17 +1,17 @@
 import sys
 import getopt
-from deskdb import *
+from .deskdb import *
 import numpy as np
 import os
-from postPlot import *
-from datafromFort import *
+from .postPlot import *
+from .datafromFort import *
 
 studyName='job_tracking'
 database='%s.db'%(studyName)
 if os.path.isfile(database):
     sd=SixDeskDB(studyName)
 else:
-    print "ERROR: file  %s does not exists!" %(database)
+    print("ERROR: file  %s does not exists!" %(database))
     sys.exit()
 
 f11 = Fort(11, sd)

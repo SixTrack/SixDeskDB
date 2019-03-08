@@ -19,8 +19,8 @@ def split_fort10fn(fn):
   else:
     join='_'
   seed=int(seed)
-  tunex,tuney=map(float,tunes.split('_'))
-  amp1,amp2=map(float,rng.split(join))
+  tunex,tuney=list(map(float,tunes.split('_')))
+  amp1,amp2=list(map(float,rng.split(join)))
   angle=float(angle)
   turns=10**int(turns[1])
   return study,seed,tunex,tuney,amp1,amp2,join,turns,angle
@@ -112,7 +112,7 @@ class SixDeskDir(object):
     return self
 
   def get_seeds(self):
-    return range(self.ista,self.iend+1)
+    return list(range(self.ista,self.iend+1))
   def get_angles(self):
     s=90./(self.kmaxl+1)
     return np.arange(self.kinil,self.kendl+1,self.kstep)*s
@@ -145,9 +145,9 @@ class SixDeskDir(object):
     for nnn,lll in enumerate(gzip.open(fn)):
       try:
         f10=tuple(map(float,lll.split()))
-      except ValueError,msg:
-        print fn,nnn,lll
-        print msg
+      except ValueError as msg:
+        print(fn,nnn,lll)
+        print(msg)
         raise ValueError
       yield params+(nnn,)+f10
   def gen_job_params(self):
@@ -193,16 +193,16 @@ class SixDeskDir(object):
     found,missing=self.get_betavalues_filemanes()
     nfound=len(found)
     ntot=nfound+len(missing)
-    print "Found: %d betavalue files out of %d"%(nfound,ntot)
+    print("Found: %d betavalue files out of %d"%(nfound,ntot))
   def iter_found_fort10(self):
     base=os.path.join(self.sixdesktrack,self.LHCDescrip)
     cmd='find "%s" -type f -name "fort.10.gz"'%base
-    print cmd
+    print(cmd)
     i=0
     for l in os.popen(cmd):
       i+=1
       if i%1000==0:
-        print i
+        print(i)
       yield l.strip()
   def iter_results(self):
     for fn in self.iter_found_fort10():
@@ -212,9 +212,9 @@ class SixDeskDir(object):
         for nnn,lll in enumerate(gzip.open(fn)):
           try:
             f10=tuple(map(float,lll.split()))
-          except ValueError,msg:
-            print fn,nnn,lll
-            print msg
+          except ValueError as msg:
+            print(fn,nnn,lll)
+            print(msg)
             raise ValueError
           yield params+(nnn,)+f10
   def inspect_existing_fort10(self):
@@ -228,18 +228,18 @@ class SixDeskDir(object):
       else:
         joined.append(data)
     names='study,seed,tunex,tuney,amp1,amp2,join,turns,angle'.split(',')
-    single=dict(zip(names,zip(*single)))
-    joined=dict(zip(names,zip(*joined)))
+    single=dict(list(zip(names,list(zip(*single)))))
+    joined=dict(list(zip(names,list(zip(*joined)))))
     def pr_stat(single):
       ln=len(single['study'])
       if ln>0:
-        print 'seed',guess_range(single['seed'])
-        print 'amp',guess_range(single['amp1']+single['amp2'])
-        print 'tunex',guess_range(single['tunex'])
-        print 'tuney',guess_range(single['tuney'])
-        print 'angle',guess_range(single['angle'])
-        print 'turns',guess_range(single['turns'])
-        print ln
+        print('seed',guess_range(single['seed']))
+        print('amp',guess_range(single['amp1']+single['amp2']))
+        print('tunex',guess_range(single['tunex']))
+        print('tuney',guess_range(single['tuney']))
+        print('angle',guess_range(single['angle']))
+        print('turns',guess_range(single['turns']))
+        print(ln)
     pr_stat(single)
     pr_stat(joined)
 

@@ -12,12 +12,12 @@ def parse_bjobs():
   return out
 
 def jobs_stats(jobs):
-  pending=[v for _,v in jobs.items() if v.stat=='PEND']
-  running=[v for _,v in jobs.items() if v.stat=='RUN']
-  done=[v for _,v in jobs.items() if v.stat=='DONE']
-  print "Jobs running : %d" % len(running)
-  print "Jobs pending : %d" % len(pending)
-  print "Jobs just done: %d" % len(done)
+  pending=[v for _,v in list(jobs.items()) if v.stat=='PEND']
+  running=[v for _,v in list(jobs.items()) if v.stat=='RUN']
+  done=[v for _,v in list(jobs.items()) if v.stat=='DONE']
+  print("Jobs running : %d" % len(running))
+  print("Jobs pending : %d" % len(pending))
+  print("Jobs just done: %d" % len(done))
 
 
 class LSFJob(tuple):
