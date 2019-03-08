@@ -15,7 +15,7 @@
 # NOTA: please use python version >=2.6
 
 import sqlite3, time, os, re, gzip, sys, glob
-from io import StringIO
+from io import StringIO,BytesIO
 import copy
 
 try:
@@ -46,15 +46,15 @@ def parse_env(studydir,logname=None):
     log='export LOGNAME="%s";'%logname
   else:
     log=""
-  cmd=tmp%(log,studydir,studydir,'"import os;print os.environ"')
+  cmd=tmp%(log,studydir,studydir,r'"import os;print(dict(os.environ))"')
   return eval(os.popen(cmd).read())
 
 
 def compressBuf(filename):
   '''file compression for storing in DB'''
   if os.path.isfile(filename):
-      buf = open(filename,'r').read()
-      zbuf = StringIO()
+      buf = open(filename,'rb').read()
+      zbuf = BytesIO()
       zfile = gzip.GzipFile(mode = 'wb',  fileobj = zbuf, compresslevel = 9)
       zfile.write(buf)
       zfile.close()
@@ -65,7 +65,7 @@ def compressBuf(filename):
 
 def decompressBuf(buf):
   '''file decompression to retrieve from DB'''
-  zbuf = StringIO(buf)
+  zbuf = BytesIO(buf)
   f = gzip.GzipFile(fileobj=zbuf)
   return f.read()
 
@@ -234,7 +234,7 @@ class SixDeskDB(object):
   def vars_replace_all(self,old,new):
     out=[]
     for k,v in list(self.env_var.items()):
-      if type(v) is str and old in v:
+      if (type(v) is str or type(v) is bytes) and old in v:
         print(k,v)
         out.append( (k,v.replace(old,new))  )
     mtime=time.time()
@@ -315,7 +315,7 @@ class SixDeskDB(object):
       data=self.get_mad_out(seed)
       out=[]
       for mad,ii,mt in data:
-          out.append(madout.extract_mad_out(StringIO(mad)))
+          out.append(madout.extract_mad_out(BytesIO(mad)))
       return out
   def mad_out(self):
       mad_runs=self.execute('SELECT DISTINCT run_id FROM mad6t_run')
@@ -472,7 +472,7 @@ class SixDeskDB(object):
             if os.path.exists(ffn):
                 mtime=os.path.getmtime(ffn)
                 #if mtime >maxtime: #bug to be checked
-                row.append(sqlite3.Binary(open(ffn, 'r').read()))
+                row.append(sqlite3.Binary(open(ffn, 'rb').read()))
                 update[fn]+=1
             else:
               print("%s missing inserted null"%ffn)
@@ -652,7 +652,8 @@ class SixDeskDB(object):
              countl = 1
              try:
                for lines in gzip.open(f10,"r"):
-                line=[six_id,countl]+lines.split()+[mtime10]
+                row=[dd.decode() for dd in lines.split()]
+                line=[six_id,countl]+row+[mtime10]
                 if len(line)!=63:
                     print(line)
                     print(("Error in %s"%f10))
@@ -671,7 +672,8 @@ class SixDeskDB(object):
              countl = 1
              for lines in gzip.open(ffma,"r"):
                 if (lines.rfind('#') < 0):#skip header
-                  rowsfma.append([six_id,countl]+lines.split()+[mtimefma])
+                  row=[dd.decode() for dd in lines.split()]
+                  rowsfma.append([six_id,countl]+row+[mtimefma])
                   countl += 1
              countfma += 1
         if len(rows3) == 6000:
@@ -700,6 +702,7 @@ class SixDeskDB(object):
 #      sql="""SELECT COUNT(*) FROM six_%s"""%(six_tab)
       jobs=list(cur.execute(sql))[0][0]
       print(" db now contains %d %s from %d jobs"% (results,six_tab,jobs))
+    self.conn.commit()
 
   def execute(self,sql):
     cur= self.conn.cursor()
@@ -1317,7 +1320,7 @@ class SixDeskDB(object):
     data,name={},''
     anbn=['b'+str(n+1) for n in range(20)]+['a'+str(n+1) for n in range(20)]
     for seed,fb16 in lst:
-      f16=gzip.GzipFile(fileobj=StringIO(fb16))
+      f16=gzip.GzipFile(fileobj=BytesIO(fb16))
       for line in f16:
         ll=line.split()
         if len(ll)==1:#condition for line=name
@@ -1345,7 +1348,7 @@ class SixDeskDB(object):
     name,data='',{}
     anbn=[]
     for n in range(20): anbn.extend(['b'+str(n+1)+'rms','b'+str(n+1),'a'+str(n+1)+'rms','a'+str(n+1)])
-    f3=gzip.GzipFile(fileobj=StringIO(fb3))
+    f3=gzip.GzipFile(fileobj=BytesIO(fb3))
     for line in f3:
       ll=line.split()
       if len(ll)==3:#condition for line=name
@@ -1483,10 +1486,10 @@ class SixDeskDB(object):
     t=self._movavg2d(t,smooth=smooth)
     return x,y,t
   def get_2d_col(self,col,seed):
-    cmd="""SELECT angle,sigx1*sigx1+sigy1*sigy1,
+    cmd="""SELECT angle,emitx+emity,
             %s
             FROM results
-            WHERE seed=%s ORDER BY angle,sigx1*sigx1+sigy1*sigy1"""
+            WHERE seed=%s ORDER BY angle,emitx+emity"""
     cur=self.conn.cursor().execute(cmd%(col,seed))
     ftype=[('angle',float),('ampsq',float),('surv',float)]
     data=np.fromiter(cur,dtype=ftype)
@@ -1495,9 +1498,9 @@ class SixDeskDB(object):
     a,s,t=data['angle'],np.sqrt(data['ampsq']),data['surv']
     return a,s,t
   def get_3d_col(self,col,cond=''):
-    cmd="""SELECT seed,angle,sigx1*sigx1+sigy1*sigy1,
+    cmd="""SELECT seed,angle,emitx+emity,
             %s
-            FROM results %s ORDER BY seed,angle,sigx1*sigx1+sigy1*sigy1"""
+            FROM results %s ORDER BY seed,angle,emitx+emity"""
     cur=self.conn.cursor().execute(cmd%(col,cond))
     ftype=[('seed',float),('angle',float),('ampsq',float),('surv',float)]
     data=np.fromiter(cur,dtype=ftype)
@@ -1556,7 +1559,7 @@ class SixDeskDB(object):
         Example:
             db.get_col('sturns1',1,45)
     """
-    cmd="""SELECT sigx1*sigx1+sigy1*sigy1, %s FROM results
+    cmd="""SELECT emitx+emity, %s FROM results
             WHERE tunex=%s AND tuney=%s AND seed=%s AND angle=%s
             ORDER BY amp1,row_num"""
     if tunes is None:
@@ -1593,10 +1596,10 @@ class SixDeskDB(object):
 
   def get_survival_turns(self,seed):
     '''get survival turns from DB '''
-    cmd="""SELECT angle,(sigx1*sigx1+sigy1*sigy1),
+    cmd="""SELECT angle,(emitx+emity),
         CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
         FROM six_results,six_input WHERE seed=%s AND id=six_input_id
-        ORDER BY angle,sigx1*sigx1+sigy1*sigy1"""
+        ORDER BY angle,emitx+emity"""
     # cmd="""SELECT angle,(sigx1*2+sigy1*2),
     #         CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
     #         FROM six_results,six_input WHERE seed=%s and id=six_input_id 
@@ -1617,10 +1620,10 @@ class SixDeskDB(object):
 
   def plot_survival_2d_avg(self,smooth=None):
     ''' plot avg survival turns graph '''
-    cmd=""" SELECT seed,angle,sigx1*sigx1+sigy1*sigy1,
+    cmd=""" SELECT seed,angle,emitx+emity,
         CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
         FROM six_results,six_input WHERE id=six_input_id
-        ORDER BY angle,sigx1*sigx1+sigy1*sigy1"""
+        ORDER BY angle,emitx+emity"""
     cur=self.conn.cursor().execute(cmd)
     ftype=[('seed',float),('angle',float),('ampsq',float),('surv',float)]
     data=np.fromiter(cur,dtype=ftype)
@@ -1731,7 +1734,7 @@ class SixDeskDB(object):
              ('amp1','float'),('amp2','float'),('angle','float'),
              ('row_num','int'),
              ('mtime','float')]
-    names=','.join(zip(*rectype)[0])
+    names=','.join(list(zip(*rectype))[0])
     turnsl=self.env_var['turnsl']
     turnse=self.env_var['turnse']
     ns1l=self.env_var['ns1l']
@@ -1766,7 +1769,7 @@ class SixDeskDB(object):
                 sql=sql1+' AND seed=%s '%seed
                 #sql+=' AND ROUND(angle,5)=ROUND(%s,5) '%angle
                 sql+=' AND angle=%s '%angle
-                sql+=' ORDER BY sigx1*sigx1+sigy1*sigy1 '
+                sql+=' ORDER BY emitx+emity '
                 if self.debug:
                     print(sql)
                 inp=np.array(self.execute(sql),dtype=rectype)

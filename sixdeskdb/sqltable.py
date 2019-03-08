@@ -11,7 +11,7 @@ class SQLTable(object):
     types=[]
     for i,ttt,desc in fields:
       if ttt == 'float' or ttt == 'double': types.append('%s REAL'%i)
-      elif ttt == 'str' or ttt == "string": types.append('%s STRING'%i)
+      elif ttt == 'str' or ttt == "string" or ttt == "bytes": types.append('%s STRING'%i)
       elif ttt == 'int': types.append('%s INTEGER'%i)
       elif ttt == 'blob': types.append('%s BLOB'%i)
     return types
@@ -20,7 +20,7 @@ class SQLTable(object):
     types=[]
     for i,ttt,desc in fields:
       if ttt == 'float' or ttt == 'double': types.append((i,float))
-      elif ttt == 'str' or ttt == "string": types.append((i,'|S100') )
+      elif ttt == 'str' or ttt == "string" or ttt == "bytes": types.append((i,'|S100') )
       elif ttt == 'int': types.append((i,int))
       elif ttt == 'blob': types.append((i,'S1000'))
     return types
@@ -167,7 +167,7 @@ class SQLTable(object):
     if len(data)>0:
       for i in data[0]:
         if type(i) == float : types.append('float')
-        elif type(i) == str: types.append('|S100')
+        elif type(i) == str  or type(i) == "bytes": types.append('|S100')
         elif type(i) == int: types.append('int')
       names=[i[0] for i in cur.description]
       data = np.array(data, dtype = list(zip(names,types)))
