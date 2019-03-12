@@ -477,147 +477,147 @@ def RunDaVsTurnsAng(db,seed,tune,turnstep):
 
 import itertools
 
-import pdb
+#import pdb
 
 # in analysis - putting the pieces together
 def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,
                  fitdaterr,fitndrop,fitskap,fitekap,fitdkap,outfilefit,
                  emitx=None, emity=None,
                  verbose=True):
-  '''Da vs turns -- calculate da vs turns for study dbname, if davstfit=True also fit the data'''
+    '''Da vs turns -- calculate da vs turns for study dbname, if davstfit=True also fit the data'''
 
-  try:
-    turnstep = int(float(turnstep))
-  except [ValueError,NameError,TypeError]:
-    print('Error in RunDaVsTurns: turnstep must be integer!')
-    sys.exit(0)
-  if(not db.check_seeds()):
-    print('!!! Seeds are missing in database !!!')
-  turnsl = db.env_var['turnsl'] # get turnsl for outputfile names
-  turnse = db.env_var['turnse']
-  regemi = db.env_var['emit'] # get the emittance at which the simulation was carried out
+    try:
+        turnstep = int(float(turnstep))
+    except [ValueError,NameError,TypeError]:
+        print('Error in RunDaVsTurns: turnstep must be integer!')
+        sys.exit(0)
+    if(not db.check_seeds()):
+        print('!!! Seeds are missing in database !!!')
+    turnsl = db.env_var['turnsl'] # get turnsl for outputfile names
+    turnse = db.env_var['turnse']
+    regemi = db.env_var['emit'] # get the emittance at which the simulation was carried out
 
-  if emitx is None: # if the unequal emittance option is not used
-    emitx, emity = regemi, regemi
+    if emitx is None: # if the unequal emittance option is not used
+        emitx, emity = regemi, regemi
 
-  ## # filenames in case they have to be updated
-  ## files0 = ['DA.out', 'DAsurv.out', 'DA.png', 'DAsurv.png',
-  ##          'DAsurv_log.png', 'DAsurv_comp.png', 'DAsurv_comp_log.png']
-  ## files = files0[:]
-  ## for f in files0:
-  ##   files.append(f[:-4] + '.{}'.format(turnse) + f[-4:])
+    ## # filenames in case they have to be updated
+    ## files0 = ['DA.out', 'DAsurv.out', 'DA.png', 'DAsurv.png',
+    ##          'DAsurv_log.png', 'DAsurv_comp.png', 'DAsurv_comp_log.png']
+    ## files = files0[:]
+    ## for f in files0:
+    ##   files.append(f[:-4] + '.{}'.format(turnse) + f[-4:])
 
-  if verbose:
-     print('REGEMI  =', regemi)
-     print('EMITX   =', emitx)
-     print('EMITY   =', emity)
-     if (emitx != regemi or emity != regemi):
-        print("WARNING: you are using unequal emittances! So far this option is only computing"\
-              + " the correct value of dastrap. Take this into account in your analysis!")
-
-
-  seeds = db.get_db_seeds()
-  tunes = db.get_db_tunes()
-  if isinstance(emitx, float):
-    emitx = [emitx]
-  if isinstance(emity, float):
-    emity = [emity]
-
-  # pre-allocate data to improve speed
-  # --> does not work yet because the number of valid turn steps may change from case to case
-  #ftype = [('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),
-  #  ('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),
-  #  ('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),
-  #  ('nturn',float),('tlossmin',float),('nturnavg',float),('mtime',float)]
-  #daout = np.zeros(len(seeds)*len(tunes)*len(emitx)*len(emity), dtype=ftype)
-  daout = []
-
-  count = 0
-  for seed in seeds:
-    seed = int(seed)
     if verbose:
-      print('analyzing seed {0} ...'.format(seed))
+        print('REGEMI  =', regemi)
+        print('EMITX   =', emitx)
+        print('EMITY   =', emity)
+        if (emitx != regemi or emity != regemi):
+            print("WARNING: you are using unequal emittances! So far this option is only computing"\
+                   + " the correct value of dastrap. Take this into account in your analysis!")
 
-    for tune in tunes:
-      if verbose:
-        print('analyzing tune {0} ...'.format(tune))
-      dasurv = db.get_surv(seed, tune, verbose=verbose)
 
-      if dasurv is None:
+    seeds = db.get_db_seeds()
+    tunes = db.get_db_tunes()
+    if isinstance(emitx, float):
+        emitx = [emitx]
+    if isinstance(emity, float):
+        emity = [emity]
+
+    # pre-allocate data to improve speed
+    # --> does not work yet because the number of valid turn steps may change from case to case
+    #ftype = [('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),
+    #  ('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),
+    #  ('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),
+    #  ('nturn',float),('tlossmin',float),('nturnavg',float),('mtime',float)]
+    #daout = np.zeros(len(seeds)*len(tunes)*len(emitx)*len(emity), dtype=ftype)
+    daout = []
+
+    count = 0
+    for seed in seeds:
+        seed = int(seed)
         if verbose:
-          print("ERROR: survival data could not be retrieved due to "+
-              "and error in the database or tracking data. Skipping "
-              "this case: (seed, tune) = ({}, {})".format(seed, tune))
-        break
+            print('analyzing seed {0} ...'.format(seed))
 
-      for ex, ey in itertools.product(emitx, emity):
-        if verbose:
-          print ('calculating da vs turns for (ex, ey) = ({}, {})'.format(ex, ey))
+        for tune in tunes:
+            if verbose:
+                print('analyzing tune {0} ...'.format(tune))
+            dasurv = db.get_surv(seed, tune, verbose=verbose)
 
-        ddd = mk_da_vst(dasurv, seed, tune, turnsl, turnstep, ex, ey, regemi, verbose=False)
-        #pdb.set_trace()
-        daout.append(ddd)
-        print (len(ddd))
-        count += 1
+            if dasurv is None:
+                if verbose:
+                    print("ERROR: survival data could not be retrieved due to "+
+                          "and error in the database or tracking data. Skipping "
+                          "this case: (seed, tune) = ({}, {})".format(seed, tune))
+                break
 
-      if outfile or outfileold: # create dasurv.out and da.out files
-        dirname = db.mk_analysis_dir(seed, tune) # directory struct already created in clean_dir_da_vst, only get dir name (string) here
-        daout_seed_tune = daout[count-1]
-        if outfile:
-           save_dasurv(data=dasurv, filename='%s/DAsurv.%s.out'%(dirname, turnse), verbose=verbose)        
-           save_daout(daout_seed_tune, filename='%s/DA.%s.out'%(dirname, turnse), verbose=verbose)
-        if outfileold:
-           save_daout_old(daout_seed_tune, filename='%s/DAold.%s.out'%(dirname, turnse), verbose=verbose)
+            for ex, ey in itertools.product(emitx, emity):
+                if verbose:
+                    print ('calculating da vs turns for (ex, ey) = ({}, {})'.format(ex, ey))
 
-  # MT: ToDo: check the original cleaning part in this script
-  print ('flattening ...')
-  daout_flat = np.hstack(daout)
-  recreate = False
-  db.store_to_sql_database(daout_flat, name='da_vst', recreate=recreate, verbose=verbose)
+                ddd = mk_da_vst(dasurv, seed, tune, turnsl, turnstep, ex, ey, regemi, verbose=False)
+                #pdb.set_trace()
+                daout.append(ddd)
+                #print (len(ddd))
+                count += 1
+
+            if outfile or outfileold: # create dasurv.out and da.out files
+                dirname = db.mk_analysis_dir(seed, tune) # directory struct already created in clean_dir_da_vst, only get dir name (string) here
+                daout_seed_tune = daout[count-1]
+                if outfile:
+                    save_dasurv(data=dasurv, filename='%s/DAsurv.%s.out'%(dirname, turnse), verbose=verbose)        
+                    save_daout(daout_seed_tune, filename='%s/DA.%s.out'%(dirname, turnse), verbose=verbose)
+                if outfileold:
+                    save_daout_old(daout_seed_tune, filename='%s/DAold.%s.out'%(dirname, turnse), verbose=verbose)
+
+        # MT: ToDo: check the original cleaning part in this script
+    if verbose:
+        print ('flattening ...')
+    daout_flat = np.hstack(daout)
+    recreate = False
+    db.store_to_sql_database(daout_flat, name='da_vst', recreate=recreate, verbose=verbose)
         
+    if(davstfit):
+        # --- fit the data ---
+        valid_fit_keys = ['dawtrap', 'dastrap', 'dawsimp', 'dassimp']
+        valid_fit_error_keys = ['none', 'dawtraperr', 'dastraperr', 'dastraperrep', 
+                                'dastraperrepang', 'dastraperrepamp', 'dawsimperr', 
+                                'dassimperr']
+        # --- check user input ---
+        if fitdat not in valid_fit_keys:
+            print("Error in -fitopt: <data> has to be in {} - Aborting!".format(valid_fit_keys))
+            sys.exit(0)
+        if fitdaterr not in valid_fit_error_keys:
+            print("Error in -fitopt: <dataerr> has to be in {} - Aborting!".format(valid_fit_error_keys))
+            sys.exit(0)
+        try:
+            fitndrop = int(float(fitndrop))
+        except [ValueError, NameError, TypeError]:
+            print('Error in RunDaVsTurns: fitndrop must be integer! - Aborting!')
+            sys.exit(0)
+        try:
+            fitskap = float(fitskap)
+            fitekap = float(fitekap)
+            fitdkap = float(fitdkap)
+        except [ValueError, NameError, TypeError]:
+            print('Error in RunDaVsTurns: fitskap, fitekap and fitdkap must be float! - Aborting!')
+            sys.exit(0)
+        # ------------------------
 
-  # --- fit the data ---
-  valid_fit_keys = ['dawtrap', 'dastrap', 'dawsimp', 'dassimp']
-  valid_fit_error_keys = ['none', 'dawtraperr', 'dastraperr', 'dastraperrep', 
-                       'dastraperrepang', 'dastraperrepamp', 'dawsimperr', 
-                       'dassimperr']
-
-  if(davstfit):
-    # --- check user input ---
-    if fitdat not in valid_fit_keys:
-      print("Error in -fitopt: <data> has to be in {} - Aborting!".format(valid_fit_keys))
-      sys.exit(0)
-    if fitdaterr not in valid_fit_error_keys:
-      print("Error in -fitopt: <dataerr> has to be in {} - Aborting!".format(valid_fit_error_keys))
-      sys.exit(0)
-    try:
-      fitndrop = int(float(fitndrop))
-    except [ValueError, NameError, TypeError]:
-      print('Error in RunDaVsTurns: fitndrop must be integer! - Aborting!')
-      sys.exit(0)
-    try:
-      fitskap = float(fitskap)
-      fitekap = float(fitekap)
-      fitdkap = float(fitdkap)
-    except [ValueError, NameError, TypeError]:
-      print('Error in RunDaVsTurns: fitskap, fitekap and fitdkap must be float! - Aborting!')
-      sys.exit(0)
-    # ------------------------
-
-    if np.arange(fitskap, fitekap + fitdkap, fitdkap).any():
-      for tune in db.get_db_tunes():
-        fitdaout = mk_da_vst_fit(db, tune, fitdat, fitdaterr, fitndrop,
+        if np.arange(fitskap, fitekap + fitdkap, fitdkap).any():
+            for tune in db.get_db_tunes():
+                fitdaout = mk_da_vst_fit(db, tune, fitdat, fitdaterr, fitndrop,
                                  fitskap, fitekap, fitdkap, verbose=verbose)
-        db.store_to_sql_database(fitdaout, name='da_vst_fit', recreate=False, verbose=verbose)
-        if(outfilefit):
-          (tunex, tuney) = tune
-          sixdesktunes = "%g_%g"%(tunex, tuney)
-          fndot = '%s/DAfit.%s.%s.%s.%s.%s.plot'%(db.mk_analysis_dir(), db.LHCDescrip, sixdesktunes,
+                db.store_to_sql_database(fitdaout, name='da_vst_fit', recreate=False, verbose=verbose)
+            if(outfilefit):
+                (tunex, tuney) = tune
+                sixdesktunes = "%g_%g"%(tunex, tuney)
+                fndot = '%s/DAfit.%s.%s.%s.%s.%s.plot'%(db.mk_analysis_dir(), db.LHCDescrip, sixdesktunes,
                                                       turnse, fitdat, fitdaterr)
-          save_davst_fit(fitdaout, fndot, verbose=verbose)
-    else:
-      if verbose:
-        print('Error in RunDaVsTurns: empty scan range for fitkap!')
+                save_davst_fit(fitdaout, fndot, verbose=verbose)
+        else:
+            if verbose:
+                print('Error in RunDaVsTurns: empty scan range for fitkap!')
+
 
 
 def PlotFMA(db,args=[]):
