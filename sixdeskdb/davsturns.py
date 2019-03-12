@@ -96,7 +96,6 @@ def mk_da_vst(data, seed, tune, turnsl, turnstep, emitx, emity, regemi,
   simpson rule     (simp):  a_i=(55/24.,-1/6.,11/8.,1, ... 1,11/8.,-1/6.,55/24.)
                             numerical recipes open formulas 4.1.15 and 4.1.18
   """
-
   if verbose:
     print('... calculate da vs turns')
 
@@ -214,7 +213,7 @@ def mk_da_vst(data, seed, tune, turnsl, turnstep, emitx, emity, regemi,
 
       daout[dacount] = (seed,tunex,tuney,turnsl,dawtrap,dastrap,dawsimp,dassimp,dawtraperr,dastraperr,dastraperrep,
          dastraperrepang,dastraperrepamp,dawsimperr,dassimperr, it-turnstep, tlossmin, nturnavg, mtime)
-      dacount += dacount
+      dacount += 1
     currentdastrap = dastrap
     currenttlossmin = tlossmin
   if emitx != regemi or emity != regemi:
@@ -478,6 +477,8 @@ def RunDaVsTurnsAng(db,seed,tune,turnstep):
 
 import itertools
 
+import pdb
+
 # in analysis - putting the pieces together
 def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,
                  fitdaterr,fitndrop,fitskap,fitekap,fitdkap,outfilefit,
@@ -523,11 +524,13 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,
     emity = [emity]
 
   # pre-allocate data to improve speed
-  ftype = [('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),
-    ('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),
-    ('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),
-    ('nturn',float),('tlossmin',float),('nturnavg',float),('mtime',float)]
-  daout = np.zeros(len(seeds)*len(tunes)*len(emitx)*len(emity), dtype=ftype)
+  # --> does not work yet because the number of valid turn steps may change from case to case
+  #ftype = [('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),
+  #  ('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),
+  #  ('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),
+  #  ('nturn',float),('tlossmin',float),('nturnavg',float),('mtime',float)]
+  #daout = np.zeros(len(seeds)*len(tunes)*len(emitx)*len(emity), dtype=ftype)
+  daout = []
 
   count = 0
   for seed in seeds:
@@ -551,8 +554,10 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,
         if verbose:
           print ('calculating da vs turns for (ex, ey) = ({}, {})'.format(ex, ey))
 
+        ddd = mk_da_vst(dasurv, seed, tune, turnsl, turnstep, ex, ey, regemi, verbose=False)
         #pdb.set_trace()
-        daout[count] = mk_da_vst(dasurv, seed, tune, turnsl, turnstep, ex, ey, regemi, verbose=False)
+        daout.append(ddd)
+        print (len(ddd))
         count += 1
 
       if outfile or outfileold: # create dasurv.out and da.out files
@@ -565,8 +570,10 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,
            save_daout_old(daout_seed_tune, filename='%s/DAold.%s.out'%(dirname, turnse), verbose=verbose)
 
   # MT: ToDo: check the original cleaning part in this script
+  print ('flattening ...')
+  daout_flat = np.hstack(daout)
   recreate = False
-  db.store_to_sql_database(daout, name='da_vst', recreate=recreate, verbose=verbose)
+  db.store_to_sql_database(daout_flat, name='da_vst', recreate=recreate, verbose=verbose)
         
 
   # --- fit the data ---
