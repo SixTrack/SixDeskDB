@@ -5,7 +5,7 @@
 # Xavier Valls Pla  <xavier.valls.pla@cern.ch>
 # Danilo Banfi <danilo.banfi@cern.ch>
 #
-# From 2019 in Python 3.6 onwards:
+# From 2019 in Python 3.6 onwards (& commented by MT):
 # Malte Titze <malte.titze@cern.ch>
 #
 # This software is distributed under the terms of the GNU Lesser General Public
@@ -2462,12 +2462,18 @@ class SixDeskDB(object):
     range"""
     footprint.plot_res_upto_order(o=o,l=l,qz=qz,c1=c1,lst1=lst1,c2=c2,lst2=lst2,c3=c3,annotate=annotate)
 # -------------------------------- da_vs_turns -----------------------------------------------------------
-  def store_to_sql_database(self, data, recreate=False, name='da_vst', verbose=True):
+  def store_to_sql_database(self, data, recreate=False, name='da_vst', verbose=True, fit=False):
       ''' store da vs turns data in database'''
       if verbose:
           print ('... saving {} to database (recreate = {})'.format(name, recreate))
       cols = SQLTable.cols_from_dtype(data.dtype)
-      tab = SQLTable(self.conn, name, cols, tables.Da_Vst.key, recreate=recreate)
+
+      # fit: temp solution. need to check why this is 
+      if not fit:
+          tab = SQLTable(self.conn, name, cols, tables.Da_Vst.key, recreate=recreate)
+      else:
+          tab = SQLTable(self.conn, name, cols, tables.Da_Vst_Fit.key, recreate=recreate)
+
       tab.insert(data)
 
   def get_da_vst(self, seed, tune, verbose=True):
@@ -2505,18 +2511,17 @@ class SixDeskDB(object):
            ORDER BY nturn"""%(seed, tunex, tuney, turnsl)
       cur = self.conn.cursor().execute(cmd)
       data = np.fromiter(cur, dtype=ftype)
-    # 11/03/2019 commented out this part - to be checked.
-    ## else:
+    else:
       # 02/11/2014 renamed table da_vsturn to da_vst - keep da_vsturn for backward compatibility - note this table did not include the turn_max!!!
-      ## # check if table da_vsturn exists in database
-      ## if(self.check_table('da_vsturn')):
-      ##  ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
-      ##  cmd="""SELECT *
-      ##       FROM da_vsturn WHERE seed=%s AND tunex=%s AND tuney=%s
-      ##       ORDER BY nturn"""
-      ##  cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
-      ##  data=np.fromiter(cur,dtype=ftype)
-      ## # if tables da_vst and da_vsturn do not exist, return an empty list
+      # check if table da_vsturn exists in database
+      if(self.check_table('da_vsturn')):
+        ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
+        cmd="""SELECT *
+             FROM da_vsturn WHERE seed=%s AND tunex=%s AND tuney=%s
+             ORDER BY nturn"""
+        cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
+        data=np.fromiter(cur,dtype=ftype)
+       # if tables da_vst and da_vsturn do not exist, return an empty list
     return data
 
   def get_da_vst_fit(self,seed,tune):

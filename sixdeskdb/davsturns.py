@@ -127,6 +127,7 @@ def mk_da_vst(data, seed, tune, turnsl, turnstep, emitx, emity, regemi,
   ajsimp_s = np.array([55/24., -1/6., 11/8.]) # Simpson rule
   ajsimp_e = np.array([11/8., -1/6., 55/24.])
   warnsimp = True
+
   for it in np.arange(turnstep, tmax + turnstep, turnstep):
     mta = get_min_turn_ang(s, t, a, it)
     mta_angle = mta['angle']*np.pi/180 # convert to rad
@@ -151,54 +152,59 @@ def mk_da_vst(data, seed, tune, turnsl, turnstep, emitx, emity, regemi,
       calcsimp = False
 
     # prepare the arrays for unequal emittances
-    mta_angle_ue = np.arctan(((emitx/emity)**0.5)*np.tan(mta_angle))                                        # angle for unequal emittances
-    angstep_ue   = angstep*((emitx/emity)**0.5)*((np.cos(mta_angle_ue)**2)/(np.cos(mta_angle)**2))          # angular step for unequal emittances
-    eR           = (((emitx/regemi)*np.cos(mta_angle_ue)**2 + (emity/regemi)*np.sin(mta_angle_ue)**2))**0.5 # square root under rsigma
-    mta_sigma_ue = mta_sigma/eR                                                                             # rsigma for unequal emittances
-    ampstep_ue   = eR*ampstep - ((emitx - emity)/regemi)*((np.cos(mta_angle_ue)*np.sin(mta_angle_ue))/eR**2)*mta_sigma_ue*angstep_ue    # amplitude step with unequal emittances
+    # Reference [1]: "Comment on the computation of DA in case of unequal sigmas", M. Giovanozzi, May 4 2017.
+    mta_angle_ue = np.arctan((emitx/emity)**0.5*np.tan(mta_angle)) # angle for unequal emittances, Eq. (6) in [1].
+    angstep_ue = angstep*(emitx/emity)**0.5*(np.cos(mta_angle_ue)/np.cos(mta_angle))**2 # angular step for unequal emittances, Eq. (7) in [1].
+    eR = (emitx/regemi*np.cos(mta_angle_ue)**2 + emity/regemi*np.sin(mta_angle_ue)**2)**0.5 # square root under rsigma in Eq. (8) in [1].
+    mta_sigma_ue = mta_sigma/eR # rsigma for unequal emittances, see also Eq. (8) in [1].
+
+    # the next quantity is not used and therefore commented out - MT
+    ## ampstep_ue = eR*ampstep - (emitx - emity)/regemi*np.cos(mta_angle_ue)*np.sin(mta_angle_ue)/eR**2*mta_sigma_ue*angstep_ue # amplitude step with unequal emittances
+    # ampstep_ue = ampstep/eR + (emitx - emity)/regemi*np.cos(mta_angle_ue)*np.sin(mta_angle_ue)/eR**2*mta_sigma_ue*angstep_ue # bugfix of previous line - MT
+
 
     # get the integration steps (difference in angle) in the new coordinate system
-    dtheta = np.diff(mta_angle_ue)                               # get the angular distance of the data points [integration constant]
-    dtheta = np.insert(dtheta, 0, mta_angle_ue[0])               # add the first point (distance from x-axis)
-    dtheta = np.append(dtheta, (np.pi/2-mta_angle_ue[-1]))       # add the last ponit  (distance from y-axis)
+    dtheta = np.diff(mta_angle_ue) # get the angular distance of the data points [integration constant]
+    dtheta = np.insert(dtheta, 0, mta_angle_ue[0]) # add the first point (distance from x-axis)
+    dtheta = np.append(dtheta, (np.pi/2 - mta_angle_ue[-1])) # add the last point  (distance from y-axis)
 
     # ---- trapezoidal rule (trap)
     # integral
-    dawtrapint = ((ajtrap*(mta_sigma**4*np.sin(2*mta_angle))).sum())*angstep # old
-    dawtrap    = (dawtrapint)**(1/4.) # old
+    dawtrapint = ((ajtrap*mta_sigma**4*np.sin(2*mta_angle)).sum())*angstep # old
+    dawtrap = (dawtrapint)**(1/4.) # old
 
     #### PH: calculate dastrap with a generalized integration rule
     #        baseline is the open formula (4.1.15) in Press et al. NUMERICAL RECIPES in Fortran 77 [second edition]
     #        we generalize the formula for uneven distances between the sampling points
-    dastrap_ue  = 0
+    dastrap_ue = 0
     dastrap_ue += dtheta[0]*mta_sigma_ue[0]   # corner element from left  [open formula for trapezoidal rule]
     dastrap_ue += dtheta[-1]*mta_sigma_ue[-1] # corner element from right [open formula for trapezoidal rule]
-    for i in range(1,len(dtheta)-1):
+    for i in range(1, len(dtheta) - 1):
         dastrap_ue += (0.5)*( mta_sigma_ue[i] + mta_sigma_ue[i-1] )*dtheta[i]
     dastrap_ue = (2./np.pi)*dastrap_ue # multipy with 2/pi
-    dastrap    = dastrap_ue            # preliminary, change dastrap variable before merging with main branch
+    dastrap = dastrap_ue            # preliminary, change dastrap variable before merging with main branch
 
     # error
-    dawtraperrint   = np.abs(((ajtrap*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum())*angstep*ampstep) # old
-    dawtraperr      = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint
+    dawtraperrint = np.abs(((ajtrap*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum())*angstep*ampstep) # old
+    dawtraperr = np.abs(1/4.*dawtrapint**(-3/4.))*dawtraperrint
 
-    dastraperr      = ampstep/2 # old
+    dastraperr = ampstep/2 # old
     dastraperrepang = ((np.abs(np.diff(mta_sigma))).sum())/(2*(angmax+1)) # PH: bugfix angmax -> angmax+1
 
     dastraperrepamp = ampstep/2
-    dastraperrep    = np.sqrt(dastraperrepang**2 + dastraperrepamp**2)
+    dastraperrep = np.sqrt(dastraperrepang**2 + dastraperrepamp**2)
     # ---- simpson rule (simp)
     if(calcsimp):
       # int
       dawsimpint = (ajsimp*((mta_sigma**4)*np.sin(2*mta_angle))).sum()*angstep # old
-      dawsimp    = (dawsimpint)**(1/4.)
+      dawsimp = (dawsimpint)**(1/4.)
       dassimpint = (ajsimp*mta_sigma).sum()*angstep
-      dassimp    = (2./np.pi)*dassimpint
+      dassimp = (2./np.pi)*dassimpint
 
       # error
       dawsimperrint = (ajsimp*(2*(mta_sigma**3)*np.sin(2*mta_angle))).sum()*angstep*ampstep # old
-      dawsimperr    = np.abs(1/4.*dawsimpint**(-3/4.))*dawsimperrint
-      dassimperr    = ampstep/2 # simplified
+      dawsimperr = np.abs(1/4.*dawsimpint**(-3/4.))*dawsimperrint
+      dassimperr = ampstep/2 # simplified
       # print "DAWSIMPERR, DASSIMPERR, OLD", dawsimperr, dassimperr
 
     else:
@@ -211,8 +217,9 @@ def mk_da_vst(data, seed, tune, turnsl, turnstep, emitx, emity, regemi,
         dawtrap, dawsimp, dassimp, dawtraperr, dastraperr = np.zeros(5)
         dawsimperr, dassimperr = np.zeros(2)
 
-      daout[dacount] = (seed,tunex,tuney,turnsl,dawtrap,dastrap,dawsimp,dassimp,dawtraperr,dastraperr,dastraperrep,
-         dastraperrepang,dastraperrepamp,dawsimperr,dassimperr, it-turnstep, tlossmin, nturnavg, mtime)
+      daout[dacount] = (seed, tunex, tuney, turnsl, dawtrap, dastrap, dawsimp, dassimp,
+                        dawtraperr, dastraperr, dastraperrep, dastraperrepang, dastraperrepamp, 
+                        dawsimperr, dassimperr, it-turnstep, tlossmin, nturnavg, mtime)
       dacount += 1
     currentdastrap = dastrap
     currenttlossmin = tlossmin
@@ -515,7 +522,6 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,
             print("WARNING: you are using unequal emittances! So far this option is only computing"\
                    + " the correct value of dastrap. Take this into account in your analysis!")
 
-
     seeds = db.get_db_seeds()
     tunes = db.get_db_tunes()
     if isinstance(emitx, float):
@@ -523,16 +529,7 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,
     if isinstance(emity, float):
         emity = [emity]
 
-    # pre-allocate data to improve speed
-    # --> does not work yet because the number of valid turn steps may change from case to case
-    #ftype = [('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),
-    #  ('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),
-    #  ('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),
-    #  ('nturn',float),('tlossmin',float),('nturnavg',float),('mtime',float)]
-    #daout = np.zeros(len(seeds)*len(tunes)*len(emitx)*len(emity), dtype=ftype)
-    daout = []
-
-    count = 0
+    daout = {(ex, ey): [] for ex, ey in itertools.product(emitx, emity)}
     for seed in seeds:
         seed = int(seed)
         if verbose:
@@ -554,15 +551,18 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,
                 if verbose:
                     print ('calculating da vs turns for (ex, ey) = ({}, {})'.format(ex, ey))
 
-                ddd = mk_da_vst(dasurv, seed, tune, turnsl, turnstep, ex, ey, regemi, verbose=False)
-                #pdb.set_trace()
-                daout.append(ddd)
-                #print (len(ddd))
-                count += 1
+                daout[(ex, ey)].append(mk_da_vst(dasurv, seed, tune, turnsl, turnstep, ex, ey, regemi, verbose=False))
 
-            if outfile or outfileold: # create dasurv.out and da.out files
+    if verbose:
+        print ('flattening {} cases & storing results to SQL database ...'.format(len(daout.keys())))
+    for exey in daout.keys():
+        column_name = 'da_vst_{}_{}'.format(exey[0], exey[1]).replace('.', '')  # sql does not like '.' in the column names.
+        db.store_to_sql_database(np.hstack(daout[exey]), name=column_name, recreate=True, verbose=verbose)
+
+'''
+    if outfile or outfileold: # create dasurv.out and da.out files
                 dirname = db.mk_analysis_dir(seed, tune) # directory struct already created in clean_dir_da_vst, only get dir name (string) here
-                daout_seed_tune = daout[count-1]
+                daout_seed_tune = daout[(ex, ey)]
                 if outfile:
                     save_dasurv(data=dasurv, filename='%s/DAsurv.%s.out'%(dirname, turnse), verbose=verbose)        
                     save_daout(daout_seed_tune, filename='%s/DA.%s.out'%(dirname, turnse), verbose=verbose)
@@ -570,11 +570,9 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,
                     save_daout_old(daout_seed_tune, filename='%s/DAold.%s.out'%(dirname, turnse), verbose=verbose)
 
         # MT: ToDo: check the original cleaning part in this script
-    if verbose:
-        print ('flattening ...')
-    daout_flat = np.hstack(daout)
+
     recreate = False
-    db.store_to_sql_database(daout_flat, name='da_vst', recreate=recreate, verbose=verbose)
+    db.store_to_sql_database(daout_flat, name='da_vst', recreate=recreate, verbose=verbose, fit=True)
         
     if(davstfit):
         # --- fit the data ---
@@ -617,7 +615,7 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,
         else:
             if verbose:
                 print('Error in RunDaVsTurns: empty scan range for fitkap!')
-
+'''
 
 
 def PlotFMA(db,args=[]):
