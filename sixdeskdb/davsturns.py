@@ -170,10 +170,6 @@ def compute_da_ue(data, emittances_x, emittances_y, turnstep, regemi,
     for nm in daout.dtype.names:
         #daout[nm] = np.zeros(l_turnstep)
         daout[nm] = np.zeros(ll)
-    dawsimp, dassimp, dawsimperr, dassimperr = np.zeros(4)
-    dawtrap, dawsimp, dassimp, dawtraperr, dastraperr = np.zeros(5)
-    dawsimperr, dassimperr, dastraperrep = np.zeros(3)
-    dastraperrepang, dastraperrepamp = np.zeros(2)
     ###############################################
 
     # iterate over emittances and turn steps
@@ -190,12 +186,15 @@ def compute_da_ue(data, emittances_x, emittances_y, turnstep, regemi,
         nturnavg = (it - turnstep + tlossmin)/2.
 
         if tlossmin != currenttlossmin: # ??? effect of this condition to be checked - MT
+
+            tan = np.tan(mta_angle)
+            cos = np.cos(mta_angle)
+
             for emitx, emity in itertools.product(emittances_x, emittances_y): #daout.keys():
-                # prepare the arrays for unequal emittances; currently only
-                # simple formula implemented.
+                # prepare the arrays for unequal emittances; currently only simple version implemented.
                 # Reference [1]: "Comment on the computation of DA in case of unequal sigmas", M. Giovanozzi, May 4 2017.
-                mta_angle_ue = np.arctan((emitx/emity)**0.5*np.tan(mta_angle)) # angle for unequal emittances, Eq. (6) in [1].
-                angstep_ue = angstep*(emitx/emity)**0.5*(np.cos(mta_angle_ue)/np.cos(mta_angle))**2 # angular step for unequal emittances, Eq. (7) in [1].
+                mta_angle_ue = np.arctan((emitx/emity)**0.5*tan) # angle for unequal emittances, Eq. (6) in [1].
+                angstep_ue = angstep*(emitx/emity)**0.5*(np.cos(mta_angle_ue)/cos)**2 # angular step for unequal emittances, Eq. (7) in [1].
                 eR = (emitx/regemi*np.cos(mta_angle_ue)**2 + emity/regemi*np.sin(mta_angle_ue)**2)**0.5 # square root under rsigma in Eq. (8) in [1].
                 mta_sigma_ue = mta_sigma/eR # rsigma for unequal emittances, see also Eq. (8) in [1].
 
@@ -218,9 +217,8 @@ def compute_da_ue(data, emittances_x, emittances_y, turnstep, regemi,
                 dastrap_ue += dtheta[-1]*mta_sigma_ue[-1] # corner element from right [open formula for trapezoidal rule]
                 for i in range(1, len(dtheta) - 1):
                     dastrap_ue += (0.5)*( mta_sigma_ue[i] + mta_sigma_ue[i-1] )*dtheta[i]
-                dastrap_ue = (2./np.pi)*dastrap_ue
-                dastrap = dastrap_ue # preliminary, change dastrap variable before merging with main branch#
-                ##daout[(emitx, emity)].append(dastrap)
+                dastrap_ue = (2/np.pi)*dastrap_ue
+                dastrap = dastrap_ue # preliminary, change dastrap variable before merging with main branch
 
                 if (dastrap != currentdastrap or it == tmax) and dastrap > 0:  # ??? effect of first condition to be checked - MT
                     daout[dacount] = (seed, tunex, tuney, emitx, emity, turnsl, dastrap, 
@@ -646,7 +644,8 @@ def RunDaVsTurnsAng(db,seed,tune,turnstep):
 
 import itertools
 
-import pdb
+#import pdb
+from . import tables
 
 # in analysis - putting the pieces together
 def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,
@@ -732,6 +731,7 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,
                                            seed, tune[0], tune[1], turnsl,
                                            verbose=verbose))
 
+
             if verbose:
                 end = time.time()
                 print ('T: {:.8f} [s]'.format(end - start))
@@ -747,7 +747,9 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,
             column_name = 'da_vst_{}_{}'.format(exey[0], exey[1]).replace('.', '')  # n.b. sql does not like '.' in column names.
             db.store_to_sql_database(np.hstack(daout[exey]), name=column_name, recreate=True, verbose=verbose)
     if method == 1:
-        db.store_to_sql_database(np.hstack(daout), name='da_vst', recreate=True, verbose=verbose)
+        #pdb.set_trace()
+        db.store_to_sql_database(np.hstack(daout), name='da_vst', keys=tables.Da_Vst_Emit.key, 
+                                 recreate=True, verbose=verbose)
     
         #pdb.set_trace()
         #db.store_to_sql_database(np.array(daout[exey], dtype=[(column_name, float)]), name=column_name, 
