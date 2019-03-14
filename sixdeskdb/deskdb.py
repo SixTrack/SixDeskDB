@@ -2462,17 +2462,13 @@ class SixDeskDB(object):
     range"""
     footprint.plot_res_upto_order(o=o,l=l,qz=qz,c1=c1,lst1=lst1,c2=c2,lst2=lst2,c3=c3,annotate=annotate)
 # -------------------------------- da_vs_turns -----------------------------------------------------------
-  def store_to_sql_database(self, data, recreate=False, name='da_vst', verbose=True, fit=False):
+  def store_to_sql_database(self, data, recreate=False, name='da_vst', keys=tables.Da_Vst.key, verbose=True):
       ''' store da vs turns data in database'''
       if verbose:
           print ('... saving {} to database (recreate = {})'.format(name, recreate))
+          print ('keys: {}'.format(keys))
       cols = SQLTable.cols_from_dtype(data.dtype)
-
-      # fit: temp solution. need to check why this is 
-      if not fit:
-          tab = SQLTable(self.conn, name, cols, tables.Da_Vst.key, recreate=recreate)
-      else:
-          tab = SQLTable(self.conn, name, cols, tables.Da_Vst_Fit.key, recreate=recreate)
+      tab = SQLTable(self.conn, name, cols, keys, recreate=recreate)
 
       tab.insert(data)
 

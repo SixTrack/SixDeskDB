@@ -259,6 +259,18 @@ class Da_Vst_Fit(object):
   ('mtime','float','last modification time')]
   key=['fitdat','fitdaterr','fitndrop','tunex','tuney','seed']
 
+class Da_Vst_Emit(object):
+  fields=[
+  ('seed', 'int', 'seed value'),
+  ('tunex', 'float', 'tunex value'),
+  ('tuney' ,'float', 'tuney value'),
+  ('turn_max' ,'int', 'Maximum turn number'),
+  ('da', 'float', 'Dynamic Aperture'),
+  ('nturn', 'float', 'lost turn number [turnstep,2*turnstep,...]'),
+  ('tlossmin', 'float', 'minimum lost turn number over all angles'),
+  ('mtime','float','last modification time')]
+  key=['seed','tunex','tuney','nturn']
+
 acc_var = ['BNL','COLUMNS','CORR_TEST','G_FILENAME_ENCODING','LHCDesHome',
     'LHCDesName','LHCDescrip','LINES','MADX','MADX_PATH','SIXTRACKBNLEXE',
     'SIXTRACKDAEXE','SIXTRACKEXE','basedir','beam','boincdir','bunch_charge',

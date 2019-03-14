@@ -43,7 +43,8 @@ def guess_toolkit():
 class SixDB(object):
     def __init__(self,argsv):
         self.args=argsv[1:]
-        self.verbose=True
+        self.verbose = True
+        self.da_method = 0 # 0: old, 1: new (test)
     def run(self):
         args=self.args
         if len(args)==0:
@@ -235,7 +236,7 @@ Usage: sixdb <dbname> da_vs_turns
 
        RunDaVsTurns(db, force, outfile, outfileold, turnstep, davstfit, fitdat, fitdaterr,
                     fitndrop, fitskap, fitekap, fitdkap, outfilefit, emitx, emity, 
-                    verbose=self.verbose)
+                    verbose=self.verbose, method=self.da_method)
 
     def plot_fma(self, study):
       """Plot FMA.
