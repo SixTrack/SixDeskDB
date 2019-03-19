@@ -2463,14 +2463,27 @@ class SixDeskDB(object):
     footprint.plot_res_upto_order(o=o,l=l,qz=qz,c1=c1,lst1=lst1,c2=c2,lst2=lst2,c3=c3,annotate=annotate)
 # -------------------------------- da_vs_turns -----------------------------------------------------------
   def store_to_sql_database(self, data, recreate=False, name='da_vst', keys=tables.Da_Vst.key, verbose=True):
-      ''' store da vs turns data in database'''
+      ''' store da vs turns data in database. For new unequal emittance routine - MT.'''
       if verbose:
           print ('... saving {} to database (recreate = {})'.format(name, recreate))
           print ('keys: {}'.format(keys))
       cols = SQLTable.cols_from_dtype(data.dtype)
       tab = SQLTable(self.conn, name, cols, keys, recreate=recreate)
-
       tab.insert(data)
+      tab.db.close() # close SQL connection (i.e. store_to_sql_database is intended to be called at the end of loops)
+
+
+  def st_da_vst(self,data,recreate=False):
+    ''' store da vs turns data in database'''
+    cols  = SQLTable.cols_from_dtype(data.dtype)
+    tab   = SQLTable(self.conn,'da_vst',cols,tables.Da_Vst.key,recreate)
+    tab.insert(data)
+  def st_da_vst_fit(self,data,recreate=False):
+    ''' store da vs turns fit data in database'''
+    cols  = SQLTable.cols_from_dtype(data.dtype)
+    tab   = SQLTable(self.conn,'da_vst_fit',cols,tables.Da_Vst_Fit.key,recreate=False)
+    tab.insert(data)
+
 
   def get_da_vst(self, seed, tune, verbose=True):
     '''get da vs turns data from DB'''
