@@ -2462,7 +2462,8 @@ class SixDeskDB(object):
     range"""
     footprint.plot_res_upto_order(o=o,l=l,qz=qz,c1=c1,lst1=lst1,c2=c2,lst2=lst2,c3=c3,annotate=annotate)
 # -------------------------------- da_vs_turns -----------------------------------------------------------
-  def store_to_sql_database(self, data, recreate=False, name='da_vst', keys=tables.Da_Vst.key, verbose=True):
+  def store_to_sql_database(self, data, recreate=False, name='da_vst', keys=tables.Da_Vst.key, 
+                            close=False, verbose=True):
       ''' store da vs turns data in database. For new unequal emittance routine - MT.'''
       if verbose:
           print ('... saving {} to database (recreate = {})'.format(name, recreate))
@@ -2470,7 +2471,12 @@ class SixDeskDB(object):
       cols = SQLTable.cols_from_dtype(data.dtype)
       tab = SQLTable(self.conn, name, cols, keys, recreate=recreate)
       tab.insert(data)
-      tab.db.close() # close SQL connection (i.e. store_to_sql_database is intended to be called at the end of loops)
+      if close:
+          # close SQL connection (i.e. store_to_sql_database is intended to be called at the end of loops)
+          if verbose:
+              print ('Closing database.')
+          self.conn.close()
+          #tab.db.close() 
 
 
   def st_da_vst(self,data,recreate=False):
