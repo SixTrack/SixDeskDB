@@ -40,29 +40,33 @@ def linear_fit(datx,daty,daterr):
 # ----------- functions necessary for the analysis -----------
 
 #@profile
-def get_min_turn_ang(s,t,a,it):
-  """returns array with (angle,minimum sigma,sturn) of particles with lost turn number < it.
+def get_min_turn_ang(s, t, a, it):
+    """returns array with (angle, minimum sigma, sturn) of particles with lost turn number < it.
 
-  check if there is a particle with angle ang with lost turn number <it
-  if true: lost turn number and amplitude of the last stable particle is saved = particle "before" the particle with the smallest amplitude with nturns<it
-  if false: the smallest lost turn number and the largest amplitude is saved
-  """
-  # s,t,a are ordered by angle,amplitude
-  angles,sigmas=t.shape# angles = number of angles, sigmas = number of amplitudes
-  ftype=[('angle',float),('sigma',float),('sturn',float)]
-  mta=np.zeros(angles,dtype=ftype)
-  # enumerate(a[:,0]) returns (0, a[0]), (1, a[1]), (2, a[2]), ... = iang, ang where iang = index of the array (0,1,2,...) for ang = angle (e.g. [1.5, ... , 1.5] , [3.0, ... ,3.0])
-  for iang,ang in enumerate(a[:,0]):
-    tang = t[iang]
-    sang = s[iang]
-    iturn = tang<it # select lost turn number < it
-    if(any(tang[iturn])):
-      sangit=sang[iturn].min()
-      argminit=sang.searchsorted(sangit) # get index of smallest amplitude with sturn<it - amplitudes are ordered ascending
-      mta[iang]=(ang,sang[argminit-1],tang[argminit-1])#last stable amplitude -> index argminit-1
-    else:
-      mta[iang]=(ang,sang.max(),tang.min())
-  return mta
+    check if there is a particle with angle ang with lost turn number <it
+    if true: lost turn number and amplitude of the last stable particle is 
+    saved = particle "before" the particle with the smallest amplitude with nturns<it
+    if false: the smallest lost turn number and the largest amplitude is saved
+    """
+    # s, t, a are ordered by angle, amplitude
+    n_angles, n_sigmas = t.shape # n_angles = number of angles, n_sigmas = number of amplitudes
+    ftype = [('angle', float), ('sigma', float), ('sturn', float)]
+    mta = np.zeros(n_angles, dtype=ftype)
+    # enumerate(a[:,0]) returns (0, a[0]), (1, a[1]), (2, a[2]), ... = (iang, ang),
+    # where iang = index of the array (0, 1, 2, ...) for ang = angle (e.g. [1.5, ..., 1.5], [3.0, ..., 3.0])
+    for iang, ang in enumerate(a[:, 0]): # corrsponds in looping over the different angles
+        t_ang = t[iang] # turns belonging to this angle
+        s_ang = s[iang] # sigmas belonging to this angle
+
+        iturn = t_ang < it # select lost turn number < it
+        if any(t_ang[iturn]):
+            s_angit = s_ang[iturn].min()
+            argminit = s_ang.searchsorted(s_angit) # get index of smallest amplitude with sturn < it. Amplitudes are ordered ascending
+            mta[iang] = (ang, s_ang[argminit - 1], t_ang[argminit - 1]) # last stable amplitude -> index argminit - 1
+        else:
+            # mta[iang] = (ang, s_ang.min(), t_ang.max())  # original s_ang.max(), but this would be inconsistent with other case... - MT
+            mta[iang] = (ang, s_ang.max(), t_ang.min()) 
+    return mta
 
 def select_ang_surv(data,seed,nang):
   """returns data reduced to ((angmax+1)/nang)-1 angles -> nang being the divisor of angmax"""
@@ -78,7 +82,8 @@ def select_ang_surv(data,seed,nang):
   dataang['sigma'],dataang['angle'],dataang['sturn']=s,a,t
   return dataang
 
-def compute_da_ue(data, emittances_x, emittances_y, turnstep, regemi, 
+
+def compute_da_ue(data, emittances, turnstep, regemi, 
                   seed, tunex, tuney, turnsl,
                   simple=True, method='simpson', verbose=True):
     '''
@@ -87,12 +92,11 @@ def compute_da_ue(data, emittances_x, emittances_y, turnstep, regemi,
     from mk_da_vst function, but output/input structure
     overworked for the purpose of improving. Old code kept for compatibility/checks. 
     Currently only implemented for simpson rule.
-    - all unecessary checks and calculations of outdated quantities removed.
  
     INPUT
     -----
     data: see mk_da_vst. Depends on seed & turns.
-    emittance_x/y: list of emittances to be computed
+    emittances: list of emittance tuples to be computed
     turnstep: step length of turns at which we perform the DA computation
     regemi: Regular emittance which was used in the simulation.
     simple: True: compute DA via simplified formula, False: use 4D formula.
@@ -118,21 +122,21 @@ def compute_da_ue(data, emittances_x, emittances_y, turnstep, regemi,
     # not all be computed at once every time, at it was done in the past. This is for the purpose to improve speed (and encourage
     # the use of more meaningful variable names). 
     # Therefore this routine will return a single column called 'da' (and later perhaps 'da_err').
-    ftype = [('seed',int), 
-               ('tunex',float), 
-               ('tuney',float), 
+    ftype = [('seed', int), 
+               ('tunex', float), 
+               ('tuney', float), 
                ('emitx', float),
                ('emity', float),
-               ('turn_max',int),
-               ('da',float),
-               ('nturn',float),
-               ('tlossmin',float), 
-               ('nturnavg',float) , 
-               ('mtime',float)]
+               ('turn_max', int),
+               ('da', float),
+               ('nturn', float),
+               ('tlossmin', float), 
+               ('nturnavg', float) , 
+               ('mtime', float)]
 
     turns = np.arange(turnstep, tmax + turnstep, turnstep)
 
-    ll = len(turns)*len(emittances_x)*len(emittances_y)
+    ll = len(turns)*len(list(emittances))
     daout = np.ndarray(ll, dtype=ftype)
     for nm in daout.dtype.names:
         daout[nm] = np.zeros(ll)
@@ -167,7 +171,6 @@ def compute_da_ue(data, emittances_x, emittances_y, turnstep, regemi,
                 print('ERROR: compute_da_ue - You need at least 3 angles to calculate the da vs turns! Aborting!!!')
                 sys.exit(0)
 
-
         tlossmin = np.min(mta['sturn'])
         nturnavg = (it - turnstep + tlossmin)/2.
 
@@ -176,7 +179,7 @@ def compute_da_ue(data, emittances_x, emittances_y, turnstep, regemi,
             tan = np.tan(thetas)
             cos = np.cos(thetas)
 
-            for emitx, emity in itertools.product(emittances_x, emittances_y): #daout.keys():
+            for emitx, emity in emittances: #daout.keys():
                 # prepare the arrays for unequal emittances; currently only simple version implemented.
                 # Reference [1]: "Comment on the computation of DA in case of unequal sigmas", M. Giovanozzi, May 4 2017.
                 thetas_ue = np.arctan((emitx/emity)**0.5*tan) # angle for unequal emittances, Eq. (6) in [1].
@@ -730,8 +733,9 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
 import itertools
 #import pdb
 from . import tables
-
-def RunDaVsTurns_ue(db, turnstep=100, emitx=None, emity=None, verbose=True, method=0):
+# new DA method for unequal emittances - MT
+def RunDaVsTurns_ue(db, turnstep=100, emittances=None, method=1, close=True,
+                    verbose=True):
     '''Da vs turns -- calculate da vs turns for study dbname.
     method: 
     0: similar to original method (at python 3 initial commit) but
@@ -751,15 +755,11 @@ def RunDaVsTurns_ue(db, turnstep=100, emitx=None, emity=None, verbose=True, meth
     turnse = db.env_var['turnse']
     regemi = db.env_var['emit'] # get the emittance at which the simulation was carried out
 
-    if emitx is None: # if the unequal emittance option is not used
-        emitx, emity = regemi, regemi
+    if emittances is None: # if the unequal emittance option is not used
+        emittances = [[regemi, regemi]]
 
     seeds = db.get_db_seeds()
     tunes = db.get_db_tunes()
-    if isinstance(emitx, float):
-        emitx = [emitx]
-    if isinstance(emity, float):
-        emity = [emity]
 
     if method == 0:
         daout = {(ex, ey): [] for ex, ey in itertools.product(emitx, emity)}
@@ -767,13 +767,9 @@ def RunDaVsTurns_ue(db, turnstep=100, emitx=None, emity=None, verbose=True, meth
         daout = []
 
     if verbose:
-        print('REGEMI  =', regemi)
-        print('EMITX   =', emitx)
-        print('EMITY   =', emity)
-        print('METHOD  =', method)
-        if (emitx != regemi or emity != regemi) and method == 0:
-            print("WARNING: you are using unequal emittances! So far this option is only computing"\
-                   + " the correct value of dastrap. Take this into account in your analysis!")
+        print('REGEMI       =', regemi)
+        print('EMITTANCES   =', list(emittances))
+        print('METHOD       =', method)
         start_time = time.time()
 
     for seed in seeds:
@@ -793,14 +789,14 @@ def RunDaVsTurns_ue(db, turnstep=100, emitx=None, emity=None, verbose=True, meth
 
             # now compute DA depending on user-given method
             if method == 0:
-                for ex, ey in itertools.product(emitx, emity):
+                for ex, ey in emittances:
                     #if verbose:
                     #    print ('calculating da vs turns for (ex, ey) = ({}, {})'.format(ex, ey))
 
                     daout[(ex, ey)].append(mk_da_vst(dasurv, seed, tune, turnsl, turnstep, ex, ey, regemi)) #, verbose=False))
             if method == 1:
                 # loop inside new DA method, faster than method 0
-                daout.append(compute_da_ue(dasurv, emitx, emity, turnstep, regemi, 
+                daout.append(compute_da_ue(dasurv, emittances, turnstep, regemi, 
                                            seed, tune[0], tune[1], turnsl,
                                            verbose=False))
 
@@ -816,7 +812,7 @@ def RunDaVsTurns_ue(db, turnstep=100, emitx=None, emity=None, verbose=True, meth
             db.store_to_sql_database(np.hstack(daout[exey]), name=column_name, recreate=True, verbose=verbose)
     if method == 1:
         db.store_to_sql_database(np.hstack(daout), name='da_vst', keys=tables.Da_Vst_Emit.key, 
-                                 recreate=True, verbose=verbose)
+                                 recreate=True, close=close, verbose=verbose)
  
 
 '''
