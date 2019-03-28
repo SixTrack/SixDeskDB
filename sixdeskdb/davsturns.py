@@ -139,10 +139,12 @@ def compute_da_ue(data, emittances, turnstep, regemi,
        # print (' --- emittances ---\n x: {}\n y: {}'.format(emittances_x, emittances_y))
 
     mtime = time.time()
-    s, thetas, t = data['sigma'], data['angle'][:, 0]*np.pi/180, data['sturn']
+    thetas, t = data['angle'][:, 0]*np.pi/180, data['sturn']
+    sx, sy = data['sigmax'], data['sigmay']
+    s = np.sqrt(sx**2 + sy**2)
     tmax = np.max(t[s > 0]) # maximum number of turns
     # set the 0 in t to tmax*100 in order to check if turnnumber < it (any(tang < it) in get_min_turn_ang) (old comment - MT)
-    t[s==0] = tmax*100
+    t[s==0] = tmax*100 #
     # s, t, a are ordered by angle, amplitude
     n_angles = len(thetas) # n_angles = number of angles, n_sigmas = number of amplitudes
     angstep = np.pi/(2*(n_angles + 1)) # step in angle in rad
@@ -223,10 +225,10 @@ def compute_da_ue(data, emittances, turnstep, regemi,
         #import pdb
         #pdb.set_trace()
 
-        if tlossmin != current_tlossmin or it == tmax: # ??? effect of these conditions needs to be checked - MT
-            # the first condition may ensure that only computations are performed if it is large enough to yield a change
-            # in the losses. However, what seems to be lost if using a condition here is the statistics: It can happen
-            # that there are many different cases with the same DA, of different amounts.
+        if True:# tlossmin != current_tlossmin or it == tmax: # ??? effect of these conditions needs to be checked - MT
+            # the first condition may ensure that only computations are performed if the minimum of the survival turns
+            # changed. However, what seems to be lost if using a condition here is the statistics: It can happen
+            # that there are many different cases with a chage in the loss pattern and one minimum which did not changed.
 
             for emitx, emity in emittances: #daout.keys():
                 # prepare the arrays for unequal emittances; currently only simple version implemented.
@@ -809,7 +811,7 @@ def RunDaVsTurns_ue(db, turnstep=100, emittances=None, method=1, close=True,
         for tune in tunes:
             if verbose:
                 print('\ranalyzing seed {}/{}, tune {} ...'.format(seed, len(seeds), tune), end='')
-            dasurv = db.get_surv(seed, tune, verbose=False)
+            dasurv = db.get_surv_ue(seed, tune, verbose=False)
 
             if dasurv is None:
                 if verbose:

@@ -2605,7 +2605,7 @@ class SixDeskDB(object):
     cmd = """SELECT angle, emitx, emity,
           CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
           FROM results WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%s
-          ORDER BY angle, emitx, emity"""
+          ORDER BY angle, emitx*emitx + emity*emity"""
     cur = self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
     ftype = [('angle', float), ('sigmax', float), ('sigmay', float), ('sturn',float)]
     data = np.fromiter(cur, dtype=ftype)
