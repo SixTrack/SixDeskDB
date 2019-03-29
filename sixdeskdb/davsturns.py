@@ -115,7 +115,8 @@ def get_min_turn_ang_fast(s, t, mta, it):
 
 def compute_da_ue(data, emittances, turnstep, regemi, 
                   seed, tunex, tuney, turnsl,
-                  simple=True, method='simpson', verbose=True):
+                  simple=True, method='simpson', quick=False, 
+                  verbose=True):
     '''
     New version to compute DA for unequal emittances & speed improvements (MT)
     Code and some comments taken over
@@ -140,8 +141,7 @@ def compute_da_ue(data, emittances, turnstep, regemi,
 
     mtime = time.time()
     thetas, t = data['angle'][:, 0]*np.pi/180, data['sturn']
-    sx, sy = data['sigmax'], data['sigmay']
-    s = np.sqrt(sx**2 + sy**2)
+    s = data['sigma']
     tmax = np.max(t[s > 0]) # maximum number of turns
     # set the 0 in t to tmax*100 in order to check if turnnumber < it (any(tang < it) in get_min_turn_ang) (old comment - MT)
     t[s==0] = tmax*100 #
@@ -206,6 +206,7 @@ def compute_da_ue(data, emittances, turnstep, regemi,
             print('ERROR: compute_da_ue - You need at least 3 angles to calculate the da vs turns! Aborting!!!')
             sys.exit(0)
 
+    condition = True
     for it in turns:
         mta = get_min_turn_ang_fast(s, t, mta, it)
         sigmas = mta['sigma'] # sigmas is a list showing the (multiples of) sigma, determined by 
@@ -222,14 +223,13 @@ def compute_da_ue(data, emittances, turnstep, regemi,
         # array([ 1715.,  1667.,  2616.,  8897., 12115.,  3605.,  2845.,  6941., 1396., 64155.,  2182.])
         nturnavg = (it - turnstep + tlossmin)/2.
 
-        #import pdb
-        #pdb.set_trace()
-
-        if True:# tlossmin != current_tlossmin or it == tmax: # ??? effect of these conditions needs to be checked - MT
+        if quick:
+            condition = tlossmin != current_tlossmin or it == tmax # effect of these conditions needs to be checked - MT
             # the first condition may ensure that only computations are performed if the minimum of the survival turns
             # changed. However, what seems to be lost if using a condition here is the statistics: It can happen
             # that there are many different cases with a chage in the loss pattern and one minimum which did not changed.
 
+        if condition:
             for emitx, emity in emittances: #daout.keys():
                 # prepare the arrays for unequal emittances; currently only simple version implemented.
                 # Reference [1]: "Comment on the computation of DA in case of unequal sigmas", M. Giovanozzi, May 4 2017.
@@ -245,7 +245,7 @@ def compute_da_ue(data, emittances, turnstep, regemi,
                 # currently only trapezoid formula implemented
                 da = 2/np.pi*(aj*sigmas_ue*dthetas_ue).sum() # should correspond to (4.1.15)
 
-                if da > 0: ## and da != current_da:  # ??? effect of 2nd condition to be checked - MT
+                if da > 0: ## and da != current_da:  # effect of 2nd condition to be checked - MT
                     daout[dacount] = (seed, tunex, tuney, emitx, emity, turnsl, da, 
                                       it - turnstep, tlossmin, nturnavg, mtime)
                     dacount += 1
@@ -766,8 +766,8 @@ import itertools
 from . import tables
 # new DA method for unequal emittances - MT
 def RunDaVsTurns_ue(db, turnstep=100, emittances=None, method=1, close=True,
-                    integration_scheme='trapezoid', verbose=True):
-    '''Da vs turns -- calculate da vs turns for study dbname.
+                    integration_scheme='trapezoid', quick=False, verbose=True):
+    '''Da vs turns -- calculate da vs turns for study dbname - MT
     
     emittances: List of emittance tuples.
     method: 
@@ -830,12 +830,12 @@ def RunDaVsTurns_ue(db, turnstep=100, emittances=None, method=1, close=True,
             if method == 1:
                 # loop inside new DA method, faster than method 0
                 daout.append(compute_da_ue(dasurv, emittances, turnstep, regemi, 
-                                           seed, tune[0], tune[1], turnsl, method=integration_scheme,
+                                           seed, tune[0], tune[1], turnsl, method=integration_scheme, quick=quick,
                                            verbose=False))
 
     # store results in SQL database
     if verbose:
-        print ('\nTime elapsed: {:.6f} [s]'.format(time.time() - start_time))
+        print ('\nTime elapsed: {:.3f} [s]'.format(time.time() - start_time))
         print ('flattening {} cases & storing results to SQL database ...'.format(len(daout)))
     if method == 0:
         for exey in daout.keys():

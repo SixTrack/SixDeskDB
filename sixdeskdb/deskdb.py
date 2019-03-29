@@ -2602,16 +2602,15 @@ class SixDeskDB(object):
     emit = float(self.env_var['emit'])
     gamma = float(self.env_var['gamma'])
     turnsl = self.env_var['turnsl']
-    cmd = """SELECT angle, emitx, emity,
+    cmd = """SELECT angle, emitx+emity,
           CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
           FROM results WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%s
           ORDER BY angle, emitx*emitx + emity*emity"""
     cur = self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
-    ftype = [('angle', float), ('sigmax', float), ('sigmay', float), ('sturn',float)]
+    ftype = [('angle', float), ('sigma', float), ('sturn',float)]
     data = np.fromiter(cur, dtype=ftype)
     
-    data['sigmax'] = np.sqrt(data['sigmax']*gamma/emit) 
-    data['sigmay'] = np.sqrt(data['sigmay']*gamma/emit) # data['sigma'] on the right-hand side is in fact the sum of the x and y action, see above. The gamma factor corresponds to energy normalization while the division by emit yields the scaling factor in terms of sigma (reference). - MT
+    data['sigma']=np.sqrt(data['sigma']*gamma/emit) # data['sigma'] on the right-hand side is in fact the sum of the x and y action, see above. The gamma factor corresponds to energy normalization while the division by emit yields the scaling factor in terms of sigma (reference). - MT
     angles = len(set(data['angle']))
     try:
       return data.reshape(angles,-1)
