@@ -811,7 +811,7 @@ def RunDaVsTurns_ue(db, turnstep=100, emittances=None, method=1, close=True,
         for tune in tunes:
             if verbose:
                 print('\ranalyzing seed {}/{}, tune {} ...'.format(seed, len(seeds), tune), end='')
-            dasurv = db.get_surv_ue(seed, tune, verbose=False)
+            dasurv = db.get_surv(seed, tune, verbose=False)
 
             if dasurv is None:
                 if verbose:

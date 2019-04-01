@@ -2589,36 +2589,6 @@ class SixDeskDB(object):
             "shape (%s,newaxis). Skip this seed %s!"%(angles,seed)))
       return None
 
-  def get_surv_ue(self,seed,tune=None,verbose=True):
-    '''get survival turns from DB calculated from emitI and emitII'''
-
-    if verbose:
-      print ('... getting survival data') 
-
-    #change for new db version
-    if tune is None:
-        tune = self.get_db_tunes()[0]
-    (tunex, tuney) = tune
-    emit = float(self.env_var['emit'])
-    gamma = float(self.env_var['gamma'])
-    turnsl = self.env_var['turnsl']
-    cmd = """SELECT angle, emitx+emity,
-          CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
-          FROM results WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%s
-          ORDER BY angle, emitx*emitx + emity*emity"""
-    cur = self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
-    ftype = [('angle', float), ('sigma', float), ('sturn',float)]
-    data = np.fromiter(cur, dtype=ftype)
-    
-    data['sigma']=np.sqrt(data['sigma']*gamma/emit) # data['sigma'] on the right-hand side is in fact the sum of the x and y action, see above. The gamma factor corresponds to energy normalization while the division by emit yields the scaling factor in terms of sigma (reference). - MT
-    angles = len(set(data['angle']))
-    try:
-      return data.reshape(angles,-1)
-    except ValueError:
-      print(("Cannot reshape array of size %s into "%(len(data))+
-            "shape (%s,newaxis). Skip this seed %s!"%(angles,seed)))
-      return None
-
   def plot_da_vst(self,seed,tune,ldat,ldaterr,ampmin,ampmax,tmax,slog,sfit,fitndrop):
     """plot dynamic aperture vs number of turns where ldat,ldaterr is the data and 
     the associated error to be plotted. The data is plotted in blue and the fit in red.
