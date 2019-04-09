@@ -304,6 +304,11 @@ class SixDeskDB(object):
       data=self.execute(sql)
       data=[(decompressBuf(mad),ii,mt) for mad,ii,mt in data]
       return data
+  def get_fit_parameters(self, names):
+      '''example: names = ['d', 'b', 'kappa']'''
+      sql = "SELECT seed, {}, chi FROM fit_parameters ORDER BY seed ".format(', '.join(names))
+      data = self.execute(sql)
+      return data
   def get_mad_in(self,seed):
       sql="SELECT mad_in,run_id FROM mad6t_run WHERE seed=%d ORDER BY mad_out_mtime "%seed
       data=self.execute(sql)
