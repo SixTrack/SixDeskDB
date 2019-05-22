@@ -306,7 +306,7 @@ class SixDeskDB(object):
       return data
   def get_fit_parameters(self, names):
       '''example: names = ['d', 'b', 'kappa']'''
-      sql = "SELECT seed, {}, chi FROM fit_parameters ORDER BY seed ".format(', '.join(names))
+      sql = "SELECT seed, chi, {0} FROM fit_parameters ORDER BY seed, {0}, chi".format(', '.join(names))
       data = self.execute(sql)
       return data
   def get_mad_in(self,seed):
