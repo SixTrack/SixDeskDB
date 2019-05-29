@@ -2585,7 +2585,8 @@ class SixDeskDB(object):
     cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
     ftype=[('angle',float),('sigma',float),('sturn',float)]
     data=np.fromiter(cur,dtype=ftype)
-    data['sigma']=np.sqrt(data['sigma']*gamma/emit)
+    #data['sigma']=np.sqrt(data['sigma']*gamma/emit) # original code
+    data['sigma']=np.sqrt(data['sigma']*gamma/2) # = sqrt(J_x + J_y), see info 2019.05.27 - MT
     angles=len(set(data['angle']))
     try:
       return data.reshape(angles,-1)
