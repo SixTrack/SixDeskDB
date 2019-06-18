@@ -5,6 +5,7 @@ import matplotlib.pyplot as pl
 import glob, sys, os, time
 from .deskdb import SixDeskDB,tune_dir,mk_dir
 import matplotlib
+
 # ------------- basic functions -----------
 def get_divisors(n):
   """finds the divisors of an integer number"""
@@ -39,6 +40,7 @@ def linear_fit(datx,daty,daterr):
 
 # ----------- functions necessary for the analysis -----------
 
+
 #@profile
 def get_min_turn_ang(s, t, a, it):
     """returns array with (angle, minimum sigma, sturn) of particles with lost turn number < it.
@@ -59,13 +61,13 @@ def get_min_turn_ang(s, t, a, it):
         s_ang = s[iang] # sigmas belonging to this angle
 
         iturn = t_ang < it # select lost turn number < it
-        if any(t_ang[iturn]):
-            s_angit = s_ang[iturn].min()
+        if any(iturn):
+            s_angit = s_ang[iturn].min() # minimum sigma (factor) where losses occured, smaller than turn it.
+            # nb. s_angit = s_ang[iturn][0] # list already sorted, no need to call min() - MT
             argminit = s_ang.searchsorted(s_angit) # get index of smallest amplitude with sturn < it. Amplitudes are ordered ascending
             mta[iang] = (ang, s_ang[argminit - 1], t_ang[argminit - 1]) # last stable amplitude -> index argminit - 1
         else:
-            # mta[iang] = (ang, s_ang.min(), t_ang.max())  # original s_ang.max(), but this would be inconsistent with other case... - MT
-            mta[iang] = (ang, s_ang.max(), t_ang.min()) 
+            mta[iang] = (ang, s_ang.max(), t_ang.min())  # better get min and max outside loop - MT
     return mta
 
 def select_ang_surv(data,seed,nang):
@@ -83,37 +85,79 @@ def select_ang_surv(data,seed,nang):
   return dataang
 
 
-def compute_da_ue(data, emittances, turnstep, regemi, 
-                  seed, tunex, tuney, turnsl,
-                  simple=True, method='simpson', verbose=True):
+from . import search
+#@profile
+#def get_min_turn_ang_fast(s, t, mta, it):
+def get_min_turn_ang_fast(qx, qy, t, mta, it):
+    """returns array with (angle, minimum sigma, sturn) of particles with lost turn number < it.
+
+    check if there is a particle with angle ang with lost turn number <it
+    if true: lost turn number and amplitude of the last stable particle is 
+    saved = particle "before" the particle with the smallest amplitude with nturns<it
+    if false: the smallest lost turn number and the largest amplitude is saved
+
+    Speed improved version (MT). Requires to compile search.f90 before using
+    f2py -c -m search search.f90
+    for details see
+    https://stackoverflow.com/questions/7632963/numpy-find-first-index-of-value-fast
+    """
+    # enumerate(a[:,0]) returns (0, a[0]), (1, a[1]), (2, a[2]), ... = (iang, ang),
+    # where iang = index of the array (0, 1, 2, ...) for ang = angle (e.g. [1.5, ..., 1.5], [3.0, ..., 3.0])
+    for iang in range(len(t)): # corrsponds in looping over the different angles
+        t_ang = t[iang] # turns belonging to this angle
+        ## s_ang = s[iang] # sigmas belonging to this angle
+        sx_ang = qx[iang] # sigmas belonging to this angle
+        sy_ang = qy[iang] # sigmas belonging to this angle
+        boolean_turn = t_ang < it # select lost turn number < it
+        index_oi = search.find_first(True, boolean_turn)
+        if index_oi > 0:
+            mta[iang] = (sx_ang[index_oi - 1], sy_ang[index_oi - 1], t_ang[index_oi - 1])  # last stable amplitude -> index_oi - 1
+        else:
+            mta[iang] = (sx_ang[index_oi], sy_ang[index_oi], t_ang[index_oi]) # n.b. s_ang already sorted. If index_oi = -1 we get maximum sigma
+    return mta
+
+def compute_da_ue(data, turnstep, emittances,
+                  seed, tunex, tuney, turnsl, gamma,
+                  simple=True, method='simpson', quick=False, 
+                  verbose=True):
     '''
-    New version to compute DA for unequal emittances (MT). 
+    New version to compute DA for unequal emittances & speed improvements (MT)
     Code and some comments taken over
-    from mk_da_vst function, but output/input structure
-    overworked for the purpose of improving. Old code kept for compatibility/checks. 
+    from mk_da_vst function.
     Currently only implemented for simpson rule.
+    Some comments were taken over from old function.
  
     INPUT
     -----
     data: see mk_da_vst. Depends on seed & turns.
     emittances: list of emittance tuples to be computed
     turnstep: step length of turns at which we perform the DA computation
-    regemi: Regular emittance which was used in the simulation.
     simple: True: compute DA via simplified formula, False: use 4D formula.
     method: Method of integration. Either 'simpson' or 'trapezoid'.
     '''
 
     if verbose:
        print ('... calculate da vs turns')
+       print ('Integration scheme: {}'.format(method))
        # print (' --- emittances ---\n x: {}\n y: {}'.format(emittances_x, emittances_y))
 
     mtime = time.time()
-    s, a, t = data['sigma'], data['angle'], data['sturn']
-    tmax = np.max(t[s > 0]) # maximum number of turns
-    # set the 0 in t to tmax*100 in order to check if turnnumber<it (any(tang[tang<it])<it in get_min_turn_ang)
-    t[s==0] = tmax*100
-    angmax = len(a[:,0]) # number of angles
-    angstep = np.pi/(2*(angmax + 1)) # step in angle in rad
+    thetas, t = data['angle'][:, 0]*np.pi/180, data['sturn']
+    dthetas = np.diff(thetas) 
+    dthetas = np.insert(dthetas, 0, thetas[0]) # add the first point (distance from x-axis)
+    ## s = data['sigma']
+
+    qx, qy = data['rx'], data['ry']
+    ## tmax = np.max(t[s > 0])
+    tmax = np.max(t[np.logical_or(qx > 0, qy > 0)]) # maximum number of turns
+    # set the 0 in t to tmax*100 in order to check if turnnumber < it (any(tang < it) in get_min_turn_ang) (old comment - MT)
+
+
+    #t[s==0] = tmax*100 #
+    t[np.logical_and(qx == 0, qy == 0)] = tmax*100
+    # s, t, a are ordered by angle, amplitude
+    n_angles = len(thetas) # n_angles = number of angles, n_sigmas = number of amplitudes
+    angstep = np.pi/(2*(n_angles + 1)) # step in angle in rad
 
     ###############################################
     # Initialize SQL output. These lists are required due to the connection 
@@ -140,50 +184,197 @@ def compute_da_ue(data, emittances, turnstep, regemi,
     daout = np.ndarray(ll, dtype=ftype)
     for nm in daout.dtype.names:
         daout[nm] = np.zeros(ll)
+
+    # used (and will be overwritten) in get_min_turn_ang_fast
+    ftype = [('rx', float), ('ry', float), ('sturn', float)]
+    mta = np.zeros(n_angles, dtype=ftype)
+    cos2 = np.cos(thetas)**2
+    sin2 = np.sin(thetas)**2
     ###############################################
 
     # iterate over emittances and turn steps
     dacount = 0
     current_da = 0
     current_tlossmin = 0
+
+    if method == 'simpson':
+        if n_angles > 6:
+            # define coefficients for simpson rule (simp)
+            aj_simp_s = np.array([55/24., -1/6., 11/8.]) # Simpson rule
+            aj_simp_e = np.array([11/8., -1/6., 55/24.])
+            aj = np.concatenate((aj_simp_s, np.ones(n_angles - 6), aj_simp_e))
+        else:
+            print('ERROR: compute_da_ue - You need at least 7 angles to calculate the da vs turns with the simpson rule! Aborting!!!')
+            sys.exit(0)
+    if method == 'trapezoid':
+        if n_angles > 2:
+            # define coefficients for trapezoid rule
+            aj_trap_s = np.array([3/2.])
+            aj_trap_e = np.array([3/2.])
+            aj = np.concatenate((aj_trap_s, np.ones(n_angles - 2), aj_trap_e))
+        else:
+            print('ERROR: compute_da_ue - You need at least 3 angles to calculate the da vs turns! Aborting!!!')
+            sys.exit(0)
+
+    condition = True
     for it in turns:
+        mta = get_min_turn_ang_fast(qx, qy, t, mta, it)
 
-        mta = get_min_turn_ang(s, t, a, it)  # check if speed can be improved here (*)
-        thetas = mta['angle']*np.pi/180
-        l_mta_angle = len(thetas)
-        sigmas = mta['sigma']
-        if method == 'simpson':
-            if l_mta_angle > 6:
-                # define coefficients for simpson rule (simp)
-                aj_simp_s = np.array([55/24., -1/6., 11/8.]) # Simpson rule
-                aj_simp_e = np.array([11/8., -1/6., 55/24.])
-                aj = np.concatenate((aj_simp_s, np.ones(l_mta_angle - 6), aj_simp_e))
-            else:
-                print('ERROR: compute_da_ue - You need at least 7 angles to calculate the da vs turns with the simpson rule! Aborting!!!')
-                sys.exit(0)
-        if method == 'trapezoid':
-            if l_mta_angle > 2:
-                # define coefficients for trapezoid rule
-                aj_trap_s = np.array([3/2.])
-                aj_trap_e = np.array([3/2.])
-                aj = np.concatenate((aj_trap_s, np.ones(l_mta_angle - 2), aj_trap_e))
-            else:
-                print('ERROR: compute_da_ue - You need at least 3 angles to calculate the da vs turns! Aborting!!!')
-                sys.exit(0)
-
-        tlossmin = np.min(mta['sturn'])
+        # using equal emittances of the simulation
+        # and the sum of the actions Jx, Jy (see get_surv function).
+        # of the last stable particle for every angle. E.g.
+        # it = 1200:
+        # sigmas = array([ 7.75861587,  7.06896394,  8.10344948,  7.55172586,  7.75862565,
+        # 9.82758472,  8.65516792,  7.7586177 ,  7.93101617,  6.51722389,
+        # 10.41380142])
+        tlossmin = np.min(mta['sturn']) # mta['sturn'] is a list showing the turns > it of the last stable
+        # particle for every angle. E.g. 
+        # it = 1200:
+        # array([ 1715.,  1667.,  2616.,  8897., 12115.,  3605.,  2845.,  6941., 1396., 64155.,  2182.])
         nturnavg = (it - turnstep + tlossmin)/2.
 
-        if tlossmin != current_tlossmin or it == tmax: # ??? effect of this condition to be checked - MT
+        if quick:
+            condition = tlossmin != current_tlossmin or it == tmax # effect of these conditions needs to be checked - MT
+            # the first condition may ensure that only computations are performed if the minimum of the survival turns
+            # changed. However, what seems to be lost if using a condition here is the statistics: It can happen
+            # that there are many different cases with a chage in the loss pattern and one minimum which did not changed.
 
-            tan = np.tan(thetas)
-            cos = np.cos(thetas)
+        if condition:
 
+            x = mta['rx']
+            y = mta['ry']
+            sigma_rsigma = np.sqrt(x**2 + y**2) # corresponds to sigma*r_sigma in MG notes regarding unequal DA.
+            # to remove energy-normalization from ex and ey
+            sigma_rsigma = sigma_rsigma*np.sqrt(gamma)
+
+            for ex, ey in emittances:
+                integrand = sigma_rsigma/np.sqrt(ey*cos2 + ex*sin2)
+
+                # dthetas are equally spaced with respect to x and y.
+                da = 2/np.pi*(aj*integrand*dthetas).sum() # = D_{sigma_x, sigma_y} in Eq. (8) in the notes
+                # if simpson rule is used, this corresponds to Eq. (4.1.18) in Numerical Recipes in F77
+  
+                if da > 0:
+                    daout[dacount] = (seed, tunex, tuney, ex, ey, turnsl, da,
+                                      it - turnstep, tlossmin, nturnavg, mtime)
+                    dacount += 1
+
+        current_tlossmin = tlossmin
+
+    return daout[:dacount]
+
+def compute_da_ue_old(data, emittances, turnstep, 
+                  seed, tunex, tuney, turnsl,
+                  simple=True, method='simpson', quick=False, 
+                  verbose=True):
+    '''
+    New version to compute DA for unequal emittances & speed improvements (MT)
+    Code and some comments taken over
+    from mk_da_vst function.
+    Currently only implemented for simpson rule.
+    Some comments were taken over from old function.
+ 
+    INPUT
+    -----
+    data: see mk_da_vst. Depends on seed & turns.
+    emittances: list of emittance tuples to be computed
+    turnstep: step length of turns at which we perform the DA computation
+    simple: True: compute DA via simplified formula, False: use 4D formula.
+    method: Method of integration. Either 'simpson' or 'trapezoid'.
+    '''
+
+    if verbose:
+       print ('... calculate da vs turns')
+       print ('Integration scheme: {}'.format(method))
+       # print (' --- emittances ---\n x: {}\n y: {}'.format(emittances_x, emittances_y))
+
+    mtime = time.time()
+    thetas, t = data['angle'][:, 0]*np.pi/180, data['sturn']
+    s = data['sigma']
+    tmax = np.max(t[s > 0]) # maximum number of turns
+    # set the 0 in t to tmax*100 in order to check if turnnumber < it (any(tang < it) in get_min_turn_ang) (old comment - MT)
+    t[s==0] = tmax*100 #
+    # s, t, a are ordered by angle, amplitude
+    n_angles = len(thetas) # n_angles = number of angles, n_sigmas = number of amplitudes
+    angstep = np.pi/(2*(n_angles + 1)) # step in angle in rad
+
+    ###############################################
+    # Initialize SQL output. These lists are required due to the connection 
+    # of sixdb with SQL databases. I dropped all quantities which are not supported by the unequal emittance
+    # option. Furthermore, the various ways of how the DA is computed should be managed by the user via the input/output and will
+    # not all be computed at once every time. 
+    ftype = [('seed', int), 
+               ('tunex', float), 
+               ('tuney', float), 
+               ('emitx', float),
+               ('emity', float),
+               ('turn_max', int),
+               ('da', float),
+               ('nturn', float),
+               ('tlossmin', float), 
+               ('nturnavg', float) , 
+               ('mtime', float)]
+
+    turns = np.arange(turnstep, tmax + turnstep, turnstep)
+
+    ll = len(turns)*len(list(emittances))
+    daout = np.ndarray(ll, dtype=ftype)
+    for nm in daout.dtype.names:
+        daout[nm] = np.zeros(ll)
+
+    # used (and will be overwritten) in get_min_turn_ang_fast
+    ftype = [('sigma', float), ('sturn', float)]
+    mta = np.zeros(n_angles, dtype=ftype)
+    tan = np.tan(thetas)
+    cos = np.cos(thetas)
+    ###############################################
+
+    # iterate over emittances and turn steps
+    dacount = 0
+    current_da = 0
+    current_tlossmin = 0
+
+    if method == 'simpson':
+        if n_angles > 6:
+            # define coefficients for simpson rule (simp)
+            aj_simp_s = np.array([55/24., -1/6., 11/8.]) # Simpson rule
+            aj_simp_e = np.array([11/8., -1/6., 55/24.])
+            aj = np.concatenate((aj_simp_s, np.ones(n_angles - 6), aj_simp_e))
+        else:
+            print('ERROR: compute_da_ue - You need at least 7 angles to calculate the da vs turns with the simpson rule! Aborting!!!')
+            sys.exit(0)
+    if method == 'trapezoid':
+        if n_angles > 2:
+            # define coefficients for trapezoid rule
+            aj_trap_s = np.array([3/2.])
+            aj_trap_e = np.array([3/2.])
+            aj = np.concatenate((aj_trap_s, np.ones(n_angles - 2), aj_trap_e))
+        else:
+            print('ERROR: compute_da_ue - You need at least 3 angles to calculate the da vs turns! Aborting!!!')
+            sys.exit(0)
+
+    condition = True
+    for it in turns:
+        mta = get_min_turn_ang_fast(s, t, mta, it)
+        sigmas = mta['sigma'] #
+        tlossmin = np.min(mta['sturn']) # mta['sturn'] is a list showing the turns > it of the last stable
+        # particle for every angle. E.g. 
+        # it = 1200:
+        # array([ 1715.,  1667.,  2616.,  8897., 12115.,  3605.,  2845.,  6941., 1396., 64155.,  2182.])
+        nturnavg = (it - turnstep + tlossmin)/2.
+
+        if quick:
+            condition = tlossmin != current_tlossmin or it == tmax # effect of these conditions needs to be checked - MT
+            # the first condition may ensure that only computations are performed if the minimum of the survival turns
+            # changed. However, what seems to be lost if using a condition here is the statistics: It can happen
+            # that there are many different cases with a chage in the loss pattern and one minimum which did not changed.
+
+        if condition:
             for emitx, emity in emittances: #daout.keys():
                 # prepare the arrays for unequal emittances; currently only simple version implemented.
                 # Reference [1]: "Comment on the computation of DA in case of unequal sigmas", M. Giovanozzi, May 4 2017.
                 thetas_ue = np.arctan((emitx/emity)**0.5*tan) # angle for unequal emittances, Eq. (6) in [1].
-                angstep_ue = angstep*(emitx/emity)**0.5*(np.cos(thetas_ue)/cos)**2 # angular step for unequal emittances, Eq. (7) in [1].
+                
                 eR = (emitx/regemi*np.cos(thetas_ue)**2 + emity/regemi*np.sin(thetas_ue)**2)**0.5 # square root under rsigma in Eq. (8) in [1].
                 sigmas_ue = sigmas/eR # rsigma for unequal emittances, see also Eq. (8) in [1].
 
@@ -192,37 +383,15 @@ def compute_da_ue(data, emittances, turnstep, regemi,
                 dthetas_ue = np.insert(dthetas_ue, 0, thetas_ue[0]) # add the first point (distance from x-axis)
 
                 # currently only trapezoid formula implemented
-                ##da = 2/np.pi*(aj*mta_sigma_ue*dtheta).sum() # should correspond to (4.1.15)
+                da = 2/np.pi*(aj*sigmas_ue*dthetas_ue).sum() # should correspond to (4.1.15)
 
-                # ORIGINAL VERSION
-                dthetas_ue = np.append(dthetas_ue, (np.pi/2 - thetas_ue[-1])) # add the last point  (distance from y-axis)
-                #### PH: calculate dastrap with a generalized integration rule
-                #        baseline is the open formula (4.1.15) in Press et al. NUMERICAL RECIPES in Fortran 77 [second edition]
-                #        we generalize the formula for uneven distances between the sampling points
-                #    MT: Actually it seems as if Eq. (4.1.11) has been used, a formula related to closed integration (or in
-                #        principle a basic riemann sum).
-                #        Furthermore, these formulas assume a fixed distance of the intervals. It requires proof that this generalization
-                #        is correct.
-                #        ---> I will keep the setting for now and work on the fitting procedure before I come back to this point.
-                # Checklist: 
-                # - overwork/verify the integration algorithm
-                # - check the two conditions (if-statements) in this function
-                da = 0
-                da += dthetas_ue[0]*sigmas_ue[0] # corner element from left  [open formula for trapezoidal rule]
-                da += dthetas_ue[-1]*sigmas_ue[-1] # corner element from right [open formula for trapezoidal rule]
-                for i in range(1, len(dthetas_ue) - 1):
-                    da += (0.5)*( sigmas_ue[i] + sigmas_ue[i-1] )*dthetas_ue[i]
-                da = (2/np.pi)*da
-
-                if da != current_da and da > 0:  # ??? effect of first condition to be checked - MT
+                if da > 0: ## and da != current_da:  # effect of 2nd condition to be checked - MT
                     daout[dacount] = (seed, tunex, tuney, emitx, emity, turnsl, da, 
                                       it - turnstep, tlossmin, nturnavg, mtime)
                     dacount += 1
-                current_da = da
         current_tlossmin = tlossmin
 
-    return daout[daout['da'] > 0]
-    #return daout
+    return daout[:dacount]
 
 
 #@profile
@@ -734,9 +903,11 @@ import itertools
 #import pdb
 from . import tables
 # new DA method for unequal emittances - MT
-def RunDaVsTurns_ue(db, turnstep=100, emittances=None, method=1, close=True,
-                    verbose=True):
-    '''Da vs turns -- calculate da vs turns for study dbname.
+def RunDaVsTurns_ue(db, emittances, turnstep=100, method=1, close=True,
+                    integration_scheme='trapezoid', quick=False, verbose=True):
+    '''Da vs turns -- calculate da vs turns for study dbname - MT
+    
+    emittances: List of emittance tuples.
     method: 
     0: similar to original method (at python 3 initial commit) but
     with the option to loop over lists of emittances.
@@ -753,10 +924,11 @@ def RunDaVsTurns_ue(db, turnstep=100, emittances=None, method=1, close=True,
         print('!!! Seeds are missing in database !!!')
     turnsl = db.env_var['turnsl'] # get turnsl for outputfile names
     turnse = db.env_var['turnse']
-    regemi = db.env_var['emit'] # get the emittance at which the simulation was carried out
+    #regemi = db.env_var['emit'] # get the emittance at which the simulation was carried out
+    gamma = db.env_var['gamma']
 
-    if emittances is None: # if the unequal emittance option is not used
-        emittances = [[regemi, regemi]]
+    #if emittances is None: # if the unequal emittance option is not used
+    #    emittances = [[regemi, regemi]]
 
     seeds = db.get_db_seeds()
     tunes = db.get_db_tunes()
@@ -767,8 +939,11 @@ def RunDaVsTurns_ue(db, turnstep=100, emittances=None, method=1, close=True,
         daout = []
 
     if verbose:
-        print('REGEMI       =', regemi)
-        print('EMITTANCES   =', list(emittances))
+        print('GAMMA        =', gamma)
+        if len(emittances) < 11:
+            print('EMITTANCES   =', list(emittances))
+        else:
+            print('EMITTANCES   = list of length {}'.format(len(emittances))) 
         print('METHOD       =', method)
         start_time = time.time()
 
@@ -793,16 +968,16 @@ def RunDaVsTurns_ue(db, turnstep=100, emittances=None, method=1, close=True,
                     #if verbose:
                     #    print ('calculating da vs turns for (ex, ey) = ({}, {})'.format(ex, ey))
 
-                    daout[(ex, ey)].append(mk_da_vst(dasurv, seed, tune, turnsl, turnstep, ex, ey, regemi)) #, verbose=False))
+                    daout[(ex, ey)].append(mk_da_vst(dasurv, seed, tune, turnsl, turnstep, ex, ey)) #, verbose=False))
             if method == 1:
                 # loop inside new DA method, faster than method 0
-                daout.append(compute_da_ue(dasurv, emittances, turnstep, regemi, 
-                                           seed, tune[0], tune[1], turnsl,
+                daout.append(compute_da_ue(dasurv, turnstep, emittances,
+                                           seed, tune[0], tune[1], turnsl, gamma=gamma, method=integration_scheme, quick=quick,
                                            verbose=False))
 
     # store results in SQL database
     if verbose:
-        print ('\nTime elapsed: {:.6f} [s]'.format(time.time() - start_time))
+        print ('\nTime elapsed: {:.3f} [s]'.format(time.time() - start_time))
         print ('flattening {} cases & storing results to SQL database ...'.format(len(daout)))
     if method == 0:
         for exey in daout.keys():

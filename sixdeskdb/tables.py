@@ -271,7 +271,7 @@ class Da_Vst_Emit(object):
   ('nturn', 'float', 'Lost turn number [turnstep,2*turnstep,...]'),
   ('tlossmin', 'float', 'Minimum lost turn number over all angles'),
   ('mtime','float','Last modification time')]
-  key=['seed', 'tunex', 'tuney', 'emitx', 'emity', 'nturn']
+  key=['seed', 'tunex', 'tuney', 'nturn']
 
 acc_var = ['BNL','COLUMNS','CORR_TEST','G_FILENAME_ENCODING','LHCDesHome',
     'LHCDesName','LHCDescrip','LINES','MADX','MADX_PATH','SIXTRACKBNLEXE',
