@@ -2565,7 +2565,7 @@ class SixDeskDB(object):
     e.g. for angmax=29+1 for divisors [1, 2, 3, 5, 6, 10]"""
     RunDaVsTurnsAng(self,seed,tune,turnstep)
 
-  def get_surv(self,seed,tune=None,verbose=True):
+  def get_surv(self, seed, tune=None, verbose=True):
     '''get survival turns from DB calculated from emitI and emitII'''
 
     if verbose:
@@ -2573,27 +2573,38 @@ class SixDeskDB(object):
 
     #change for new db version
     if tune is None:
-        tune=self.get_db_tunes()[0]
-    (tunex,tuney)=tune
-    emit=float(self.env_var['emit'])
-    gamma=float(self.env_var['gamma'])
-    turnsl=self.env_var['turnsl']
-    cmd="""SELECT angle, emitx+emity,
-         CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
-         FROM results WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%s
-         ORDER BY angle, emitx+emity"""
-    cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
-    ftype=[('angle',float),('sigma',float),('sturn',float)]
-    data=np.fromiter(cur,dtype=ftype)
-    #data['sigma']=np.sqrt(data['sigma']*gamma/emit) # original code
-    data['sigma']=np.sqrt(data['sigma']*gamma/2) # = sqrt(J_x + J_y), see info 2019.05.27 - MT
-    angles=len(set(data['angle']))
+        tune = self.get_db_tunes()[0]
+    (tunex, tuney) = tune
+    emit = float(self.env_var['emit'])
+    turnsl = self.env_var['turnsl']
+    cmd = """SELECT angle, emitx, emity,
+          CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
+          FROM results WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%s
+          ORDER BY angle, emitx+emity"""
+    cur = self.conn.cursor().execute(cmd%(seed, tunex, tuney, turnsl))
+    ftype = [('angle',float), ('emitx',float), ('emity', float), ('sturn',float)]
+    data = np.fromiter(cur, dtype=ftype)
+
+    twoJx, twoJy = data['emitx'], data['emity'] 
+
+    out = np.ndarray(len(data), dtype=[('angle', float), ('rx', float), ('ry', float), ('sturn', float)])
+    out['angle'] = data['angle']
+    out['sturn'] = data['sturn']
+
+    out['rx'] = np.sqrt(twoJx)  # The angles are taken wrt. rx and ry, the coordinates in Floquet-space.
+    out['ry'] = np.sqrt(twoJy)  
+    # see also p. 33 in SixTrack Version 4.2.16: "Single Particle Tracking Code Treating Transverse Motion with
+    # Synchrotron Oscillations in a Symplectic Manner" User's Reference Manual 2012 by F. Schmidt.
+
+    n_angles=len(set(out['angle']))
     try:
-      return data.reshape(angles,-1)
+      out_rs = out.reshape(n_angles, -1)
+      return out_rs 
     except ValueError:
-      print(("Cannot reshape array of size %s into "%(len(data))+
-            "shape (%s,newaxis). Skip this seed %s!"%(angles,seed)))
+      print(("Cannot reshape array of size %s into "%(len(out))+
+            "shape (%s, newaxis). Skip this seed %s!"%(n_angles, seed)))
       return None
+
 
   def plot_da_vst(self,seed,tune,ldat,ldaterr,ampmin,ampmax,tmax,slog,sfit,fitndrop):
     """plot dynamic aperture vs number of turns where ldat,ldaterr is the data and 
