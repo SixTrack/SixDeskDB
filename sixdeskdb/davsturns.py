@@ -186,10 +186,8 @@ def compute_da_ue(data, turnstep, emittances,
         daout[nm] = np.zeros(ll)
 
     # used (and will be overwritten) in get_min_turn_ang_fast
-    #ftype = [('sigma', float), ('sturn', float)]
     ftype = [('rx', float), ('ry', float), ('sturn', float)]
     mta = np.zeros(n_angles, dtype=ftype)
-    #tan = np.tan(thetas)
     cos2 = np.cos(thetas)**2
     sin2 = np.sin(thetas)**2
     ###############################################
@@ -220,11 +218,7 @@ def compute_da_ue(data, turnstep, emittances,
 
     condition = True
     for it in turns:
-        # mta = get_min_turn_ang_fast(s, t, mta, it)
         mta = get_min_turn_ang_fast(qx, qy, t, mta, it)
-
-        #import matplotlib.pyplot as plt
-        #import pdb; pdb.set_trace()
 
         # using equal emittances of the simulation
         # and the sum of the actions Jx, Jy (see get_surv function).
@@ -267,7 +261,6 @@ def compute_da_ue(data, turnstep, emittances,
 
         current_tlossmin = tlossmin
 
-    #return daout[daout['da'] > 0]
     return daout[:dacount]
 
 def compute_da_ue_old(data, emittances, turnstep, 
@@ -309,9 +302,7 @@ def compute_da_ue_old(data, emittances, turnstep,
     # Initialize SQL output. These lists are required due to the connection 
     # of sixdb with SQL databases. I dropped all quantities which are not supported by the unequal emittance
     # option. Furthermore, the various ways of how the DA is computed should be managed by the user via the input/output and will
-    # not all be computed at once every time, at it was done in the past. This is for the purpose to improve speed (and encourage
-    # the use of more meaningful variable names). 
-    # Therefore this routine will return a single column called 'da' (and later perhaps 'da_err').
+    # not all be computed at once every time. 
     ftype = [('seed', int), 
                ('tunex', float), 
                ('tuney', float), 
@@ -365,14 +356,7 @@ def compute_da_ue_old(data, emittances, turnstep,
     condition = True
     for it in turns:
         mta = get_min_turn_ang_fast(s, t, mta, it)
-        sigmas = mta['sigma'] # sigmas is a list showing the (multiples of) sigma, determined by 
-        # using equal emittances of the simulation
-        # and the sum of the actions Jx, Jy (see get_surv function).
-        # of the last stable particle for every angle. E.g.
-        # it = 1200:
-        # sigmas = array([ 7.75861587,  7.06896394,  8.10344948,  7.55172586,  7.75862565,
-        # 9.82758472,  8.65516792,  7.7586177 ,  7.93101617,  6.51722389,
-        # 10.41380142])
+        sigmas = mta['sigma'] #
         tlossmin = np.min(mta['sturn']) # mta['sturn'] is a list showing the turns > it of the last stable
         # particle for every angle. E.g. 
         # it = 1200:
@@ -390,7 +374,7 @@ def compute_da_ue_old(data, emittances, turnstep,
                 # prepare the arrays for unequal emittances; currently only simple version implemented.
                 # Reference [1]: "Comment on the computation of DA in case of unequal sigmas", M. Giovanozzi, May 4 2017.
                 thetas_ue = np.arctan((emitx/emity)**0.5*tan) # angle for unequal emittances, Eq. (6) in [1].
-                #angstep_ue = angstep*(emitx/emity)**0.5*(np.cos(thetas_ue)/cos)**2 # angular step for unequal emittances, Eq. (7) in [1].
+                
                 eR = (emitx/regemi*np.cos(thetas_ue)**2 + emity/regemi*np.sin(thetas_ue)**2)**0.5 # square root under rsigma in Eq. (8) in [1].
                 sigmas_ue = sigmas/eR # rsigma for unequal emittances, see also Eq. (8) in [1].
 
@@ -405,10 +389,8 @@ def compute_da_ue_old(data, emittances, turnstep,
                     daout[dacount] = (seed, tunex, tuney, emitx, emity, turnsl, da, 
                                       it - turnstep, tlossmin, nturnavg, mtime)
                     dacount += 1
-                ##current_da = da
         current_tlossmin = tlossmin
 
-    #return daout[daout['da'] > 0]
     return daout[:dacount]
 
 
