@@ -22,12 +22,12 @@ class Mad6tOut(object):
     self.workspace=opt['workspace']
     self.ista=int(opt['ista'])
     self.iend=int(opt['iend'])
-    print "Mad6tOut basedir: %s"%self.basedir
+    print("Mad6tOut basedir: %s"%self.basedir)
   def get_outdirnames(self):
     out=[]
     for l in os.listdir(self.basedir):
       if l.startswith('mad.'):
-        print "Mad6tOut rundir found: %s" % l
+        print("Mad6tOut rundir found: %s" % l)
         fdir=os.path.join(self.basedir,l)
         ftime=os.path.getmtime(fdir)
         out.append((ftime,fdir))
@@ -38,16 +38,16 @@ class Mad6tOut(object):
     try:
       basedir=self.get_outdirnames()[-1]
     except IndexError:
-      raise ValueError, "Mad6tOut no mad_run directory found"
-    print "Mad6tOut rundir used: %s" % basedir
+      raise ValueError("Mad6tOut no mad_run directory found")
+    print("Mad6tOut rundir used: %s" % basedir)
     for i in range(self.ista,self.iend+1):
       out_fn=os.path.join(basedir,"%s.out.%d"%(self.LHCDescrip,i))
       if os.path.exists(out_fn):
         out.append(out_fn)
       else:
-        print "Mad6tOut Error: outfn '%s' does not exists" %out_fn
+        print("Mad6tOut Error: outfn '%s' does not exists" %out_fn)
         self.missing_seed.append(i)
-    print "Mad6tOut found %d out file names"%len(out)
+    print("Mad6tOut found %d out file names"%len(out))
     return out
   def get_jobname(self,seed):
     return "%s_%s_mad6t_%d"%(self.workspace,self.LHCDescrip,seed)
@@ -73,13 +73,13 @@ class Mad6tOut(object):
         elif 'kmqtmax*100' in l:
           name,val=extract_kmax(l)
           self.kqt.setdefault(name,[]).append(val)
-    print "Mad6tOut clo0: %s"%minmaxavg(self.closest0)
-    print "Mad6tOut clo1: %s"%minmaxavg(self.closest1)
-    print "Mad6tOut clo2: %s"%minmaxavg(self.closest2)
-    kqsmax=[max(abs(m) for m in l) for l in zip(*self.kqs.values())]
-    kqtmax=[max(abs(m) for m in l) for l in zip(*self.kqt.values())]
-    print "Mad6tOut kqt : %s"%minmaxavg(kqtmax)
-    print "Mad6tOut kqs : %s"%minmaxavg(kqsmax)
+    print("Mad6tOut clo0: %s"%minmaxavg(self.closest0))
+    print("Mad6tOut clo1: %s"%minmaxavg(self.closest1))
+    print("Mad6tOut clo2: %s"%minmaxavg(self.closest2))
+    kqsmax=[max(abs(m) for m in l) for l in zip(*list(self.kqs.values()))]
+    kqtmax=[max(abs(m) for m in l) for l in zip(*list(self.kqt.values()))]
+    print("Mad6tOut kqt : %s"%minmaxavg(kqtmax))
+    print("Mad6tOut kqs : %s"%minmaxavg(kqsmax))
   def get_forts_filenames(self):
     out=[]
     for fort in [2,16,8]:
@@ -90,9 +90,9 @@ class Mad6tOut(object):
       ffn=os.path.join(self.basedir,fn)
       if os.path.exists(ffn):
         if os.path.getsize(ffn)<10:
-          print "Mad6tOut %s too small"
+          print("Mad6tOut %s too small")
       else:
-        print "Mad6tOut %s does not exists"
+        print("Mad6tOut %s does not exists")
   def check_all(self):
     self.check_out()
     self.check_forts()

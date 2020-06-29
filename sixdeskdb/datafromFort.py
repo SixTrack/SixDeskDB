@@ -1,4 +1,4 @@
-from queries import queries, dataQueried
+from .queries import queries, dataQueried
 import sys
 import numpy as np
 import os
@@ -36,7 +36,7 @@ class Fort:
     def retrieve(self, extraFields=[]):
         rectype = [('seed', 'int'),('angle', 'float')]+dataQueried[str(self.fort)]
         rectype += [i for i in extraFields if i not in rectype]
-        names , ind= np.unique(zip(*rectype)[0], return_index=True)
+        names , ind= np.unique(list(zip(*rectype))[0], return_index=True)
         names = ','.join(names[np.argsort(ind)])
         sql = queries['else'] if self.fort !=10 else queries['10']
         turns= self.db.env_var['turnsl']
@@ -52,7 +52,7 @@ class Fort:
 
     def retrieveAl(self, indices=None):
         f = self.getUnique()
-        for i in xrange(len(f['al'])):
+        for i in range(len(f['al'])):
              f['al'][i] = np.frombuffer(f['al'][i])
         if indices:
             arr = f['al']['arr'][:, indices][:,::-1] 
@@ -97,7 +97,7 @@ class Fort:
     def f11(self):
         data = self.retrieveAl([x*ntlint for x in range(3,8)])
         res = []
-        for row in xrange(len(data)):
+        for row in range(len(data)):
             for field in self.fields:
                 if field == 'al':
                     for column in data[row][field]['arr']:
@@ -112,7 +112,7 @@ class Fort:
         #data = data[data['f14']==1]
         res = []
         self.fields = self.fields[:-3] + ["c2"]
-        for i in xrange(len(data)):
+        for i in range(len(data)):
             res.append(tuple(list(data[i])[:3]+[data[i][3]/2.0]))
             res.append(tuple(list(data[i])[:3]+[data['turn_max'][0]*2]))
         return np.array(res, dtype=([('seed','int'), ('angle','float'),('achaos','float'),('c2','float')])) 
@@ -123,7 +123,7 @@ class Fort:
         data['sturns2'][data['sturns2']==0] = 1
         res=[]
         self.fields = self.fields[:-2]+["sturns"]
-        for i in xrange(len(data)):
+        for i in range(len(data)):
             res.append(tuple(list(data[i])[:-1]))
             res.append(tuple(list(data[i])[:-2]+[data[i][-1]]))
         return np.array(res, dtype=([('seed','int'), ('angle','float'),('rad','float'),('sturns','float')])) 
@@ -149,7 +149,7 @@ class Fort:
         res = []
         rectype = [('seed','int'), ('angle','float'),('c1','float'),('c2','float')]
         self.fields = list(zip(*rectype))
-        for i in xrange(len(data)):
+        for i in range(len(data)):
             res.append(tuple(list(data[i])[:-2]+[1e-1]))
             res.append(tuple(list(data[i])[:-3]+(
                 [data[i][-2], 1e-1] if data[i][-2] > 1e-38 else [data[i][-1], 1e-1])))

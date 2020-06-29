@@ -15,17 +15,18 @@
 import sys
 import os
 import sqlite3
+sqlite3.register_adapter(bytes,lambda x: x.decode())
 from warnings import filterwarnings
 
-from sqltable import SQLTable
+from .sqltable import SQLTable
 
 try:
   from MySQLdb import connect, Error
 except ImportError:
-    print "Warning no MySQLdb found, please install to connect MySql database"
+    print("Warning no MySQLdb found, please install to connect MySql database")
     raise ImportError
 
-import tables
+from . import tables
 
 def dbtocentral(host,user,password,db,localdb,bo=False):
   try:
@@ -37,7 +38,7 @@ def dbtocentral(host,user,password,db,localdb,bo=False):
     if not localdb.endswith('.db'):
       localdb += '.db'
     if not os.path.isfile(localdb):
-      print 'db not found'
+      print('db not found')
       exit(0)
     conn1 = sqlite3.connect(localdb)
     conn1.text_factory=str
@@ -140,7 +141,7 @@ def dbtocentral(host,user,password,db,localdb,bo=False):
     # print list(cur)
     # print len(a),(sys.getsizeof(a)/(1024.0))
     # sql = "insert into six_results values (%s)"%(','.join("%s " for _ in xrange(len(cols))))
-    for _ in xrange(len(a)/150000):
+    for _ in range(len(a)/150000):
       # cur.executemany(sql,a[:150000])
       # print len(a[:150000][0]),len(cols)
       tab.insertl(a[:150000],"%s")
@@ -164,7 +165,7 @@ def dbtocentral(host,user,password,db,localdb,bo=False):
       cmd = "python boinc.py %s"%(localdb)
       os.spawnl(os.P_NOWAIT, cmd)
   except Error as err:
-    print("Something went wrong: {}".format(err))
+    print(("Something went wrong: {}".format(err)))
     exit(1)
   conn.close()
 
@@ -181,6 +182,6 @@ if __name__ == "__main__":
     if args[5] == 'bo':
       bo = True
   else:
-    print 'Invalid number of Arguments'
+    print('Invalid number of Arguments')
     exit(0)
   dbtocentral(host,user,password,db,bo)

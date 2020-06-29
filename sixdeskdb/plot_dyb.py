@@ -5,10 +5,10 @@
 
 import sys
 import getopt
-from deskdb import *
+from .deskdb import *
 import numpy as np
 import os
-from postPlot import *
+from .postPlot import *
 import sqlite3
 
 
@@ -18,7 +18,7 @@ def readplotb(studyName):
     if os.path.isfile(database):
         sd=SixDeskDB(studyName)
     else:
-        print "ERROR: file  %s does not exists!" %(database)
+        print("ERROR: file  %s does not exists!" %(database))
         sys.exit()
 
     dirname=sd.mk_analysis_dir()
@@ -91,13 +91,13 @@ def readplotb(studyName):
                 fac3=0.01
 
                 if(np.abs(Einj)< epsilon):
-                        print "ERROR: Injection energy too small"
+                        print("ERROR: Injection energy too small")
                         sys.exit()
                 sql = sql1+'AND seed=%g AND angle=%g ORDER BY amp1'%(seed,angle)
                 inp = np.array(sd.execute(sql),dtype=rectype)
                 if len(inp)==0:
                     msg="all particle lost for angle = %s and seed = %s"
-                    print msg%(angle,seed)
+                    print(msg%(angle,seed))
                     continue
                 six_id = inp['six_input_id']
                 row  = inp['row_num']
@@ -319,7 +319,7 @@ def mk_da(studyName,force=False,nostd=False):
     if os.path.isfile(database):
         sd=SixDeskDB(studyName)
     else:
-        print "ERROR: file  %s does not exists!" %(database)
+        print("ERROR: file  %s does not exists!" %(database))
         sys.exit()
 
     dirname=sd.mk_analysis_dir()
@@ -378,10 +378,10 @@ def mk_da(studyName,force=False,nostd=False):
             maxi = -Amax
           elif len(eqaper)>0:
             mini = -Amin
-          print "Minimum:  %.2f  Sigma at Seed #: %d" %(mini, smini)
-          print "Maximum:  %.2f  Sigma at Seed #: %d" %(maxi, smaxi)
-          print "Average: %.2f Sigma" %(mean)
-        print "# of (Aav-A0)/A0 >10%%:  %d" %nega
+          print("Minimum:  %.2f  Sigma at Seed #: %d" %(mini, smini))
+          print("Maximum:  %.2f  Sigma at Seed #: %d" %(maxi, smaxi))
+          print("Average: %.2f Sigma" %(mean))
+        print("# of (Aav-A0)/A0 >10%%:  %d" %nega)
         name2 = "DAres.%s.%s.%s"%(sd.LHCDescrip,sixdesktunes,turnse)
         if nostd:
           fhplot.write('%s %d %.2f %.2f %.2f %d %.2f %.2f\n'%(name2, fn, mini, mean, maxi, nega, Amin, Amax))
@@ -394,19 +394,19 @@ def mk_da(studyName,force=False,nostd=False):
 if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
-    except getopt.error, msg:
-        print msg
-        print "for help use --help"
+    except getopt.error as msg:
+        print(msg)
+        print("for help use --help")
         sys.exit(2)
     for o, a in opts:
         if o in ("-h", "--help"):
-            print "use: DA_FullStat_public <study_name>"
+            print("use: DA_FullStat_public <study_name>")
             sys.exit(0)
     if len(args)<1 :
-        print "too few options: please provide <study_name>"
+        print("too few options: please provide <study_name>")
         sys.exit()
     if len(args)>1 :
-        print "too many options: please provide only <study_name>"
+        print("too many options: please provide only <study_name>")
         sys.exit()
     #mk_da(sys.argv[1], force=True)
     readplotb(sys.argv[1])

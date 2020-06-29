@@ -1,4 +1,4 @@
-rm -r job_hllhc10_test8.db job_hllhc10_test8
+rm -r job_hllhc10_test8.db dares_job_hllhc10_test8
 
 if [ ! -f sixdeskenv ];
 then

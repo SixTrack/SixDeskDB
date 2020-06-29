@@ -44,14 +44,14 @@ def getmn(order,kind='b'):
 
 def find_res_xcross(m,n,q,xs,y1,y2,out):
   if n!=0:
-    m,n,q,xs,y1,y2=map(float,(m,n,q,xs,y1,y2))
+    m,n,q,xs,y1,y2=list(map(float,(m,n,q,xs,y1,y2)))
     ys=(q-m*xs)/n
     if ys>=y1 and ys<=y2:
       out.append((xs,ys))
 
 def find_res_ycross(m,n,q,ys,x1,x2,out):
   if m!=0:
-    m,n,q,ys,y1,y2=map(float,(m,n,q,ys,x1,x2))
+    m,n,q,ys,y1,y2=list(map(float,(m,n,q,ys,x1,x2)))
     xs=(q-n*ys)/m
     if xs>=x1 and xs<=x2:
       out.append((xs,ys))
@@ -78,9 +78,9 @@ def get_res_box(m,n,l=0,qz=0,a=0,b=1,c=0,d=1):
       out.append(points)
       mnlq.append((m,n,l,q+l*qz))
       if l==0:
-        print '%2d*Qx%+2d*Qy=%2d' % (m,n,q)
+        print('%2d*Qx%+2d*Qy=%2d' % (m,n,q))
       else:
-        print '%2d*Qx%+2d*Qy+%+2d*Qz=%2d' % (m,n,l,q+l*qz)
+        print('%2d*Qx%+2d*Qy+%+2d*Qz=%2d' % (m,n,l,q+l*qz))
   return out,mnlq
 
 def plot_res_box(m,n,l=0,qz=0,a=0,b=1,c=0,d=1,color='b',linestyle='-'):
@@ -89,7 +89,7 @@ def plot_res_box(m,n,l=0,qz=0,a=0,b=1,c=0,d=1,color='b',linestyle='-'):
   and qy in [c,d]"""
   points,mnlq=get_res_box(m,n,l,qz,a,b,c,d)
   for p in points:
-    x,y=zip(*p)
+    x,y=list(zip(*p))
     pl.plot(x,y,color=color,linestyle=linestyle)
 
 def annotate_res_order_box(o,l=0,qz=0,a=0,b=1,c=0,d=1):
@@ -103,7 +103,7 @@ def annotate_res_order_box(o,l=0,qz=0,a=0,b=1,c=0,d=1):
     points,mnlq=get_res_box(m,n,l,qz,a,b,c,d)
     for pp,oo in zip(points,mnlq):
       if pp not in l_points:
-        x,y=zip(*pp)
+        x,y=list(zip(*pp))
         (x1,x2)=x
         (y1,y2)=y
         (xp,yp)=(x1+(x2-x1)/2.,y1+(y2-y1)/2.)
@@ -157,7 +157,7 @@ def plot_res(m,n,l=0,qz=0,color='b',linestyle='-'):
   c,d=pl.ylim()
   points,order=get_res_box(m,n,l,qz,a,b,c,d)
   for c in points:
-    x,y=zip(*c)
+    x,y=list(zip(*c))
     pl.plot(x,y,color=color,linestyle=linestyle)
   pl.xlim(a,b)
   pl.ylim(c,d)

@@ -16,7 +16,7 @@
 import sys,os,time
 
 if sys.version_info < (2, 6):
-  print "SixDeskDB requires Python version >=2.6"
+  print("SixDeskDB requires Python version >=2.6")
   sys.exit(1)
 
 from sixdeskdb import SixDeskDB,Mad6tOut,RunDaVsTurns,RunDaVsTurnsAng,PlotDaVsTurns,PlotCompDaVsTurns,PlotFMA,PlotGrid
@@ -50,20 +50,20 @@ class SixDB(object):
             study=self.args[0]
             cmd=self.args[1]
             if not hasattr(self,cmd):
-                print "Error: command `%s' not found"%cmd
-                print self.help(cmd)
+                print("Error: command `%s' not found"%cmd)
+                print(self.help(cmd))
             else:
               try:
                 getattr(self,cmd)(study)
-              except Exception, e:
-                print
-                print "Error in `%s' command."%cmd
+              except Exception as e:
+                print()
+                print("Error in `%s' command."%cmd)
                 import traceback
-                print
+                print()
                 exc_type, exc_value, exc_tb = sys.exc_info()
                 traceback.print_exception(exc_type, exc_value, exc_tb)
                 #print "%s: %s"%(e.__class__.__name__,e.message)
-                print
+                print()
                 self.help(cmd)
                 sys.exit(1)
     def help(self,cmd=None):
@@ -77,19 +77,19 @@ Usage: sixdb <cmd> <help>
 Usage: sixdb <study> <cmd> <options> or sixdb <cmd> to get additional help
         """
         if cmd is None:
-            print msg
-            print "Available commands are:"
+            print(msg)
+            print("Available commands are:")
             for cmd in cmds:
                 doc=getattr(self,cmd).__doc__.splitlines()[0]
-                print "%-11s: %s"%(cmd,doc)
-            print
-            print "To obtain help on commands type: sixdb <cmd>"
+                print("%-11s: %s"%(cmd,doc))
+            print()
+            print("To obtain help on commands type: sixdb <cmd>")
         elif cmd in cmds:
-            print "%s:"%cmd,
-            print getattr(self,cmd).__doc__
+            print("%s:"%cmd, end=' ')
+            print(getattr(self,cmd).__doc__)
         else:
-            print "Command not found"
-            print "To get all command options type: sixdb"
+            print("Command not found")
+            print("To get all command options type: sixdb")
     def info(self,study):
        """Print basic infomation on the database.
 
@@ -122,7 +122,7 @@ files, e.g. ~/w1/sixjobs or ~/w1/sixjobs/studies/job_tracking.
           logname=self.args[2]
        else:
           logname=None
-       print logname
+       print(logname)
        SixDeskDB.from_dir(study,logname=logname)
     def update_dir(self,study):
        """Update results from directory tree"""
@@ -138,7 +138,7 @@ zeroda:  Check whether da analysis produce 0 values of DA
        """
        db=SixDeskDB(study)
        if len(self.args)==0:
-          print "Please select the check"
+          print("Please select the check")
        else:
           getattr(db,"check_%s")(self.args[0])
     def mad(self,study):
@@ -223,7 +223,7 @@ Usage: sixdb <dbname> da_vs_turns
          emitx        = args[args.index('-emit')+1]     # horizontal emittance
          emity        = args[args.index('-emit')+2]     # vertical emittance
          emitx, emity = float(emitx), float(emity)      # convert to float
-         print "UNEQUAL EMITTANCES REQUESTED"
+         print("UNEQUAL EMITTANCES REQUESTED")
        else:
          emitx, emity = None, None  # set to zero if the emittance option is not selected
        RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,fitndrop,fitskap,fitekap,fitdkap,outfilefit,emitx,emity)
@@ -248,17 +248,17 @@ Usage: sixdb <dbname> plot_fma
         print('Error in plot_fma: database not found!')
         return -1.
       if (args[-1] == '-F'):
-        print "The inputfiles and methods found are:"
-        print db.get_db_fma_inputfile_method()
+        print("The inputfiles and methods found are:")
+        print(db.get_db_fma_inputfile_method())
         return
       if (len(args)>2):
         ### Check if user-defined inputfile and method exist
         it = iter(args[2:])
-        user_defined =  zip(it, it)
+        user_defined =  list(zip(it, it))
         if set(user_defined).issubset(db.get_db_fma_inputfile_method()):    
           PlotFMA(db, args[2:]) 
         else:
-          print "ERROR: The inputfile and method are not defined. Run sixdb -F for all the possible options."
+          print("ERROR: The inputfile and method are not defined. Run sixdb -F for all the possible options.")
           return -1
       else:
         PlotFMA(db) 
@@ -280,18 +280,18 @@ Usage: sixdb <dbname> plot_tune_grid
         print('Error in plot_fma: database not found!')
         return -1.
       if (args[-1] == '-F'):
-        print "The inputfiles and methods found are:"
-        print db.get_db_fma_inputfile_method()
+        print("The inputfiles and methods found are:")
+        print(db.get_db_fma_inputfile_method())
         return
       
       if (len(args)>2):
         ### Check if user-defined inputfile and method exist
         it = iter(args[2:])
-        user_defined =  zip(it, it)
+        user_defined =  list(zip(it, it))
         if set(user_defined).issubset(db.get_db_fma_inputfile_method()):    
           PlotGrid(db, args[2:]) 
         else:
-          print "ERROR: The inputfile and method are not defined. Run sixdb -F for all the possible options."
+          print("ERROR: The inputfile and method are not defined. Run sixdb -F for all the possible options.")
           return -1
       else:
         PlotGrid(db) 
@@ -352,7 +352,7 @@ Usage: sixdb <dbname> plot_da_vs_turns
          try:
            dbcomp=SixDeskDB(args[args.index('-comp')+1])
          except ValueError:
-           print('Error in da_vs_turns: database %s not found!'%dbname)
+           print(('Error in da_vs_turns: database %s not found!'%dbname))
            sys.exit(1)
          lblname=db.LHCDescrip
          complblname=dbcomp.LHCDescrip
@@ -365,18 +365,18 @@ Usage: sixdb <dbname> plot_da_vs_turns
         """Open an IPython shell with a database loeaded as db
         Usage: sixdb <dbname> interactive
         """
-        print
+        print()
         import IPython
         import matplotlib.pyplot as pl
         import numpy, scipy
-        print "db=SixDeskDB('%s')\n"%study
+        print("db=SixDeskDB('%s')\n"%study)
         db=SixDeskDB(study)
-        print """\nExample:
+        print("""\nExample:
 print db.get_col('sturns1',1,45)
 db.plot_col('sturns1',1,45)
 db.plot_polar_col('sturns1',1)
-"""
-        print
+""")
+        print()
         if hasattr(IPython,'start_ipython'):
           tk=guess_toolkit()
           IPython.start_ipython(user_ns={'db':db},argv=['--pylab=%s'%tk])
@@ -392,10 +392,10 @@ db.plot_polar_col('sturns1',1)
         keys=self.args[2::2]
         values=self.args[3::2]
         if len(keys)==len(values):
-             lst=zip(keys,values)
+             lst=list(zip(keys,values))
              SixDeskDB(study).set_variables(lst,time.time())
         else:
-             print "Error: Unmatched name value arguments"
+             print("Error: Unmatched name value arguments")
     def missing_jobs(self,study):
         """Compute missing jobs
         Usage: sixdb <dbname> missing_jobs
@@ -418,18 +418,18 @@ db.plot_polar_col('sturns1',1)
       sd = SixDeskDB(study)
       args = self.args
       if len(args)!=5:
-         print "Not enough arguments for plotting"
+         print("Not enough arguments for plotting")
          sys.exit(1)
 
       option  = args[args.index('plot')+1]
       seed    = int(args[args.index('plot')+2])
       angle   = int(args[args.index('plot')+3])
-      print args
+      print(args)
       try:
         plot = getattr(plots, 'plot_{name}'.format(name=option))
-      except Exception, e:
-        print
-        print "Wrong plot option: %s"%name
+      except Exception as e:
+        print()
+        print("Wrong plot option: %s"%name)
         sys.exit(1)
 
       if seed < 1 or seed > len(sd.get_seeds()):

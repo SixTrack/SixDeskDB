@@ -1,4 +1,4 @@
-from  StringIO import StringIO
+from  io import StringIO
 import re
 
 import numpy as np
@@ -20,9 +20,9 @@ def check_mad_out(data,resname):
         name,val=extract_kmax(l)
         out.setdefault(name,[]).append(val)
   for k,vals in sorted(out.items()):
-    print "%-10s: %s"%(k,minmaxavg(vals))
-  keys,table=zip(*sorted(out.items()))
-  table=zip(*table)
+    print("%-10s: %s"%(k,minmaxavg(vals)))
+  keys,table=list(zip(*sorted(out.items())))
+  table=list(zip(*table))
   fh=open(resname,'w')
   fh.write('seed,%s\n'%(','.join(keys)))
   for seed,row in zip(seeds,table):
@@ -67,7 +67,7 @@ def extract_mad_out(fh):
       #out.setdefault(name,[]).append(float(val))
     elif l.startswith('acb'):
       name,valf,vali,lima,limb=l.split()
-      valf,vali,lima,limb=map(float,(valf,vali,lima,limb))
+      valf,vali,lima,limb=list(map(float,(valf,vali,lima,limb)))
       out[name]=[abs(valf-vali),valf,vali,limb]
   return out
 
