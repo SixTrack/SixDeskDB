@@ -67,8 +67,11 @@ def compressBuf(filename):
 def decompressBuf(buf):
   '''file decompression to retrieve from DB'''
   zbuf = BytesIO(buf)
-  f = gzip.GzipFile(fileobj=zbuf)
-  return f.read()
+  f = gzip.GzipFile(fileobj=zbuf).read()
+  if f.startswith(b'\x1f\x8b'):
+      return decompressBuf(f)
+  else:
+      return f.decode()
 
 def isint(s):
   try:
@@ -2873,7 +2876,7 @@ class SixDeskDB(object):
     turns='e%g'%self.env_var['turnsle']
     ss=ss%(seed,tunes[0],tunes[1],amp1,turns,angle)
     fort3=self.execute(ss)[0][0]
-    return decompressBuf(decompressBuf(fort3))
+    return decompressBuf(fort3)
   def get_fort_2_8_16(self,seed):
     ss="""select fort2, fort8, fort16 from mad6t_results
           where seed=%s"""%(seed)
