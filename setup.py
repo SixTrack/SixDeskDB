@@ -28,4 +28,5 @@ setup(
         "numpy",
     ],
     extras_require={"dev": ["pytest"]},
+    scripts = ['sixdb'],
 )
