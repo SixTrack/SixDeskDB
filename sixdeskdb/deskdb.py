@@ -2568,7 +2568,7 @@ class SixDeskDB(object):
     e.g. for angmax=29+1 for divisors [1, 2, 3, 5, 6, 10]"""
     RunDaVsTurnsAng(self,seed,tune,turnstep)
 
-  def get_surv(self, seed, tune=None, verbose=True):
+  def get_surv_tmp(self, seed, tune=None, verbose=True):
     '''get survival turns from DB calculated from emitI and emitII'''
 
     if verbose:
@@ -2607,6 +2607,29 @@ class SixDeskDB(object):
       print(("Cannot reshape array of size %s into "%(len(out))+
             "shape (%s, newaxis). Skip this seed %s!"%(n_angles, seed)))
       return None
+
+  def get_surv(self, seed, tune_pair):
+        '''get survival turns from DB calculated from emitI and emitII'''
+
+        (tunex, tuney) = tune_pair
+        emit = float(self.env_var['emit'])
+        gamma = float(self.env_var['gamma'])
+        turnsl = self.env_var['turnsl']
+        cmd="""SELECT angle, emitx + emity,
+            CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
+            FROM results WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%s
+            ORDER BY angle, emitx + emity"""
+        cur = self.conn.cursor().execute(cmd%(seed, tunex, tuney, turnsl))
+        ftype = [('angle', float), ('sigma', float), ('sturn', float)]
+        data = np.fromiter(cur, dtype=ftype)
+        data['sigma'] = np.sqrt(data['sigma']/(emit/gamma))
+        angles = len(set(data['angle']))
+        try:
+            return data.reshape(angles, -1)
+        except ValueError:
+            print("Cannot reshape array of size %s into "%(len(data))+
+                  "shape (%s,newaxis). Skip this seed %s!"%(angles, seed))
+            return None
 
 
   def plot_da_vst(self,seed,tune,ldat,ldaterr,ampmin,ampmax,tmax,slog,sfit,fitndrop):

@@ -442,6 +442,7 @@ def mk_da_vst(data,seed,tune,turnsl,turnstep,emitx,emity,regemi):
   ajsimp_s=np.array([55/24.,-1/6.,11/8.])#Simpson rule
   ajsimp_e=np.array([11/8.,-1/6.,55/24.])
   warnsimp=True
+
   for it in np.arange(turnstep,tmax+turnstep,turnstep):
     mta=get_min_turn_ang(s,t,a,it)
     mta_angle=mta['angle']*np.pi/180#convert to rad
@@ -900,7 +901,6 @@ def RunDaVsTurns(db,force,outfile,outfileold,turnstep,davstfit,fitdat,fitdaterr,
 
 
 import itertools
-#import pdb
 from . import tables
 # new DA method for unequal emittances - MT
 def RunDaVsTurns_ue(db, emittances, turnstep=100, method=1, close=True,
