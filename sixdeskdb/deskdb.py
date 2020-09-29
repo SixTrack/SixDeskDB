@@ -2568,7 +2568,9 @@ class SixDeskDB(object):
     e.g. for angmax=29+1 for divisors [1, 2, 3, 5, 6, 10]"""
     RunDaVsTurnsAng(self,seed,tune,turnstep)
 
+
   def get_surv_tmp(self, seed, tune=None, verbose=True):
+
     '''get survival turns from DB calculated from emitI and emitII'''
 
     if verbose:
@@ -2608,6 +2610,7 @@ class SixDeskDB(object):
             "shape (%s, newaxis). Skip this seed %s!"%(n_angles, seed)))
       return None
 
+
   def get_surv(self, seed, tune_pair):
         '''get survival turns from DB calculated from emitI and emitII'''
 
@@ -2630,7 +2633,6 @@ class SixDeskDB(object):
             print("Cannot reshape array of size %s into "%(len(data))+
                   "shape (%s,newaxis). Skip this seed %s!"%(angles, seed))
             return None
-
 
   def plot_da_vst(self,seed,tune,ldat,ldaterr,ampmin,ampmax,tmax,slog,sfit,fitndrop):
     """plot dynamic aperture vs number of turns where ldat,ldaterr is the data and 
