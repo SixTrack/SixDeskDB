@@ -5,14 +5,15 @@
 # Xavier Valls Pla  <xavier.valls.pla@cern.ch>
 # Danilo Banfi <danilo.banfi@cern.ch>
 #
+# From 2019 in Python 3.6 onwards (& commented by MT):
+# Malte Titze <malte.titze@cern.ch>
+#
 # This software is distributed under the terms of the GNU Lesser General Public
 # License version 2.1, copied verbatim in the file ``COPYING''.
 
 # In applying this licence, CERN does not waive the privileges and immunities
 # granted to it by virtue of its status as an Intergovernmental Organization or
 # submit itself to any jurisdiction.
-
-# NOTA: please use python version >=2.6
 
 import sqlite3, time, os, re, gzip, sys, glob
 from io import StringIO,BytesIO
@@ -186,10 +187,6 @@ def split_job_params(dirname):
       raise ValueError
   return seed,simul,tunex,tuney,amp1,amp2,turns,angle
 
-
-
-
-
 def check_sixdeskenv(studyDir):
   sixdeskenv=os.path.join(studyDir,'sixdeskenv')
   sysenv=os.path.join(studyDir,'sysenv')
@@ -199,16 +196,15 @@ def check_sixdeskenv(studyDir):
       raise ValueError(msg)
   return sixdeskenv,sysenv
 
-
 class SixDeskDB(object):
   @classmethod
-  def from_dir(cls,studyDir,logname=None):
+  def from_dir(cls, studyDir, logname=None):
     '''create local Database for storing study'''
-    sixdeskenv,sysenv=check_sixdeskenv(studyDir)
-    env_var = parse_env(studyDir,logname=logname)
+    sixdeskenv, sysenv = check_sixdeskenv(studyDir)
+    env_var = parse_env(studyDir, logname=logname)
     dbname = env_var['LHCDescrip'] + ".db"
-    db=cls(dbname,create=True)
-    db.update_sixdeskenv(studyDir,logname=logname)
+    db = cls(dbname, create=True)
+    db.update_sixdeskenv(studyDir, logname=logname)
     db.st_mad6t_run()
     db.st_mad6t_run2()
     db.st_mad6t_results()
@@ -253,7 +249,8 @@ class SixDeskDB(object):
         content = sqlite3.Binary(compressBuf(path))
         toinsert.append([key,content,mtime])
     filetab.insertl(toinsert)
-  def __init__(self,dbname,create=False,debug=False):
+
+  def __init__(self, dbname, create=False, debug=False, verbose=True):
     '''initialise variables and location for study creation 
         or database creation, usage listed in main.py'''
     self.debug=debug
@@ -274,7 +271,8 @@ class SixDeskDB(object):
     except sqlite3.Error:
       print('Error creating database %s'%dbname)
       sys.exit(1)
-    print("Opened %s successfully"%dbname)
+    if verbose:
+      print("Opened %s successfully"%dbname)
     self.conn = conn
     conn.text_factory=str
     self.load_env()
@@ -308,6 +306,11 @@ class SixDeskDB(object):
       sql="SELECT mad_out,run_id,mad_out_mtime FROM mad6t_run WHERE seed=%d ORDER BY mad_out_mtime "%seed
       data=self.execute(sql)
       data=[(decompressBuf(mad),ii,mt) for mad,ii,mt in data]
+      return data
+  def get_fit_parameters(self, names):
+      '''example: names = ['d', 'b', 'kappa']'''
+      sql = "SELECT seed, chi, {0} FROM fit_parameters ORDER BY seed, {0}, chi".format(', '.join(names))
+      data = self.execute(sql)
       return data
   def get_mad_in(self,seed):
       sql="SELECT mad_in,run_id FROM mad6t_run WHERE seed=%d ORDER BY mad_out_mtime "%seed
@@ -1655,26 +1658,28 @@ class SixDeskDB(object):
     pl.ylabel(r'$\sigma_y$')
     #pl.colorbar()
 
-  def mk_analysis_dir(self,seed=None,tunes=None,angle=None):
+  def mk_analysis_dir(self, seed=None, tunes=None, angle=None):
     '''create analysis directory structure'''
-    dirname='dares_'+self.LHCDescrip
-    out=[mk_dir(dirname)]
+    dirname = 'dares_' + self.LHCDescrip
+    out = [mk_dir(dirname)]
     if seed is not None:
-      seed=str(seed)
-      seedname=os.path.join(dirname,seed)
+      seed = str(seed)
+      seedname = os.path.join(dirname, seed)
       out.append(mk_dir(seedname))
     if tunes is not None:
-      tunes=tune_dir(tunes)
-      tunename=os.path.join(dirname,seed,tunes)
+      tunes = tune_dir(tunes)
+      tunename = os.path.join(dirname, seed, tunes)
       out.append(mk_dir(tunename))
     if angle is not None:
-      angle=str(angle)
-      anglename=os.path.join(dirname,seed,angle)
+      angle = str(angle)
+      anglename = os.path.join(dirname, seed, angle)
       out.append(mk_dir(anglename))
     return out[-1]
+
   def has_table(self,name):
     sql="SELECT count(*) FROM sqlite_master WHERE type='table' AND name='%s'"
     return self.execute(sql%name)
+
   def plot_survival_avg(self,seed):
     data=self.get_survival_turns(seed)
     a,s,t=data['angle'],data['amp'],data['surv']
@@ -2043,10 +2048,12 @@ class SixDeskDB(object):
 #    dbname=create_db(tbt_data,studio,seedinit,seedend,nsi,nsf,angles)
 #    print ('Turn by turn tracking data successfully stored in %s.db' %dbname)
 # -------------------------------- fma -------------------------------------------------------------------
+
   def get_fma_methods(self):
     """returns list of all methods available for FMA analysis
     """
     return ['TUNENEWT1','TUNEABT','TUNEABT2','TUNENEWT','TUNEFIT','TUNEAPA','TUNEFFT','TUNEFFTI','TUNELASK','NAFF']
+
   def get_db_fma_inputfile_method(self):
     """returns a list of inputfiles and methods used 
     in db for FMA analysis
@@ -2061,6 +2068,7 @@ class SixDeskDB(object):
            FROM fma ORDER BY inputfile"""
       cur=self.conn.cursor().execute(cmd)
       return list(set(cur.fetchall()))
+
   def get_fma(self,seed,tune,turns,inputfile,method):
     """get data from fma_sixtrack. The data is stored
     in table six_fma and can be accesed via the view
@@ -2095,6 +2103,7 @@ class SixDeskDB(object):
     else:
       data=[]
     return data
+
   def get_fma_intersept(self,seed,tune,turns,files,var=None):
     """get data with seed *seed*, tune *tune*,turns *turns*
     which exists in (inputfile1,method1),(inputfile2,method2),etc.
@@ -2193,6 +2202,7 @@ class SixDeskDB(object):
       cmd="""DROP TABLE IF EXISTS %s"""%(t)
       self.conn.cursor().execute(cmd)
     return data
+
   def plot_fma_footprint(self,seed,tune,turns,inputfile,method,eps1='eps1_0',eps2='eps2_0',dq=None,vmin=None,vmax=None,grid=False):
     """plot q1 vs q2 colorcoded by sqrt((eps1+eps2)/eps0)
     
@@ -2310,6 +2320,7 @@ class SixDeskDB(object):
     pl.xlabel(r'$\sigma_x=\sqrt{\frac{\epsilon_{1,%s}}{\epsilon_0}} , \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(eps1.split('_')[1],self.env_var['emit']))
     pl.ylabel(r'$\sigma_y=\sqrt{\frac{\epsilon_{2,%s}}{\epsilon_0}} , \ \epsilon_{0,N}=\epsilon_0/\gamma = %2.2f \ \mu \rm m$'%(eps2.split('_')[1],self.env_var['emit']))
     pl.title('%s %s'%(inputfile,method))
+
   def plot_fma_scatter(self,seed,tune,turns,files,var1='eps1_0',var2='eps2_0',dqmode='trans',vmin=None,vmax=None, dqlim=5.e-2):
     """scatter plot var1 vs var2 of inputfile_0 colorcoded by the 
     difference in tune over all (inputfile,method) pairs in *files*.
@@ -2459,6 +2470,23 @@ class SixDeskDB(object):
     range"""
     footprint.plot_res_upto_order(o=o,l=l,qz=qz,c1=c1,lst1=lst1,c2=c2,lst2=lst2,c3=c3,annotate=annotate)
 # -------------------------------- da_vs_turns -----------------------------------------------------------
+  def store_to_sql_database(self, data, recreate=False, name='da_vst', keys=tables.Da_Vst.key, 
+                            close=False, verbose=True):
+      ''' store da vs turns data in database. For new unequal emittance routine - MT.'''
+      if verbose:
+          print ('... saving {} to database (recreate = {})'.format(name, recreate))
+          print ('keys: {}'.format(keys))
+      cols = SQLTable.cols_from_dtype(data.dtype)
+      tab = SQLTable(self.conn, name, cols, keys, recreate=recreate)
+      tab.insert(data)
+      if close:
+          # close SQL connection (i.e. store_to_sql_database is intended to be called at the end of loops)
+          if verbose:
+              print ('Closing database.')
+          self.conn.close()
+          #tab.db.close() 
+
+
   def st_da_vst(self,data,recreate=False):
     ''' store da vs turns data in database'''
     cols  = SQLTable.cols_from_dtype(data.dtype)
@@ -2469,21 +2497,46 @@ class SixDeskDB(object):
     cols  = SQLTable.cols_from_dtype(data.dtype)
     tab   = SQLTable(self.conn,'da_vst_fit',cols,tables.Da_Vst_Fit.key,recreate=False)
     tab.insert(data)
-  def get_da_vst(self,seed,tune):
+
+
+  def get_da_vst(self, seed, tune, verbose=True):
     '''get da vs turns data from DB'''
-    turnsl=self.env_var['turnsl']
-    (tunex,tuney)=tune
-    #check if table da_vst exists in database
+    if verbose:
+       print('... get da vs turns data')
+
+    turnsl = self.env_var['turnsl']
+    (tunex,tuney) = tune
+
+    data = []
+    # check if table da_vst exists in database
     if(self.check_table('da_vst')):
-      ftype=[('seed',int),('tunex',float),('tuney',float),('turn_max',int),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float), ('nturn',float),('tlossmin',float), ('nturnavg',float) , ('mtime',float)]
-      cmd="""SELECT *
+      ftype = [('seed',int), 
+               ('tunex',float), 
+               ('tuney',float), 
+               ('turn_max',int), 
+               ('dawtrap',float),
+               ('dastrap',float), 
+               ('dawsimp',float), 
+               ('dassimp',float), 
+               ('dawtraperr',float),
+               ('dastraperr',float), 
+               ('dastraperrep',float), 
+               ('dastraperrepang',float), 
+               ('dastraperrepamp',float), 
+               ('dawsimperr',float), 
+               ('dassimperr',float), 
+               ('nturn',float),
+               ('tlossmin',float), 
+               ('nturnavg',float) , 
+               ('mtime',float)]
+      cmd = """SELECT *
            FROM da_vst WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%d
-           ORDER BY nturn"""
-      cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
-      data=np.fromiter(cur,dtype=ftype)
+           ORDER BY nturn"""%(seed, tunex, tuney, turnsl)
+      cur = self.conn.cursor().execute(cmd)
+      data = np.fromiter(cur, dtype=ftype)
     else:
-      #02/11/2014 remaned table da_vsturn to da_vst - keep da_vsturn for backward compatibility - note this table did not include the turn_max!!!
-      #check if table da_vsturn exists in database
+      # 02/11/2014 renamed table da_vsturn to da_vst - keep da_vsturn for backward compatibility - note this table did not include the turn_max!!!
+      # check if table da_vsturn exists in database
       if(self.check_table('da_vsturn')):
         ftype=[('seed',int),('tunex',float),('tuney',float),('dawtrap',float),('dastrap',float),('dawsimp',float),('dassimp',float),('dawtraperr',float),('dastraperr',float),('dastraperrep',float),('dastraperrepang',float),('dastraperrepamp',float),('dawsimperr',float),('dassimperr',float),('nturn',float),('tlossmin',float),('mtime',float)]
         cmd="""SELECT *
@@ -2491,10 +2544,9 @@ class SixDeskDB(object):
              ORDER BY nturn"""
         cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney))
         data=np.fromiter(cur,dtype=ftype)
-      #if tables da_vst and da_vsturn do not exist, return an empty list
-      else:      
-        data=[]
+       # if tables da_vst and da_vsturn do not exist, return an empty list
     return data
+
   def get_da_vst_fit(self,seed,tune):
     '''get da vs turns data from DB'''
     turnsl=self.env_var['turnsl']
@@ -2510,34 +2562,75 @@ class SixDeskDB(object):
     else:      
       data=[]
     return data
+
   def mk_da_vst_ang(self,seed,tune,turnstep):
     """Da vs turns -- calculate da vs turns for divisors of angmax, 
     e.g. for angmax=29+1 for divisors [1, 2, 3, 5, 6, 10]"""
     RunDaVsTurnsAng(self,seed,tune,turnstep)
-  def get_surv(self,seed,tune=None):
+
+  def get_surv_tmp(self, seed, tune=None, verbose=True):
     '''get survival turns from DB calculated from emitI and emitII'''
+
+    if verbose:
+      print('... getting survival data') 
+
     #change for new db version
     if tune is None:
-        tune=self.get_db_tunes()[0]
-    (tunex,tuney)=tune
-    emit=float(self.env_var['emit'])
-    gamma=float(self.env_var['gamma'])
-    turnsl=self.env_var['turnsl']
-    cmd="""SELECT angle,emitx+emity,
-         CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
-         FROM results WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%s
-         ORDER BY angle,emitx+emity"""
-    cur=self.conn.cursor().execute(cmd%(seed,tunex,tuney,turnsl))
-    ftype=[('angle',float),('sigma',float),('sturn',float)]
-    data=np.fromiter(cur,dtype=ftype)
-    data['sigma']=np.sqrt(data['sigma']/(emit/gamma))
-    angles=len(set(data['angle']))
+        tune = self.get_db_tunes()[0]
+    (tunex, tuney) = tune
+    emit = float(self.env_var['emit'])
+    turnsl = self.env_var['turnsl']
+    cmd = """SELECT angle, emitx, emity,
+          CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
+          FROM results WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%s
+          ORDER BY angle, emitx+emity"""
+    cur = self.conn.cursor().execute(cmd%(seed, tunex, tuney, turnsl))
+    ftype = [('angle',float), ('emitx',float), ('emity', float), ('sturn',float)]
+    data = np.fromiter(cur, dtype=ftype)
+
+    twoJx, twoJy = data['emitx'], data['emity'] 
+
+    out = np.ndarray(len(data), dtype=[('angle', float), ('rx', float), ('ry', float), ('sturn', float)])
+    out['angle'] = data['angle']
+    out['sturn'] = data['sturn']
+
+    out['rx'] = np.sqrt(twoJx)  # The angles are taken wrt. rx and ry, the coordinates in Floquet-space.
+    out['ry'] = np.sqrt(twoJy)  
+    # see also p. 33 in SixTrack Version 4.2.16: "Single Particle Tracking Code Treating Transverse Motion with
+    # Synchrotron Oscillations in a Symplectic Manner" User's Reference Manual 2012 by F. Schmidt.
+
+    n_angles=len(set(out['angle']))
     try:
-      return data.reshape(angles,-1)
+      out_rs = out.reshape(n_angles, -1)
+      return out_rs 
     except ValueError:
-      print(("Cannot reshape array of size %s into "%(len(data))+
-            "shape (%s,newaxis). Skip this seed %s!"%(angles,seed)))
+      print(("Cannot reshape array of size %s into "%(len(out))+
+            "shape (%s, newaxis). Skip this seed %s!"%(n_angles, seed)))
       return None
+
+  def get_surv(self, seed, tune_pair):
+        '''get survival turns from DB calculated from emitI and emitII'''
+
+        (tunex, tuney) = tune_pair
+        emit = float(self.env_var['emit'])
+        gamma = float(self.env_var['gamma'])
+        turnsl = self.env_var['turnsl']
+        cmd="""SELECT angle, emitx + emity,
+            CASE WHEN sturns1 < sturns2 THEN sturns1 ELSE sturns2 END
+            FROM results WHERE seed=%s AND tunex=%s AND tuney=%s AND turn_max=%s
+            ORDER BY angle, emitx + emity"""
+        cur = self.conn.cursor().execute(cmd%(seed, tunex, tuney, turnsl))
+        ftype = [('angle', float), ('sigma', float), ('sturn', float)]
+        data = np.fromiter(cur, dtype=ftype)
+        data['sigma'] = np.sqrt(data['sigma']/(emit/gamma))
+        angles = len(set(data['angle']))
+        try:
+            return data.reshape(angles, -1)
+        except ValueError:
+            print("Cannot reshape array of size %s into "%(len(data))+
+                  "shape (%s,newaxis). Skip this seed %s!"%(angles, seed))
+            return None
+
 
   def plot_da_vst(self,seed,tune,ldat,ldaterr,ampmin,ampmax,tmax,slog,sfit,fitndrop):
     """plot dynamic aperture vs number of turns where ldat,ldaterr is the data and 
@@ -2582,6 +2675,7 @@ class SixDeskDB(object):
     else:
       pl.ylim([0,float(tmax)])
       pl.gca().ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+
   def plot_surv_2d(self,seed,tune=None,ampmax=14):
     '''survival plot, blue=all particles, red=stable particles'''
     if tune is None:
@@ -2601,6 +2695,7 @@ class SixDeskDB(object):
     pl.ylim([0,ampmax])
     pl.xlabel(r'Horizontal amplitude [$\sigma$]',labelpad=10,fontsize=12)
     pl.ylabel(r'Vertical amplitude [$\sigma$]',labelpad=10,fontsize=12)
+
   def get_da_angle(self,tunes=None,alost='alost1'):
     """returns DA results for all seeds and angles"""
     if tunes is None:
@@ -2614,6 +2709,7 @@ class SixDeskDB(object):
       self.mk_da()
     data=np.array(self.execute(sql)).reshape(len(seeds),len(angles),-1)
     return data
+
   def get_da_angle_seed(self,seed,alost='alost1'):
     """returns DA results for seed *seed* and all angles"""
     angles=self.get_db_angles()
@@ -2624,6 +2720,7 @@ class SixDeskDB(object):
       self.mk_da()
     data=np.array(self.execute(sql))
     return data
+
   def plot_da_angle(self,label=None,color='r',ashift=0,marker='o',
                     alpha=None,mec='none',alost='alost1',tunes=None,**args):
     """plot DA (alost1) vs sigma_x and sigma_y"""
@@ -2650,6 +2747,7 @@ class SixDeskDB(object):
     pl.xlabel(r'$\sigma_x$')
     pl.ylabel(r'$\sigma_y$')
     return self
+
   def plot_da_seed(self,seed,label=None,color='k',marker='o',linestyle='-',alpha=1.0,mec='none',tunes=None,alost='alost1'):
     """plot the angle vs the DA (alost1) for one seed *seed*"""
     data=self.get_da_angle_seed(seed,tunes=tunes,alost=alost)
@@ -2660,6 +2758,7 @@ class SixDeskDB(object):
       pl.legend()
     pl.xlabel('angle')
     pl.ylabel(r'DA [$\sigma$]')
+
   def plot_da_angle_seed(self,seed,label=None,color='k',ashift=0,marker='o',linestyle='-',alpha=1.0,mec='none',tunes=None,alost='alost1'):
     """plot the DA (alost1) expressed in sigmax
     and sigmay for one seed *seed*"""
@@ -2683,6 +2782,7 @@ class SixDeskDB(object):
             print("Tune %s_%s, seed %d, angle %d has alost1=0"%(tunex,tuney,seed,angle))
       else:
         print("No DA command issued yet")
+
   def get_overlap_angle(self,tunes,seed,angle,colname):
     ss="""select %%s,%s from results
           where tunex=%s and tuney=%s and seed=%s and
@@ -2692,6 +2792,7 @@ class SixDeskDB(object):
     l1=np.array(self.execute(ss%('amp1',1))[1:])
     l2=np.array(self.execute(ss%('amp2',pairs))[:-1])
     return l1,l2
+
   def compare_overlap_angle(self,tunes,seed,angle,colname,threshold):
     l1,l2=self.get_overlap_angle(tunes,seed,angle,colname)
     check=l1[:,1]-l2[:,1]
@@ -2701,6 +2802,7 @@ class SixDeskDB(object):
                   [tunes,seed,angle,colname],
                   l1[idx,1],l2[idx,1]))
     return l1[idx,0]
+
   def compare_overlap(self,colname,threshold):
     out=[]
     for tunes in self.get_tunes():
