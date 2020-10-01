@@ -1756,7 +1756,8 @@ class SixDeskDB(object):
     LHCDescrip=self.LHCDescrip
     for tunex,tuney in self.get_tunes():
         anumber=1
-        sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>1e-10 AND emity>1e-10 AND turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
+        #sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>1e-10 AND emity>1e-10 AND turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
+        sql1='SELECT %s FROM results WHERE turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
         sixdesktunes="%s_%s"%(tunex,tuney)
         sql1+=' AND tunex=%s AND tuney=%s '%(tunex,tuney)
         for angle in angles:
@@ -1775,12 +1776,17 @@ class SixDeskDB(object):
                 achaos = 0.
                 achaos1 = 0.
                 sql=sql1+' AND seed=%s '%seed
-                #sql+=' AND ROUND(angle,5)=ROUND(%s,5) '%angle
                 sql+=' AND angle=%s '%angle
-                sql+=' ORDER BY emitx+emity '
+                sql+=' ORDER BY amp1+row_num/%f '%pairs #ordering based on file
                 if self.debug:
                     print(sql)
                 inp=np.array(self.execute(sql),dtype=rectype)
+                zerotest=np.where(inp['betx']==0)[0]  # remove everything from first zero line
+                truncated=False
+                if len(zerotest)>0:
+                    truncated=True
+                    izerotest=zerotest[0]
+                    inp=inp[:izerotest]
                 if self.debug:
                     print(inp.shape)
                 if len(inp)==0:
@@ -1804,10 +1810,6 @@ class SixDeskDB(object):
                 turn_max=inp['turn_max'].max()
                 amp2=inp['amp2'][-1]
                 row_num=inp['row_num'][-1]
-                if row_num<pairs :
-                    truncated=True
-                else:
-                    truncated=False
                 zero = 1e-10
                 #xidx=(betx>zero) & (emitx>zero)
                 #yidx=(bety>zero) & (emity>zero)
