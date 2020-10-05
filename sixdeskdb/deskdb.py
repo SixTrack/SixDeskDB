@@ -1747,6 +1747,7 @@ class SixDeskDB(object):
     turnse=self.env_var['turnse']
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
+    nsincl = self.env_var['nsincl']
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     angles=self.get_db_angles()
     seeds=self.get_db_seeds()
@@ -1777,7 +1778,7 @@ class SixDeskDB(object):
                 achaos1 = 0.
                 sql=sql1+' AND seed=%s '%seed
                 sql+=' AND angle=%s '%angle
-                sql+=' ORDER BY amp1+row_num/%f '%pairs #ordering based on file
+                sql+=' ORDER BY amp1+%g*row_num'%(nsincl/pairs/10) #ordering based on file (10 ordering only)
                 if self.debug:
                     print(sql)
                 inp=np.array(self.execute(sql),dtype=rectype)
@@ -1878,6 +1879,8 @@ class SixDeskDB(object):
                 alost2test=np.where((sturns1<turn_max)|(sturns2<turn_max))[0]
                 if len(alost2test)>0:
                     ialost2=alost2test[0]
+                    if ialost2>0:
+                        ialost2-=1 #last stable particle
                     alost2=rad*sigx1[ialost2]
                 icount=1.
                 if iin != -999 and iend == -999 : iend=iel
