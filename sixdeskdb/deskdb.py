@@ -778,7 +778,7 @@ class SixDeskDB(object):
     cur = conn.cursor()
     # env_var = self.env_var
     basedir = self.basedir
-    cur.execute("begin IMMEDIATE transaction")
+    #cur.execute("begin IMMEDIATE transaction")
     sql = """SELECT path,content from files"""
     cur.execute(sql)
     files = cur.fetchall()
@@ -808,6 +808,7 @@ class SixDeskDB(object):
         else:
           f.write(decompressBuf(str(file[1])))
         f.close()
+    cur.commit()
 
   def load_mad6t_run(self):
     ''' load mad runs from DB '''
@@ -883,7 +884,7 @@ class SixDeskDB(object):
     conn = self.conn
     cur = conn.cursor()
     env_var = self.env_var
-    cur.execute("begin IMMEDIATE transaction")
+    #cur.execute("begin IMMEDIATE transaction")
     sql = """SELECT * from mad6t_results"""
     cur.execute(sql)
     forts = cur.fetchall()
@@ -927,6 +928,7 @@ class SixDeskDB(object):
           f.close()
         else:
           print('fort.16_%s.gz was not created at %s',(seed,path))
+    cur.commit()
 
   def load_six_beta(self):
     '''load general_input,betavalues and sixdesktunes from DB'''
@@ -936,7 +938,7 @@ class SixDeskDB(object):
     cur = conn.cursor()
     env_var = self.env_var
     path = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
-    cur.execute("begin IMMEDIATE transaction")
+    #cur.execute("begin IMMEDIATE transaction")
     sql = """SELECT * from six_beta"""
     cur.execute(sql)
     beta = cur.fetchall()
@@ -985,6 +987,7 @@ class SixDeskDB(object):
         f = open(temp,'w')
         f.write(stri)
         f.close()
+    cur.commit()
 
   def load_six_input_results(self):
     '''load fort.3 and fort.10 files from DB '''
@@ -994,7 +997,7 @@ class SixDeskDB(object):
     cur = conn.cursor()
     env_var = self.env_var
     path = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
-    cur.execute("begin IMMEDIATE transaction")
+    #cur.execute("begin IMMEDIATE transaction")
     sql = """SELECT * from six_input"""
     cur.execute(sql)
     six = cur.fetchall()
@@ -1037,6 +1040,7 @@ class SixDeskDB(object):
         f = gzip.open(temp,'w')
         f.write(stri)
         f.close()
+    cur.commit()
 
   def get_missing_fort10(self):
     '''get input values for which fort.10 is not present '''

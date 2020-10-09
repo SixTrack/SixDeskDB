@@ -93,8 +93,8 @@ class SQLTable(object):
     else:
       sql="INSERT INTO %s(%s) VALUES (%s)"
     cur=db.cursor()
-    if dbtype == "sql":
-      cur.execute("begin IMMEDIATE transaction")
+    #if dbtype == "sql":
+    #  cur.execute("begin IMMEDIATE transaction")
     if len(data) == 0:
       return
     cols=','.join(data.dtype.names)
@@ -111,8 +111,8 @@ class SQLTable(object):
     else:
       sql="INSERT INTO %s VALUES (%s)"
     cur=db.cursor()
-    if dbtype == "sql":
-      cur.execute("begin IMMEDIATE transaction")
+    #if dbtype == "sql":
+    #  cur.execute("begin IMMEDIATE transaction")
     if len(data) == 0:
       return
     #if not isinstance(data[0], list):
