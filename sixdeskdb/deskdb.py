@@ -778,7 +778,7 @@ class SixDeskDB(object):
     cur = conn.cursor()
     # env_var = self.env_var
     basedir = self.basedir
-    cur.execute("begin IMMEDIATE transaction")
+    #cur.execute("begin IMMEDIATE transaction")
     sql = """SELECT path,content from files"""
     cur.execute(sql)
     files = cur.fetchall()
@@ -808,6 +808,7 @@ class SixDeskDB(object):
         else:
           f.write(decompressBuf(str(file[1])))
         f.close()
+    cur.commit()
 
   def load_mad6t_run(self):
     ''' load mad runs from DB '''
@@ -883,7 +884,7 @@ class SixDeskDB(object):
     conn = self.conn
     cur = conn.cursor()
     env_var = self.env_var
-    cur.execute("begin IMMEDIATE transaction")
+    #cur.execute("begin IMMEDIATE transaction")
     sql = """SELECT * from mad6t_results"""
     cur.execute(sql)
     forts = cur.fetchall()
@@ -927,6 +928,7 @@ class SixDeskDB(object):
           f.close()
         else:
           print('fort.16_%s.gz was not created at %s',(seed,path))
+    cur.commit()
 
   def load_six_beta(self):
     '''load general_input,betavalues and sixdesktunes from DB'''
@@ -936,7 +938,7 @@ class SixDeskDB(object):
     cur = conn.cursor()
     env_var = self.env_var
     path = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
-    cur.execute("begin IMMEDIATE transaction")
+    #cur.execute("begin IMMEDIATE transaction")
     sql = """SELECT * from six_beta"""
     cur.execute(sql)
     beta = cur.fetchall()
@@ -985,6 +987,7 @@ class SixDeskDB(object):
         f = open(temp,'w')
         f.write(stri)
         f.close()
+    cur.commit()
 
   def load_six_input_results(self):
     '''load fort.3 and fort.10 files from DB '''
@@ -994,7 +997,7 @@ class SixDeskDB(object):
     cur = conn.cursor()
     env_var = self.env_var
     path = os.path.join(env_var['sixdesktrack'],self.LHCDescrip)
-    cur.execute("begin IMMEDIATE transaction")
+    #cur.execute("begin IMMEDIATE transaction")
     sql = """SELECT * from six_input"""
     cur.execute(sql)
     six = cur.fetchall()
@@ -1037,6 +1040,7 @@ class SixDeskDB(object):
         f = gzip.open(temp,'w')
         f.write(stri)
         f.close()
+    cur.commit()
 
   def get_missing_fort10(self):
     '''get input values for which fort.10 is not present '''
@@ -1747,6 +1751,7 @@ class SixDeskDB(object):
     turnse=self.env_var['turnse']
     ns1l=self.env_var['ns1l']
     ns2l=self.env_var['ns2l']
+    nsincl = self.env_var['nsincl']
     Elhc,Einj = self.execute('SELECT emitn,gamma from six_beta LIMIT 1')[0]
     angles=self.get_db_angles()
     seeds=self.get_db_seeds()
@@ -1756,7 +1761,8 @@ class SixDeskDB(object):
     LHCDescrip=self.LHCDescrip
     for tunex,tuney in self.get_tunes():
         anumber=1
-        sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>1e-10 AND emity>1e-10 AND turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
+        #sql1='SELECT %s FROM results WHERE betx>0 AND bety>0 AND emitx>1e-10 AND emity>1e-10 AND turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
+        sql1='SELECT %s FROM results WHERE turn_max=%d AND amp1>=%s AND  amp1<=%s'%(names,turnsl,ns1l,ns2l)
         sixdesktunes="%s_%s"%(tunex,tuney)
         sql1+=' AND tunex=%s AND tuney=%s '%(tunex,tuney)
         for angle in angles:
@@ -1775,12 +1781,17 @@ class SixDeskDB(object):
                 achaos = 0.
                 achaos1 = 0.
                 sql=sql1+' AND seed=%s '%seed
-                #sql+=' AND ROUND(angle,5)=ROUND(%s,5) '%angle
                 sql+=' AND angle=%s '%angle
-                sql+=' ORDER BY emitx+emity '
+                sql+=' ORDER BY amp1+%g*row_num'%(nsincl/pairs/10) #ordering based on file (10 ordering only)
                 if self.debug:
                     print(sql)
                 inp=np.array(self.execute(sql),dtype=rectype)
+                zerotest=np.where(inp['betx']==0)[0]  # remove everything from first zero line
+                truncated=False
+                if len(zerotest)>0:
+                    truncated=True
+                    izerotest=zerotest[0]
+                    inp=inp[:izerotest]
                 if self.debug:
                     print(inp.shape)
                 if len(inp)==0:
@@ -1804,10 +1815,6 @@ class SixDeskDB(object):
                 turn_max=inp['turn_max'].max()
                 amp2=inp['amp2'][-1]
                 row_num=inp['row_num'][-1]
-                if row_num<pairs :
-                    truncated=True
-                else:
-                    truncated=False
                 zero = 1e-10
                 #xidx=(betx>zero) & (emitx>zero)
                 #yidx=(bety>zero) & (emity>zero)
@@ -1876,6 +1883,8 @@ class SixDeskDB(object):
                 alost2test=np.where((sturns1<turn_max)|(sturns2<turn_max))[0]
                 if len(alost2test)>0:
                     ialost2=alost2test[0]
+                    if ialost2>0:
+                        ialost2-=1 #last stable particle
                     alost2=rad*sigx1[ialost2]
                 icount=1.
                 if iin != -999 and iend == -999 : iend=iel
